@@ -1,0 +1,26 @@
+﻿@using MingYue.Models
+@implements IDialogContentComponent<SettingModel>
+
+@* <FluentMessageBarProvider Section="@App.MESSAGES_DIALOG" MaxMessageCount="1"></FluentMessageBarProvider> *@
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical">
+
+        <FluentSelect Label="Theme"
+                      Width="250px"
+                      Items="@(Enum.GetValues<DesignThemeModes>())"
+                      @bind-SelectedOption="@Content.Mode" />
+
+        <FluentSelect Label="Color"
+                      Items="@(Enum.GetValues<OfficeColor>().Select(i => (OfficeColor?)i))"
+                      Height="200px"
+                      Width="250px"
+                      @bind-SelectedOption="@Content.OfficeColor" />
+
+    </FluentStack>
+</FluentDialogBody>
+@code {
+    [Parameter]
+    public SettingModel Content { get; set; } = default;
+    [CascadingParameter]
+    public FluentDialog? Dialog { get; set; }
+}

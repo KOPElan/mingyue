@@ -1,0 +1,49 @@
+﻿@inherits LayoutComponentBase
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@using MingYue.Components.Dialog
+@using MingYue.Models
+@inject IDialogService DialogService
+
+<FluentDesignTheme @bind-Mode="@Settings.Mode" @bind-OfficeColor="@Settings.OfficeColor" StorageName="theme" />
+<FluentLayout>
+    <FluentHeader>
+        <FluentStack>
+            明月 Portal
+        </FluentStack>
+        <FluentSpacer />
+        <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="@Color.Fill"></FluentIcon>
+            <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="@Color.Fill" Title="设置" @onclick="OpenSetting" />
+        </FluentStack>
+    </FluentHeader>
+    <FluentBodyContent>
+        @Body
+    </FluentBodyContent>
+</FluentLayout>
+<FluentToastProvider />
+<FluentDialogProvider />
+<FluentTooltipProvider />
+<FluentMessageBarProvider />
+<FluentMenuProvider />
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    public SettingModel Settings { get; set; } = new();
+
+    public async Task OpenSetting()
+    {
+        IDialogReference? _dialog;
+        _dialog = await DialogService.ShowPanelAsync<SettingDialog>(Settings, new DialogParameters<SettingModel>()
+        {
+            Content = Settings,
+            Alignment = HorizontalAlignment.Right,
+            Title = $"Hello",
+        });
+        DialogResult result = await _dialog.Result;
+        // HandlePanel(result);
+    }
+}

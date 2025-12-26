@@ -1,0 +1,6 @@
+﻿namespace MingYue.Services
+{
+    public class IDiskManagementService
+    {
+    }
+}

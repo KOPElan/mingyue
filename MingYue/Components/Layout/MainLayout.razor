@@ -43,7 +43,7 @@
             Alignment = HorizontalAlignment.Right,
             Title = $"Hello",
         });
-        DialogResult result = await _dialog.Result;
+        _ = await _dialog.Result;
         // HandlePanel(result);
     }
 }

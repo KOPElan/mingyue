@@ -1,6 +1,16 @@
-﻿namespace MingYue.Services
+﻿using MingYue.Models;
+
+namespace MingYue.Services
 {
-    public class IDockerManagementService
+    public interface IDockerManagementService
     {
+        Task<List<DockerContainerInfo>> GetContainersAsync(bool showAll = true);
+        Task<List<DockerImageInfo>> GetImagesAsync();
+        Task StartContainerAsync(string containerId);
+        Task StopContainerAsync(string containerId);
+        Task RestartContainerAsync(string containerId);
+        Task RemoveContainerAsync(string containerId);
+        Task<bool> IsDockerAvailableAsync();
+        Task<string> GetContainerLogsAsync(string containerId, int tailLines = 1000);
     }
 }

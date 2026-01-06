@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.FluentUI.AspNetCore.Components;
 using MingYue.Components;
+using MingYue.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,13 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddFluentUIComponents();
 builder.Services.AddHttpClient();
+
+// Add SQLite database
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Data Source=mingyue.db";
+// Register DbContextFactory for services that need multiple contexts or custom lifetime management (e.g., FileManagerService)
+builder.Services.AddDbContextFactory<MingYueDbContext>(options =>
+    options.UseSqlite(connectionString));
 
 var app = builder.Build();
 

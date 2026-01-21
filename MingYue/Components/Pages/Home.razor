@@ -1,7 +1,124 @@
 ﻿@page "/"
+@using MingYue.Models
+@using MingYue.Services
+@inject ISystemMonitorService SystemMonitorService
 
 <PageTitle>Home</PageTitle>
 
-<FluentGrid>
-    <FluentGridItem xs="12"></FluentGridItem>
+<FluentGrid Spacing="3" Justify="JustifyContent.Center">
+    <FluentGridItem xs="12">
+        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
+            <FluentLabel Typo="Typography.HeroTitle">@TimeNow</FluentLabel>
+            <FluentLabel Typo="Typography.HeroTitle">@DateNow</FluentLabel>
+        </FluentStack>
+    </FluentGridItem>
+    <FluentGridItem HiddenWhen="GridItemHidden.XsAndDown" md="1"></FluentGridItem>
+    <FluentGridItem xs="12" md="3">
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical">
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
+                    <FluentLabel>CPU</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
+                </FluentStack>
+                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
+                    <FluentLabel>RAM</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
+                </FluentStack>
+                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Max="100" />
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" md="3">
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical">
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
+                    <FluentLabel>CPU</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
+                </FluentStack>
+                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
+                    <FluentLabel>RAM</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
+                </FluentStack>
+                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Max="100" />
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>
+    <FluentGridItem xs="12" md="3">
+        <FluentCard>
+            <FluentStack Orientation="Orientation.Vertical">
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
+                    <FluentLabel>CPU</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
+                </FluentStack>
+                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
+                    <FluentLabel>RAM</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
+                </FluentStack>
+                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Min="0" Max="100"/>
+            </FluentStack>
+        </FluentCard>
+    </FluentGridItem>   
+    <FluentGridItem HiddenWhen="GridItemHidden.XsAndDown" md="1"></FluentGridItem>
+    <FluentGridItem xs="12" Justify="JustifyContent.FlexStart">
+        <FluentLabel>应用</FluentLabel>
+    </FluentGridItem>
 </FluentGrid>
+
+
+@code {
+    public string TimeNow => DateTime.Now.ToString("HH:mm");
+    public string DateNow => DateTime.Now.ToString("yyyy年MM月dd日 星期") + GetDayOfWeek();
+    public SystemResourceInfo systemInfo = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadDataAsync();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public string GetDayOfWeek()
+    {
+        return "一";
+        // return DateTime.Now.DayOfWeek switch
+        // {
+        //     DayOfWeek.Monday => LocalizationService.GetString("Monday"),
+        //     DayOfWeek.Tuesday => LocalizationService.GetString("Tuesday"),
+        //     DayOfWeek.Wednesday => LocalizationService.GetString("Wednesday"),
+        //     DayOfWeek.Thursday => LocalizationService.GetString("Thursday"),
+        //     DayOfWeek.Friday => LocalizationService.GetString("Friday"),
+        //     DayOfWeek.Saturday => LocalizationService.GetString("Saturday"),
+        //     DayOfWeek.Sunday => LocalizationService.GetString("Sunday"),
+        //     _ => ""
+        // };
+    }
+
+    public async Task LoadDataAsync()
+    {
+        try
+        {
+            systemInfo = await SystemMonitorService.GetSystemResourceInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions
+        }
+    }
+}

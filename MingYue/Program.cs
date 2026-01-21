@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.FluentUI.AspNetCore.Components;
 using MingYue.Components;
 using MingYue.Data;
+using MingYue.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContextFactory<MingYueDbContext>(options =>
     options.UseSqlite(connectionString));
 
+builder.Services.AddScoped<ISystemMonitorService, SystemMonitorService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

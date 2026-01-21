@@ -5,8 +5,8 @@
 @inject IDialogService DialogService
 
 <FluentDesignTheme @bind-Mode="@Settings.Mode" @bind-OfficeColor="@Settings.OfficeColor" StorageName="theme" />
-<FluentLayout>
-    <FluentHeader>
+<FluentMainLayout>
+    <Header>
         <FluentStack>
             明月 Portal
         </FluentStack>
@@ -15,11 +15,11 @@
             <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="@Color.Fill"></FluentIcon>
             <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="@Color.Fill" Title="设置" @onclick="OpenSetting" />
         </FluentStack>
-    </FluentHeader>
-    <FluentBodyContent>
+    </Header>
+    <Body>
         @Body
-    </FluentBodyContent>
-</FluentLayout>
+    </Body>
+</FluentMainLayout>
 <FluentToastProvider />
 <FluentDialogProvider />
 <FluentTooltipProvider />

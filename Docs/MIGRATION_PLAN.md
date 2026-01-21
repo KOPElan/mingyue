@@ -48,6 +48,7 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 10. **计划任务**: 定时任务调度和执行历史
 11. **本地化**: 多语言支持
 12. **系统设置**: 全局配置管理
+13. **通知服务**: 实时通知系统，支持多种类型通知（信息、成功、警告、错误）
 
 ---
 
@@ -71,6 +72,8 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
   - `User`, `ScheduledTask`, `ScheduledTaskExecutionHistory`
   - `AnydropMessage`, `AnydropAttachment`
   - `FileIndex`, `Thumbnail`
+  - `Notification`（新增）
+
 
 **UI 组件**:
 - ✅ MainLayout（主布局）
@@ -105,6 +108,7 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - ScheduledTaskService ❌
 - ScheduledTaskExecutionHistoryService ❌
 - ScheduledTaskExecutorService ❌
+- NotificationService ❌ (新增)
 ```
 
 **Components/Pages (17 个页面)**:
@@ -590,6 +594,51 @@ public class SystemSetting
 - [ ] 文件管理设置（上传大小限制）
 - [ ] Docker 设置（连接地址）
 - [ ] 设置导入/导出
+
+#### 3.5 通知服务
+**目标**: 实现实时通知系统
+
+**迁移内容**:
+- `NotificationService.cs` - 通知服务
+- `INotificationService.cs` - 通知服务接口
+- `Notification` 数据模型
+- 通知面板组件（MainLayout 集成）
+- `NotificationEndpoints.cs` - 通知 API
+
+**数据库变更**:
+```csharp
+// 启用 Notification 表
+public class Notification
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Type { get; set; } = "Info"; // Info, Success, Warning, Error
+    public bool IsRead { get; set; } = false;
+    public DateTime CreatedAt { get; set; }
+    public string? ActionUrl { get; set; }
+    public string? Icon { get; set; }
+}
+```
+
+**重构要点**:
+- 使用 FluentUI 的徽章和对话框组件
+- 事件驱动的实时更新（OnNotificationChanged 事件）
+- 未读计数器自动更新
+- 相对时间显示（刚刚、N分钟前等）
+- 批量操作（全部已读、清除已读）
+
+**验收标准**:
+- [ ] 创建通知（支持多种类型：Info/Success/Warning/Error）
+- [ ] MainLayout 显示未读计数徽章
+- [ ] 通知面板展示所有通知
+- [ ] 标记单条通知为已读
+- [ ] 标记所有通知为已读
+- [ ] 删除单条通知
+- [ ] 批量删除已读通知
+- [ ] 通知带操作链接（可选）
+- [ ] 实时更新通知列表
+- [ ] 相对时间格式化
 
 ---
 

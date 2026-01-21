@@ -1,0 +1,234 @@
+@page "/app-management"
+@using MingYue.Models
+@using MingYue.Services
+@inject IApplicationService AppService
+@inject ILogger<AppManagement> Logger
+@inject IToastService ToastService
+
+<PageTitle>Application Management - MingYue</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">Application Management</h2>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddDialog">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
+            Add Application
+        </FluentButton>
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else if (applications.Count == 0)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info">
+            No applications found. Click "Add Application" to create your first one.
+        </FluentMessageBar>
+    }
+    else
+    {
+        <FluentDataGrid Items="@applications.AsQueryable()" GridTemplateColumns="0.5fr 1.5fr 2fr 1fr 1fr 0.8fr">
+            <PropertyColumn Property="@(a => a.Order)" Title="Order" Sortable="true" />
+            <PropertyColumn Property="@(a => a.Title)" Title="Title" Sortable="true" />
+            <PropertyColumn Property="@(a => a.Url)" Title="URL" Sortable="true" />
+            <PropertyColumn Property="@(a => a.Category)" Title="Category" Sortable="true" />
+            <TemplateColumn Title="Visible" Sortable="true">
+                @if (context.IsVisible)
+                {
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Yes</FluentBadge>
+                }
+                else
+                {
+                    <FluentBadge Fill="neutral">No</FluentBadge>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Actions">
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Edit())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteApplication(context))">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                </FluentButton>
+            </TemplateColumn>
+        </FluentDataGrid>
+    }
+</FluentStack>
+
+<FluentDialog @ref="dialog" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Apps())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                @(editingApp == null ? "Add Application" : "Edit Application")
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <EditForm Model="@currentApp" OnValidSubmit="@SaveApplication">
+            <DataAnnotationsValidator />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentTextField 
+                    @bind-Value="currentApp!.Title"
+                    Label="Title"
+                    Required="true"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentApp!.Url"
+                    Label="URL"
+                    Required="true"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentApp!.Icon"
+                    Label="Icon (FluentUI icon name or URL)"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentApp!.IconColor"
+                    Label="Icon Color"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentApp!.Category"
+                    Label="Category"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentApp!.Description"
+                    Label="Description"
+                    Style="width: 100%;" />
+                
+                <FluentCheckbox 
+                    @bind-Value="currentApp!.IsVisible"
+                    Label="Visible" />
+            </FluentStack>
+        </EditForm>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveApplication">
+            Save
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<Application> applications = new();
+    private Application? editingApp;
+    private Application currentApp = new();
+    private FluentDialog? dialog;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApplications();
+    }
+
+    private async Task LoadApplications()
+    {
+        isLoading = true;
+        try
+        {
+            applications = await AppService.GetAllApplicationsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading applications");
+            ToastService.ShowError("Failed to load applications");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenAddDialog()
+    {
+        editingApp = null;
+        currentApp = new Application
+        {
+            AppId = Guid.NewGuid().ToString(),
+            IsVisible = true
+        };
+        dialog?.Show();
+    }
+
+    private void OpenEditDialog(Application app)
+    {
+        editingApp = app;
+        currentApp = new Application
+        {
+            Id = app.Id,
+            AppId = app.AppId,
+            Title = app.Title,
+            Url = app.Url,
+            Icon = app.Icon,
+            IconColor = app.IconColor,
+            Category = app.Category,
+            Description = app.Description,
+            IsVisible = app.IsVisible,
+            Order = app.Order
+        };
+        dialog?.Show();
+    }
+
+    private async Task SaveApplication()
+    {
+        try
+        {
+            if (editingApp == null)
+            {
+                await AppService.CreateApplicationAsync(currentApp);
+                ToastService.ShowSuccess("Application created successfully");
+            }
+            else
+            {
+                await AppService.UpdateApplicationAsync(currentApp);
+                ToastService.ShowSuccess("Application updated successfully");
+            }
+
+            await LoadApplications();
+            CloseDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving application");
+            ToastService.ShowError("Failed to save application");
+        }
+    }
+
+    private async Task DeleteApplication(Application app)
+    {
+        try
+        {
+            var success = await AppService.DeleteApplicationAsync(app.Id);
+            if (success)
+            {
+                ToastService.ShowSuccess("Application deleted successfully");
+                await LoadApplications();
+            }
+            else
+            {
+                ToastService.ShowWarning("Failed to delete application");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting application");
+            ToastService.ShowError("Failed to delete application");
+        }
+    }
+
+    private void CloseDialog()
+    {
+        dialog?.Hide();
+    }
+}

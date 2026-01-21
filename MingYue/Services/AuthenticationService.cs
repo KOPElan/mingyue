@@ -40,8 +40,8 @@ namespace MingYue.Services
                     };
                 }
 
-                // Hash password using BCrypt
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                // Hash password using BCrypt with work factor 12
+                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
 
                 // Determine role (first user is admin)
                 var hasUsers = await context.Users.AnyAsync();

@@ -213,6 +213,7 @@ namespace MingYue.Services
                     Url = application.Url,
                     Icon = application.Icon,
                     IconColor = application.IconColor,
+                    IconBackground = string.Empty,
                     AssociatedAppId = appId,
                     IsPinned = true,
                     CreatedAt = DateTime.UtcNow,

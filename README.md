@@ -47,7 +47,6 @@ MingYue（明月）是一个功能强大的家庭服务器门户系统，旨在�
 - 🔄 **磁盘/共享管理 UI**: 友好的配置向导
 
 #### Phase 3: 高级功能 (第6-8周)
-- 🔄 **Web 终端**: 基于 xterm.js 的浏览器终端
 - 🔄 **Anydrop**: 跨设备文件传输和消息分享
 - 🔄 **计划任务**: Cron 定时任务调度
 - 🔄 **系统设置**: 全局配置管理
@@ -66,7 +65,7 @@ MingYue（明月）是一个功能强大的家庭服务器门户系统，旨在�
 - **组件库**: [Microsoft FluentUI Blazor](https://www.fluentui-blazor.net/) 4.13.2
 - **数据库**: SQLite + Entity Framework Core 10.0
 - **依赖注入**: ASP.NET Core DI
-- **实时通信**: SignalR（用于终端和实时监控）
+- **实时通信**: SignalR（用于实时监控）
 
 ## 📦 快速开始
 

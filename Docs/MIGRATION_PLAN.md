@@ -42,13 +42,12 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 4. **共享目录管理**: Samba/CIFS 和 NFS 共享配置
 5. **Docker 管理**: 容器和镜像管理
 6. **文件管理器**: 完整的文件操作、预览、上传下载
-7. **Web 终端**: 基于 xterm.js 的浏览器终端
-8. **Anydrop**: 跨设备文件传输和消息分享
-9. **用户认证**: 登录、权限管理
-10. **计划任务**: 定时任务调度和执行历史
-11. **本地化**: 多语言支持
-12. **系统设置**: 全局配置管理
-13. **通知服务**: 实时通知系统，支持多种类型通知（信息、成功、警告、错误）
+7. **Anydrop**: 跨设备文件传输和消息分享
+8. **用户认证**: 登录、权限管理
+9. **计划任务**: 定时任务调度和执行历史
+10. **本地化**: 多语言支持
+11. **系统设置**: 全局配置管理
+12. **通知服务**: 实时通知系统，支持多种类型通知（信息、成功、警告、错误）
 
 ---
 
@@ -99,7 +98,6 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - DockItemService ❌
 - SystemSettingService ❌
 - LocalizationService ❌
-- TerminalService ❌
 - NetworkManagementService ❌
 - AnydropService ❌
 - FileIndexService ❌
@@ -128,7 +126,6 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - FileManager.razor ❌ (需完整UI)
 - DiskManagement.razor ❌ (需完整UI)
 - ShareManagement.razor ❌ (需完整UI)
-- WebTerminal.razor ❌
 - Anydrop.razor ❌
 - ScheduledTasks.razor ❌
 - Settings.razor ❌
@@ -141,10 +138,10 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - AuthenticationEndpoints ❌
 - ApplicationEndpoints ❌
 - DockItemEndpoints ❌
-- TerminalEndpoints ❌
 - AnydropEndpoints ❌
 - ScheduledTaskEndpoints ❌
 - SystemSettingEndpoints ❌
+- NotificationEndpoints ❌
 
 已有但需增强:
 - SystemMonitorEndpoints ✅
@@ -152,12 +149,6 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - DiskManagementEndpoints ✅
 - ShareManagementEndpoints ✅
 - DockerEndpoints ✅
-```
-
-**Hubs (SignalR)**:
-```
-待迁移:
-- TerminalHub ❌ (Web终端实时通信)
 ```
 
 **Models (数据模型)**:
@@ -191,10 +182,10 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - 磁盘和共享管理 UI
 
 **P2 - 高级功能** (第6-8周):
-- Web 终端
 - Anydrop 文件传输
 - 计划任务
 - 系统设置
+- 通知服务
 
 **P3 - 优化和完善** (第9-10周):
 - 本地化支持
@@ -210,7 +201,6 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 | .NET 版本 | .NET 10.0 | .NET 10.0 | 无需调整 |
 | 数据库 | SQLite + EF Core | SQLite + EF Core | 无需调整 |
 | 身份认证 | Custom + ProtectedLocalStorage | 待实现 | 迁移实现 |
-| 终端 | xterm.js + SignalR | 待实现 | 迁移实现 |
 | 文件预览 | PDF.js, Mammoth.js, SheetJS | 待实现 | 迁移实现 |
 
 ---
@@ -434,36 +424,7 @@ public class Thumbnail
 
 ### Phase 3: 高级功能迁移 (第6-8周)
 
-#### 3.1 Web 终端
-**目标**: 实现基于浏览器的终端功能
-
-**迁移内容**:
-- `TerminalService.cs` - 终端服务
-- `TerminalHub.cs` - SignalR Hub
-- `WebTerminal.razor` - Web 终端页面
-- `TerminalEndpoints.cs` - 终端 API
-
-**技术依赖**:
-- xterm.js (前端终端模拟器)
-- SignalR (实时双向通信)
-- 系统进程管理
-
-**重构要点**:
-- 使用 FluentUI 的对话框和面板
-- 终端主题和配置
-- 会话管理
-- 安全沙箱
-
-**验收标准**:
-- [ ] 打开浏览器终端
-- [ ] 命令输入和输出
-- [ ] 实时通信
-- [ ] 多终端会话
-- [ ] 终端主题切换
-- [ ] 会话历史
-- [ ] 安全限制（可选）
-
-#### 3.2 Anydrop 文件传输
+#### 3.1 Anydrop 文件传输
 **目标**: 实现跨设备文件和消息分享
 
 **迁移内容**:
@@ -508,7 +469,7 @@ public class AnydropAttachment
 - [ ] 未读标记
 - [ ] 设备识别
 
-#### 3.3 计划任务
+#### 3.2 计划任务
 **目标**: 实现定时任务调度系统
 
 **迁移内容**:
@@ -561,7 +522,7 @@ public class ScheduledTaskExecutionHistory
 - [ ] 查看任务输出和错误
 - [ ] 任务类型（脚本、命令、HTTP）
 
-#### 3.4 系统设置
+#### 3.3 系统设置
 **目标**: 提供全局配置管理
 
 **迁移内容**:
@@ -595,7 +556,7 @@ public class SystemSetting
 - [ ] Docker 设置（连接地址）
 - [ ] 设置导入/导出
 
-#### 3.5 通知服务
+#### 3.4 通知服务
 **目标**: 实现实时通知系统
 
 **迁移内容**:
@@ -1010,7 +971,7 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 |------|------|-----------|----------|
 | **Phase 1** | 第1-2周 | 用户认证、应用/Dock管理、主页重构 | 可登录、管理应用、个性化主页 |
 | **Phase 2** | 第3-5周 | 文件管理器UI、Docker增强、磁盘/共享UI | 完整文件操作、Docker管理、磁盘管理 |
-| **Phase 3** | 第6-8周 | Web终端、Anydrop、计划任务、系统设置 | 浏览器终端、文件传输、定时任务 |
+| **Phase 3** | 第6-8周 | Anydrop、计划任务、系统设置、通知服务 | 文件传输、定时任务、系统配置 |
 | **Phase 4** | 第9-10周 | 本地化、网络管理、优化、测试、文档 | 多语言、性能优化、完整文档 |
 
 ### 8.2 每周计划（示例：第1周）
@@ -1029,9 +990,9 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 ```
 认证系统 → 应用管理 → 主页重构 → 文件管理器 → Docker管理 
                                                 ↓
-                          Web终端 ← 计划任务 ← Anydrop
-                               ↓
-                          优化测试 → 发布
+                           通知服务 ← 计划任务 ← Anydrop
+                                ↓
+                           优化测试 → 发布
 ```
 
 ---
@@ -1074,10 +1035,6 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - [ ] 文档更新
 
 ### 9.3 Phase 3 检查清单
-- [ ] TerminalService 和 TerminalHub
-- [ ] WebTerminal.razor 页面
-- [ ] xterm.js 集成
-- [ ] 终端会话管理
 - [ ] AnydropMessage 和 AnydropAttachment 数据模型
 - [ ] AnydropService
 - [ ] Anydrop.razor 页面
@@ -1089,7 +1046,11 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - [ ] SystemSetting 数据模型
 - [ ] SystemSettingService
 - [ ] Settings.razor 页面
-- [ ] 单元测试（终端、Anydrop、任务服务）
+- [ ] Notification 数据模型
+- [ ] NotificationService
+- [ ] 通知面板组件
+- [ ] NotificationEndpoints API
+- [ ] 单元测试（Anydrop、任务、设置、通知服务）
 - [ ] 文档更新
 
 ### 9.4 Phase 4 检查清单
@@ -1161,7 +1122,6 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - [Fluent UI Blazor 官方文档](https://www.fluentui-blazor.net/)
 - [ASP.NET Core Blazor 文档](https://learn.microsoft.com/en-us/aspnet/core/blazor/)
 - [Entity Framework Core 文档](https://learn.microsoft.com/en-us/ef/core/)
-- [xterm.js 文档](https://xtermjs.org/)
 - [SignalR 文档](https://learn.microsoft.com/en-us/aspnet/core/signalr/)
 
 ### 11.3 工具和库
@@ -1170,7 +1130,6 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - **Docker**: Docker.DotNet
 - **密码哈希**: BCrypt.Net-Next
 - **定时任务**: NCrontab（Cron表达式解析）
-- **终端**: xterm.js（前端）
 - **文件预览**: PDF.js, Mammoth.js, SheetJS
 
 ---

@@ -110,7 +110,7 @@
                         <FluentDataGrid Items="@DisplayedFiles.AsQueryable()" 
                                       GridTemplateColumns="3fr 1fr 1.5fr 1fr"
                                       Style="width: 100%;">
-                            <TemplateColumn Title="Name" Sortable="true" SortBy="@nameSorter">
+                            <TemplateColumn Title="Name" Sortable="true">
                                 <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
                                     <FluentIcon Value="@GetFileIcon(context)" Style="font-size: 1.2rem;" />
                                     <FluentButton Appearance="Appearance.Hypertext" 
@@ -121,7 +121,7 @@
                                 </FluentStack>
                             </TemplateColumn>
                             <PropertyColumn Property="@(f => f.SizeDisplay)" Title="Size" Sortable="true" />
-                            <TemplateColumn Title="Modified" Sortable="true" SortBy="@dateSorter">
+                            <TemplateColumn Title="Modified" Sortable="true">
                                 @context.LastModified.ToString("yyyy-MM-dd HH:mm")
                             </TemplateColumn>
                             <TemplateColumn Title="Actions">
@@ -454,14 +454,6 @@
     private List<IBrowserFile> selectedFiles = new();
     private bool isUploading = false;
     private string uploadProgress = string.Empty;
-
-    // Sorting
-    private GridSort<FileItemInfo> nameSorter = GridSort<FileItemInfo>
-        .ByAscending(f => f.IsDirectory ? 0 : 1)
-        .ThenAscending(f => f.Name);
-    
-    private GridSort<FileItemInfo> dateSorter = GridSort<FileItemInfo>
-        .ByDescending(f => f.LastModified);
 
     private bool IsRootPath => string.IsNullOrEmpty(currentPath) || currentPath == "/" || currentPath == "\\";
 

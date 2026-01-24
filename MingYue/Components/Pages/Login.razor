@@ -1,0 +1,162 @@
+@page "/login"
+@using MingYue.Models
+@using MingYue.Services
+@inject IAuthenticationService AuthService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<Login> Logger
+
+<PageTitle>Login - MingYue</PageTitle>
+
+<div class="login-container">
+    <FluentCard class="login-card">
+        <div class="login-header">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.LockClosed())" Color="@Color.Accent" />
+            <h2>Welcome to MingYue</h2>
+            <p>Please sign in to continue</p>
+        </div>
+
+        <EditForm Model="@loginRequest" OnValidSubmit="@HandleLogin">
+            <DataAnnotationsValidator />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                <FluentTextField 
+                    @bind-Value="loginRequest.Username"
+                    Label="Username"
+                    Placeholder="Enter your username"
+                    Required="true"
+                    Style="width: 100%;" />
+                <ValidationMessage For="@(() => loginRequest.Username)" />
+
+                <FluentTextField 
+                    @bind-Value="loginRequest.Password"
+                    Label="Password"
+                    Placeholder="Enter your password"
+                    TextFieldType="TextFieldType.Password"
+                    Required="true"
+                    Style="width: 100%;" />
+                <ValidationMessage For="@(() => loginRequest.Password)" />
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <FluentMessageBar Intent="MessageIntent.Error">
+                        @errorMessage
+                    </FluentMessageBar>
+                }
+
+                <FluentButton 
+                    Type="ButtonType.Submit"
+                    Appearance="Appearance.Accent"
+                    Loading="@isLoading"
+                    Style="width: 100%;">
+                    Sign In
+                </FluentButton>
+            </FluentStack>
+        </EditForm>
+
+        <FluentDivider Style="margin: 20px 0;" />
+
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+            <p style="text-align: center; color: var(--neutral-foreground-rest);">
+                Don't have an account?
+            </p>
+            <FluentButton 
+                Appearance="Appearance.Outline"
+                OnClick="@NavigateToSetup"
+                Style="width: 100%;">
+                Initial Setup
+            </FluentButton>
+        </FluentStack>
+    </FluentCard>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, var(--accent-fill-rest) 0%, var(--accent-fill-hover) 100%);
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 400px;
+        padding: 40px;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .login-header h2 {
+        margin: 16px 0 8px 0;
+        color: var(--neutral-foreground-rest);
+    }
+
+    .login-header p {
+        margin: 0;
+        color: var(--neutral-foreground-hint);
+    }
+</style>
+
+@code {
+    private readonly LoginRequest loginRequest = new();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if already authenticated
+        if (AuthStateService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        // Try to restore session
+        var restored = await AuthStateService.TryRestoreSessionAsync();
+        if (restored)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = string.Empty;
+        isLoading = true;
+
+        try
+        {
+            var response = await AuthService.LoginAsync(loginRequest);
+
+            if (response.Success && response.User != null)
+            {
+                await AuthStateService.SetCurrentUserAsync(response.User);
+                Logger.LogInformation("User {Username} logged in successfully", response.User.Username);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = response.Message;
+                Logger.LogWarning("Login failed: {Message}", response.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred during login. Please try again.";
+            Logger.LogError(ex, "Login error");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void NavigateToSetup()
+    {
+        Navigation.NavigateTo("/initial-setup");
+    }
+}

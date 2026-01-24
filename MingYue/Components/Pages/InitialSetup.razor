@@ -1,0 +1,199 @@
+@page "/initial-setup"
+@using MingYue.Models
+@using MingYue.Services
+@inject IAuthenticationService AuthService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<InitialSetup> Logger
+
+<PageTitle>Initial Setup - MingYue</PageTitle>
+
+<div class="setup-container">
+    <FluentCard class="setup-card">
+        <div class="setup-header">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Settings())" Color="@Color.Accent" />
+            <h2>Welcome to MingYue</h2>
+            <p>Let's set up your administrator account</p>
+        </div>
+
+        @if (hasExistingUsers)
+        {
+            <FluentMessageBar Intent="MessageIntent.Warning">
+                <p>A user account already exists. Please use the login page instead.</p>
+            </FluentMessageBar>
+            <FluentButton 
+                Appearance="Appearance.Accent"
+                OnClick="@(() => Navigation.NavigateTo("/login"))"
+                Style="width: 100%; margin-top: 20px;">
+                Go to Login
+            </FluentButton>
+        }
+        else
+        {
+            <EditForm Model="@registerRequest" OnValidSubmit="@HandleSetup">
+                <DataAnnotationsValidator />
+                
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                    <FluentTextField 
+                        @bind-Value="registerRequest.Username"
+                        Label="Username"
+                        Placeholder="Choose a username"
+                        Required="true"
+                        Style="width: 100%;" />
+                    <ValidationMessage For="@(() => registerRequest.Username)" />
+
+                    <FluentTextField 
+                        @bind-Value="registerRequest.Password"
+                        Label="Password"
+                        Placeholder="Choose a strong password"
+                        TextFieldType="TextFieldType.Password"
+                        Required="true"
+                        Style="width: 100%;" />
+                    <ValidationMessage For="@(() => registerRequest.Password)" />
+
+                    <FluentTextField 
+                        @bind-Value="registerRequest.ConfirmPassword"
+                        Label="Confirm Password"
+                        Placeholder="Re-enter your password"
+                        TextFieldType="TextFieldType.Password"
+                        Required="true"
+                        Style="width: 100%;" />
+                    <ValidationMessage For="@(() => registerRequest.ConfirmPassword)" />
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Error">
+                            @errorMessage
+                        </FluentMessageBar>
+                    }
+
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Success">
+                            @successMessage
+                        </FluentMessageBar>
+                    }
+
+                    <FluentButton 
+                        Type="ButtonType.Submit"
+                        Appearance="Appearance.Accent"
+                        Loading="@isLoading"
+                        Style="width: 100%;">
+                        Create Administrator Account
+                    </FluentButton>
+                </FluentStack>
+            </EditForm>
+
+            <FluentDivider Style="margin: 20px 0;" />
+
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                <p style="text-align: center; color: var(--neutral-foreground-rest);">
+                    Already have an account?
+                </p>
+                <FluentButton 
+                    Appearance="Appearance.Outline"
+                    OnClick="@(() => Navigation.NavigateTo("/login"))"
+                    Style="width: 100%;">
+                    Sign In
+                </FluentButton>
+            </FluentStack>
+        }
+    </FluentCard>
+</div>
+
+<style>
+    .setup-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, var(--accent-fill-rest) 0%, var(--accent-fill-hover) 100%);
+    }
+
+    .setup-card {
+        width: 100%;
+        max-width: 450px;
+        padding: 40px;
+    }
+
+    .setup-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .setup-header h2 {
+        margin: 16px 0 8px 0;
+        color: var(--neutral-foreground-rest);
+    }
+
+    .setup-header p {
+        margin: 0;
+        color: var(--neutral-foreground-hint);
+    }
+</style>
+
+@code {
+    private readonly RegisterRequest registerRequest = new();
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool isLoading = false;
+    private bool hasExistingUsers = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if users already exist
+        hasExistingUsers = await AuthService.HasUsersAsync();
+
+        if (hasExistingUsers)
+        {
+            Logger.LogInformation("Setup page accessed but users already exist");
+        }
+    }
+
+    private async Task HandleSetup()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        isLoading = true;
+
+        try
+        {
+            // Double check that no users exist
+            if (await AuthService.HasUsersAsync())
+            {
+                errorMessage = "A user account already exists. Please use the login page.";
+                hasExistingUsers = true;
+                return;
+            }
+
+            var response = await AuthService.RegisterAsync(registerRequest);
+
+            if (response.Success && response.User != null)
+            {
+                successMessage = "Administrator account created successfully! Redirecting...";
+                Logger.LogInformation("Administrator account created: {Username}", response.User.Username);
+                
+                // Auto-login after successful registration
+                await AuthStateService.SetCurrentUserAsync(response.User);
+                
+                // Redirect to home page after a brief delay
+                await Task.Delay(1500);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                errorMessage = response.Message;
+                Logger.LogWarning("Setup failed: {Message}", response.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred during setup. Please try again.";
+            Logger.LogError(ex, "Setup error");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

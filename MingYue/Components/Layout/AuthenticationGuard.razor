@@ -1,0 +1,90 @@
+@using MingYue.Services
+@using MingYue.Models
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject IAuthenticationService AuthService
+
+@if (isLoading)
+{
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="height: 100vh;">
+        <FluentProgressRing />
+        <FluentLabel>Loading...</FluentLabel>
+    </FluentStack>
+}
+else if (isAuthenticated || isPublicPage)
+{
+    @ChildContent
+}
+else
+{
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="height: 100vh;">
+        <FluentLabel Typo="Typography.Header">Redirecting to login...</FluentLabel>
+    </FluentStack>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool isLoading = true;
+    private bool isAuthenticated = false;
+    private bool isPublicPage = false;
+
+    protected override void OnInitialized()
+    {
+        // Get current URI
+        var uri = new Uri(Navigation.Uri);
+        var path = uri.AbsolutePath.ToLower();
+
+        // Define public pages that don't require authentication
+        isPublicPage = path == "/login" || path == "/initial-setup";
+
+        // Subscribe to authentication state changes
+        AuthStateService.OnAuthenticationStateChanged += HandleAuthStateChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (isPublicPage)
+            {
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Try to restore session (requires JS interop, so must be in OnAfterRenderAsync)
+            var restored = await AuthStateService.TryRestoreSessionAsync();
+            isAuthenticated = AuthStateService.IsAuthenticated;
+
+            if (!isAuthenticated)
+            {
+                // Check if any users exist to determine redirect
+                var hasUsers = await AuthService.HasUsersAsync();
+                if (hasUsers)
+                {
+                    Navigation.NavigateTo("/login", true);
+                }
+                else
+                {
+                    Navigation.NavigateTo("/initial-setup", true);
+                }
+            }
+
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        isAuthenticated = AuthStateService.IsAuthenticated;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        AuthStateService.OnAuthenticationStateChanged -= HandleAuthStateChanged;
+    }
+}

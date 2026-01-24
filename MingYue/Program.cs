@@ -19,7 +19,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContextFactory<MingYueDbContext>(options =>
     options.UseSqlite(connectionString));
 
+// Register application services
 builder.Services.AddScoped<ISystemMonitorService, SystemMonitorService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IApplicationService, ApplicationService>();
+builder.Services.AddScoped<IDockItemService, DockItemService>();
+builder.Services.AddScoped<AuthenticationStateService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

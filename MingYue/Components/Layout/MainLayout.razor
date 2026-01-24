@@ -2,7 +2,10 @@
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @using MingYue.Components.Dialog
 @using MingYue.Models
+@using MingYue.Services
 @inject IDialogService DialogService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
 
 <FluentDesignTheme @bind-Mode="@Settings.Mode" @bind-OfficeColor="@Settings.OfficeColor" StorageName="theme" />
 <FluentMainLayout>
@@ -11,7 +14,18 @@
             明月 Portal
         </FluentStack>
         <FluentSpacer />
-        <FluentStack HorizontalAlignment="HorizontalAlignment.Right">
+        <FluentStack HorizontalAlignment="HorizontalAlignment.Right" VerticalGap="10">
+            @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
+            {
+                <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>
+                @if (AuthStateService.IsAdmin)
+                {
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Admin</FluentBadge>
+                }
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="Logout">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
+                </FluentButton>
+            }
             <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="@Color.Fill"></FluentIcon>
             <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="@Color.Fill" Title="设置" @onclick="OpenSetting" />
         </FluentStack>
@@ -34,6 +48,11 @@
 @code {
     public SettingModel Settings { get; set; } = new();
 
+    protected override void OnInitialized()
+    {
+        AuthStateService.OnAuthenticationStateChanged += StateHasChanged;
+    }
+
     public async Task OpenSetting()
     {
         IDialogReference? _dialog;
@@ -45,5 +64,16 @@
         });
         _ = await _dialog.Result;
         // HandlePanel(result);
+    }
+
+    private async Task Logout()
+    {
+        await AuthStateService.LogoutAsync();
+        Navigation.NavigateTo("/login", true);
+    }
+
+    public void Dispose()
+    {
+        AuthStateService.OnAuthenticationStateChanged -= StateHasChanged;
     }
 }

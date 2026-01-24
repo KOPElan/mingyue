@@ -1,0 +1,260 @@
+@page "/dock-management"
+@using MingYue.Models
+@using MingYue.Services
+@inject IDockItemService DockService
+@inject IApplicationService AppService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<DockManagement> Logger
+@inject IToastService ToastService
+
+<PageTitle>Dock Management - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>Access denied. You must be an administrator to access this page.</p>
+    </FluentMessageBar>
+    return;
+}
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">Dock Management</h2>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddDialog">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
+            Add Dock Item
+        </FluentButton>
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else if (dockItems.Count == 0)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info">
+            No dock items found. Click "Add Dock Item" to create your first one.
+        </FluentMessageBar>
+    }
+    else
+    {
+        <FluentDataGrid Items="@dockItems.AsQueryable()" GridTemplateColumns="0.5fr 1.5fr 2fr 1fr 0.8fr 0.8fr">
+            <PropertyColumn Property="@(d => d.Order)" Title="Order" Sortable="true" />
+            <PropertyColumn Property="@(d => d.Title)" Title="Title" Sortable="true" />
+            <PropertyColumn Property="@(d => d.Url)" Title="URL" Sortable="true" />
+            <PropertyColumn Property="@(d => d.AssociatedAppId)" Title="Associated App" Sortable="true" />
+            <TemplateColumn Title="Pinned" Sortable="true">
+                @if (context.IsPinned)
+                {
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Yes</FluentBadge>
+                }
+                else
+                {
+                    <FluentBadge Fill="neutral">No</FluentBadge>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="Actions">
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Edit())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteDockItem(context))">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                </FluentButton>
+            </TemplateColumn>
+        </FluentDataGrid>
+    }
+</FluentStack>
+
+<FluentDialog @ref="dialog" @bind-Hidden="@isDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DockRow())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                @(editingDockItem == null ? "Add Dock Item" : "Edit Dock Item")
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <EditForm Model="@currentDockItem" OnValidSubmit="@SaveDockItem">
+            <DataAnnotationsValidator />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentTextField 
+                    @bind-Value="currentDockItem!.Title"
+                    Label="Title"
+                    Required="true"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentDockItem!.Url"
+                    Label="URL"
+                    Required="true"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentDockItem!.Icon"
+                    Label="Icon (FluentUI icon name or URL)"
+                    Required="true"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentDockItem!.IconBackground"
+                    Label="Icon Background"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentDockItem!.IconColor"
+                    Label="Icon Color"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentDockItem!.AssociatedAppId"
+                    Label="Associated Application ID (optional)"
+                    Style="width: 100%;" />
+                
+                <FluentCheckbox 
+                    @bind-Value="currentDockItem!.IsPinned"
+                    Label="Pinned" />
+            </FluentStack>
+        </EditForm>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveDockItem">
+            Save
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<DockItem> dockItems = new();
+    private DockItem? editingDockItem;
+    private DockItem currentDockItem = new();
+    private FluentDialog? dialog;
+    private bool isLoading = true;
+    private bool isAuthorized = false;
+    private bool isDialogHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Authentication is handled by AuthenticationGuard
+        // Only check if user is admin
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access dock management", 
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
+        await LoadDockItems();
+    }
+
+    private async Task LoadDockItems()
+    {
+        isLoading = true;
+        try
+        {
+            dockItems = await DockService.GetAllDockItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading dock items");
+            ToastService.ShowError("Failed to load dock items");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenAddDialog()
+    {
+        editingDockItem = null;
+        currentDockItem = new DockItem
+        {
+            ItemId = Guid.NewGuid().ToString(),
+            IsPinned = true,
+            Icon = "Apps"
+        };
+        isDialogHidden = false;
+    }
+
+    private void OpenEditDialog(DockItem item)
+    {
+        editingDockItem = item;
+        currentDockItem = new DockItem
+        {
+            Id = item.Id,
+            ItemId = item.ItemId,
+            Title = item.Title,
+            Url = item.Url,
+            Icon = item.Icon,
+            IconBackground = item.IconBackground,
+            IconColor = item.IconColor,
+            AssociatedAppId = item.AssociatedAppId,
+            IsPinned = item.IsPinned,
+            Order = item.Order
+        };
+        isDialogHidden = false;
+    }
+
+    private async Task SaveDockItem()
+    {
+        try
+        {
+            if (editingDockItem == null)
+            {
+                await DockService.CreateDockItemAsync(currentDockItem);
+                ToastService.ShowSuccess("Dock item created successfully");
+            }
+            else
+            {
+                await DockService.UpdateDockItemAsync(currentDockItem);
+                ToastService.ShowSuccess("Dock item updated successfully");
+            }
+
+            await LoadDockItems();
+            CloseDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving dock item");
+            ToastService.ShowError("Failed to save dock item");
+        }
+    }
+
+    private async Task DeleteDockItem(DockItem item)
+    {
+        try
+        {
+            var success = await DockService.DeleteDockItemAsync(item.Id);
+            if (success)
+            {
+                ToastService.ShowSuccess("Dock item deleted successfully");
+                await LoadDockItems();
+            }
+            else
+            {
+                ToastService.ShowWarning("Failed to delete dock item");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting dock item");
+            ToastService.ShowError("Failed to delete dock item");
+        }
+    }
+
+    private void CloseDialog()
+    {
+        isDialogHidden = true;
+    }
+}

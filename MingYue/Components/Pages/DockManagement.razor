@@ -142,13 +142,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Check authorization - only admins can manage dock items
-        if (!AuthStateService.IsAuthenticated)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
+        // Authentication is handled by AuthenticationGuard
+        // Only check if user is admin
         if (!AuthStateService.IsAdmin)
         {
             isAuthorized = false;

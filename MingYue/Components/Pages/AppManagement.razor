@@ -66,7 +66,7 @@
     }
 </FluentStack>
 
-<FluentDialog @ref="dialog" TrapFocus="true" Modal="true">
+<FluentDialog @ref="dialog" @bind-Hidden="@isDialogHidden" TrapFocus="true" Modal="true">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Apps())" />
@@ -137,6 +137,7 @@
     private FluentDialog? dialog;
     private bool isLoading = true;
     private bool isAuthorized = false;
+    private bool isDialogHidden = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,7 +181,7 @@
             AppId = Guid.NewGuid().ToString(),
             IsVisible = true
         };
-        dialog?.Show();
+        isDialogHidden = false;
     }
 
     private void OpenEditDialog(Application app)
@@ -199,7 +200,7 @@
             IsVisible = app.IsVisible,
             Order = app.Order
         };
-        dialog?.Show();
+        isDialogHidden = false;
     }
 
     private async Task SaveApplication()
@@ -251,6 +252,6 @@
 
     private void CloseDialog()
     {
-        dialog?.Hide();
+        isDialogHidden = true;
     }
 }

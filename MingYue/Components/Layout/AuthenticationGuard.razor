@@ -30,7 +30,7 @@ else
     private bool isAuthenticated = false;
     private bool isPublicPage = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         // Get current URI
         var uri = new Uri(Navigation.Uri);
@@ -39,39 +39,41 @@ else
         // Define public pages that don't require authentication
         isPublicPage = path == "/login" || path == "/initial-setup";
 
-        if (isPublicPage)
-        {
-            isLoading = false;
-            return;
-        }
-
-        // Try to restore session
-        var restored = await AuthStateService.TryRestoreSessionAsync();
-        isAuthenticated = AuthStateService.IsAuthenticated;
-
-        if (!isAuthenticated)
-        {
-            // Check if any users exist to determine redirect
-            var hasUsers = await AuthService.HasUsersAsync();
-            if (hasUsers)
-            {
-                Navigation.NavigateTo("/login", true);
-            }
-            else
-            {
-                Navigation.NavigateTo("/initial-setup", true);
-            }
-        }
-
-        isLoading = false;
+        // Subscribe to authentication state changes
+        AuthStateService.OnAuthenticationStateChanged += HandleAuthStateChanged;
     }
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !isPublicPage)
+        if (firstRender)
         {
-            // Subscribe to authentication state changes
-            AuthStateService.OnAuthenticationStateChanged += HandleAuthStateChanged;
+            if (isPublicPage)
+            {
+                isLoading = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Try to restore session (requires JS interop, so must be in OnAfterRenderAsync)
+            var restored = await AuthStateService.TryRestoreSessionAsync();
+            isAuthenticated = AuthStateService.IsAuthenticated;
+
+            if (!isAuthenticated)
+            {
+                // Check if any users exist to determine redirect
+                var hasUsers = await AuthService.HasUsersAsync();
+                if (hasUsers)
+                {
+                    Navigation.NavigateTo("/login", true);
+                }
+                else
+                {
+                    Navigation.NavigateTo("/initial-setup", true);
+                }
+            }
+
+            isLoading = false;
+            StateHasChanged();
         }
     }
 

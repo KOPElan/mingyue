@@ -34,6 +34,14 @@ builder.Services.AddScoped<IDockerManagementService, DockerManagementService>();
 builder.Services.AddScoped<AuthenticationStateService>();
 var app = builder.Build();
 
+// Apply database migrations automatically
+using (var scope = app.Services.CreateScope())
+{
+    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MingYueDbContext>>();
+    using var context = await dbContextFactory.CreateDbContextAsync();
+    await context.Database.MigrateAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

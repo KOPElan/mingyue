@@ -51,4 +51,33 @@ namespace MingYue.Models
         public string Type { get; set; } = string.Empty; // documents, downloads, gallery, media, backup
     }
 
+    public class FileIndex
+    {
+        public int Id { get; set; }
+        public string FilePath { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public long FileSize { get; set; }
+        public DateTime ModifiedAt { get; set; }
+        public string FileType { get; set; } = string.Empty;
+        public DateTime IndexedAt { get; set; }
+
+        public FileIndex()
+        {
+            IndexedAt = DateTime.UtcNow;
+        }
+    }
+
+    public class Thumbnail
+    {
+        public int Id { get; set; }
+        public string FilePath { get; set; } = string.Empty;
+        public byte[] ThumbnailData { get; set; } = Array.Empty<byte>();
+        public DateTime CreatedAt { get; set; }
+
+        public Thumbnail()
+        {
+            CreatedAt = DateTime.UtcNow;
+        }
+    }
+
 }

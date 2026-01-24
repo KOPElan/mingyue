@@ -15,6 +15,8 @@ namespace MingYue.Data
         public DbSet<SystemSetting> SystemSettings { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<FavoriteFolder> FavoriteFolders { get; set; } = null!;
+        public DbSet<FileIndex> FileIndexes { get; set; } = null!;
+        public DbSet<Thumbnail> Thumbnails { get; set; } = null!;
         //public DbSet<ScheduledTask> ScheduledTasks { get; set; } = null!;
         //public DbSet<AnydropMessage> AnydropMessages { get; set; } = null!;
         //public DbSet<AnydropAttachment> AnydropAttachments { get; set; } = null!;
@@ -82,6 +84,26 @@ namespace MingYue.Data
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Path).IsRequired().HasMaxLength(1000);
                 entity.Property(e => e.Icon).IsRequired().HasMaxLength(100);
+            });
+
+            // Configure FileIndex
+            modelBuilder.Entity<FileIndex>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.FilePath).IsUnique();
+                entity.HasIndex(e => e.IndexedAt);
+                entity.Property(e => e.FilePath).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.FileType).IsRequired().HasMaxLength(100);
+            });
+
+            // Configure Thumbnail
+            modelBuilder.Entity<Thumbnail>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.FilePath).IsUnique();
+                entity.Property(e => e.FilePath).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.ThumbnailData).IsRequired();
             });
 
             //// Configure ScheduledTask

@@ -24,6 +24,13 @@ builder.Services.AddScoped<ISystemMonitorService, SystemMonitorService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IApplicationService, ApplicationService>();
 builder.Services.AddScoped<IDockItemService, DockItemService>();
+builder.Services.AddScoped<IFileManagementService, FileManagementService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<IThumbnailService, ThumbnailService>();
+builder.Services.AddScoped<IFileIndexService, FileIndexService>();
+builder.Services.AddScoped<IDiskManagementService, DiskManagementService>();
+builder.Services.AddScoped<IShareManagementService, ShareManagementService>();
+builder.Services.AddScoped<IDockerManagementService, DockerManagementService>();
 builder.Services.AddScoped<AuthenticationStateService>();
 var app = builder.Build();
 

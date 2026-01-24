@@ -190,6 +190,7 @@
     private System.Threading.Timer? updateTimer;
     private int downloadSpeed = 24;
     private int uploadSpeed = 12;
+    private static readonly Random _random = new Random();
 
     protected override async Task OnInitializedAsync()
     {
@@ -221,11 +222,11 @@
         {
             systemInfo = await SystemMonitorService.GetSystemResourceInfoAsync();
             
-            // Calculate network speeds (placeholder - you can enhance this with real network monitoring)
+            // TODO: Implement proper network speed calculation with delta between time intervals
+            // This is placeholder logic for demonstration purposes
             if (systemInfo.Networks.Any())
             {
                 var mainNetwork = systemInfo.Networks.First();
-                // This is simplified - you'd want to calculate delta from previous read
                 downloadSpeed = (int)(mainNetwork.BytesReceived / 1024.0 / 1024.0 % 100);
                 uploadSpeed = (int)(mainNetwork.BytesSent / 1024.0 / 1024.0 % 100);
             }
@@ -280,7 +281,7 @@
     {
         if (string.IsNullOrEmpty(iconColor))
         {
-            // Default gradients based on hash of title for variety
+            // Default gradients for variety
             var gradients = new[]
             {
                 "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -292,14 +293,15 @@
                 "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
                 "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)"
             };
-            return gradients[new Random().Next(gradients.Length)];
+            return gradients[_random.Next(gradients.Length)];
         }
         return $"linear-gradient(135deg, {iconColor} 0%, {iconColor}dd 100%)";
     }
 
     private Icon GetIcon(string iconName)
     {
-        // Default icon mapping - you can extend this
+        // TODO: Implement icon mapping based on iconName parameter
+        // For now, return default icon - icon mapping can be added based on application requirements
         return new Icons.Regular.Size24.Apps();
     }
 

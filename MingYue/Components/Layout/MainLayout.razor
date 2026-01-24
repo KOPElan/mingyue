@@ -59,17 +59,25 @@ else
 
 @code {
     public SettingModel Settings { get; set; } = new();
-    private bool IsHomePage => Navigation.ToBaseRelativePath(Navigation.Uri) == "" || Navigation.ToBaseRelativePath(Navigation.Uri) == "/";
+    private string _currentPath = "";
+    private bool IsHomePage => _currentPath == "" || _currentPath == "/";
 
     protected override void OnInitialized()
     {
         AuthStateService.OnAuthenticationStateChanged += StateHasChanged;
         Navigation.LocationChanged += OnLocationChanged;
+        UpdateCurrentPath();
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
+        UpdateCurrentPath();
         StateHasChanged();
+    }
+
+    private void UpdateCurrentPath()
+    {
+        _currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
     }
 
     public async Task OpenSetting()

@@ -37,10 +37,6 @@
                     Style="width: 100%;" />
                 <ValidationMessage For="@(() => loginRequest.Password)" />
 
-                <FluentCheckbox 
-                    @bind-Value="loginRequest.RememberMe"
-                    Label="Remember me" />
-
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <FluentMessageBar Intent="MessageIntent.Error">
@@ -106,7 +102,7 @@
 </style>
 
 @code {
-    private LoginRequest loginRequest = new();
+    private readonly LoginRequest loginRequest = new();
     private string errorMessage = string.Empty;
     private bool isLoading = false;
 

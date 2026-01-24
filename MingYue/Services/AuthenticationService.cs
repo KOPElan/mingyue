@@ -9,13 +9,18 @@ namespace MingYue.Services
     {
         private readonly IDbContextFactory<MingYueDbContext> _dbFactory;
         private readonly ILogger<AuthenticationService> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly int _bcryptWorkFactor;
 
         public AuthenticationService(
             IDbContextFactory<MingYueDbContext> dbFactory,
-            ILogger<AuthenticationService> logger)
+            ILogger<AuthenticationService> logger,
+            IConfiguration configuration)
         {
             _dbFactory = dbFactory;
             _logger = logger;
+            _configuration = configuration;
+            _bcryptWorkFactor = _configuration.GetValue<int>("Security:BCryptWorkFactor", 12);
         }
 
         /// <summary>
@@ -27,53 +32,66 @@ namespace MingYue.Services
             {
                 await using var context = await _dbFactory.CreateDbContextAsync();
 
-                // Check if username already exists
-                var existingUser = await context.Users
-                    .FirstOrDefaultAsync(u => u.Username == request.Username);
+                // Use database transaction to prevent race condition for first admin user
+                using var transaction = await context.Database.BeginTransactionAsync();
 
-                if (existingUser != null)
+                try
                 {
+                    // Check if username already exists
+                    var existingUser = await context.Users
+                        .FirstOrDefaultAsync(u => u.Username == request.Username);
+
+                    if (existingUser != null)
+                    {
+                        await transaction.RollbackAsync();
+                        return new AuthenticationResponse
+                        {
+                            Success = false,
+                            Message = "Username already exists"
+                        };
+                    }
+
+                    // Hash password using BCrypt with configurable work factor
+                    var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: _bcryptWorkFactor);
+
+                    // Determine role (first user is admin) - within transaction to prevent race condition
+                    var hasUsers = await context.Users.AnyAsync();
+                    var role = hasUsers ? "User" : "Admin";
+
+                    var user = new User
+                    {
+                        Username = request.Username,
+                        PasswordHash = passwordHash,
+                        Role = role,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    context.Users.Add(user);
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("User {Username} registered successfully with role {Role}", 
+                        request.Username, role);
+
                     return new AuthenticationResponse
                     {
-                        Success = false,
-                        Message = "Username already exists"
+                        Success = true,
+                        Message = "User registered successfully",
+                        User = new UserDto
+                        {
+                            Id = user.Id,
+                            Username = user.Username,
+                            Role = user.Role,
+                            CreatedAt = user.CreatedAt,
+                            LastLoginAt = user.LastLoginAt
+                        }
                     };
                 }
-
-                // Hash password using BCrypt with work factor 12
-                var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 12);
-
-                // Determine role (first user is admin)
-                var hasUsers = await context.Users.AnyAsync();
-                var role = hasUsers ? "User" : "Admin";
-
-                var user = new User
+                catch
                 {
-                    Username = request.Username,
-                    PasswordHash = passwordHash,
-                    Role = role,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                context.Users.Add(user);
-                await context.SaveChangesAsync();
-
-                _logger.LogInformation("User {Username} registered successfully with role {Role}", 
-                    request.Username, role);
-
-                return new AuthenticationResponse
-                {
-                    Success = true,
-                    Message = "User registered successfully",
-                    User = new UserDto
-                    {
-                        Id = user.Id,
-                        Username = user.Username,
-                        Role = user.Role,
-                        CreatedAt = user.CreatedAt,
-                        LastLoginAt = user.LastLoginAt
-                    }
-                };
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
             catch (Exception ex)
             {

@@ -133,7 +133,7 @@
 </style>
 
 @code {
-    private RegisterRequest registerRequest = new();
+    private readonly RegisterRequest registerRequest = new();
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
     private bool isLoading = false;

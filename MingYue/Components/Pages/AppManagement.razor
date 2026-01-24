@@ -2,10 +2,20 @@
 @using MingYue.Models
 @using MingYue.Services
 @inject IApplicationService AppService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
 @inject ILogger<AppManagement> Logger
 @inject IToastService ToastService
 
 <PageTitle>Application Management - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>Access denied. You must be an administrator to access this page.</p>
+    </FluentMessageBar>
+    return;
+}
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
@@ -126,9 +136,26 @@
     private Application currentApp = new();
     private FluentDialog? dialog;
     private bool isLoading = true;
+    private bool isAuthorized = false;
 
     protected override async Task OnInitializedAsync()
     {
+        // Check authorization - only admins can manage applications
+        if (!AuthStateService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access app management", 
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
         await LoadApplications();
     }
 

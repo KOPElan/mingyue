@@ -17,6 +17,9 @@ namespace MingYue.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Get all dock items (both pinned and unpinned)
+        /// </summary>
         public async Task<List<DockItem>> GetAllDockItemsAsync()
         {
             try
@@ -24,7 +27,6 @@ namespace MingYue.Services
                 await using var context = await _dbFactory.CreateDbContextAsync();
                 return await context.DockItems
                     .AsNoTracking()
-                    .Where(d => d.IsPinned)
                     .OrderBy(d => d.Order)
                     .ThenBy(d => d.Title)
                     .ToListAsync();
@@ -100,12 +102,14 @@ namespace MingYue.Services
                     return null;
                 }
 
-                // Update properties
+                // Update properties (Order and AssociatedAppId can be updated)
                 existingItem.Title = dockItem.Title;
                 existingItem.Url = dockItem.Url;
                 existingItem.Icon = dockItem.Icon;
                 existingItem.IconBackground = dockItem.IconBackground;
                 existingItem.IconColor = dockItem.IconColor;
+                existingItem.AssociatedAppId = dockItem.AssociatedAppId;
+                existingItem.Order = dockItem.Order;
                 existingItem.IsPinned = dockItem.IsPinned;
                 existingItem.UpdatedAt = DateTime.UtcNow;
 
@@ -155,9 +159,15 @@ namespace MingYue.Services
             {
                 await using var context = await _dbFactory.CreateDbContextAsync();
 
+                // Fetch all dock items in a single query to avoid N+1 problem
+                var dockItems = await context.DockItems
+                    .Where(d => dockItemIds.Contains(d.Id))
+                    .ToListAsync();
+
+                // Update order in memory
                 for (int i = 0; i < dockItemIds.Count; i++)
                 {
-                    var item = await context.DockItems.FindAsync(dockItemIds[i]);
+                    var item = dockItems.FirstOrDefault(d => d.Id == dockItemIds[i]);
                     if (item != null)
                     {
                         item.Order = i;

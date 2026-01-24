@@ -115,7 +115,7 @@ namespace MingYue.Services
                     return null;
                 }
 
-                // Update properties
+                // Update properties (Order can be updated for manual reordering)
                 existingApp.Title = application.Title;
                 existingApp.Url = application.Url;
                 existingApp.Icon = application.Icon;
@@ -123,6 +123,7 @@ namespace MingYue.Services
                 existingApp.Description = application.Description;
                 existingApp.Category = application.Category;
                 existingApp.IsVisible = application.IsVisible;
+                existingApp.Order = application.Order;
                 existingApp.UpdatedAt = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
@@ -171,9 +172,15 @@ namespace MingYue.Services
             {
                 await using var context = await _dbFactory.CreateDbContextAsync();
 
+                // Fetch all applications in a single query to avoid N+1 problem
+                var applications = await context.Applications
+                    .Where(a => applicationIds.Contains(a.Id))
+                    .ToListAsync();
+
+                // Update order in memory
                 for (int i = 0; i < applicationIds.Count; i++)
                 {
-                    var app = await context.Applications.FindAsync(applicationIds[i]);
+                    var app = applications.FirstOrDefault(a => a.Id == applicationIds[i]);
                     if (app != null)
                     {
                         app.Order = i;

@@ -113,9 +113,9 @@
                             <TemplateColumn Title="Name" Sortable="true">
                                 <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
                                     <FluentIcon Value="@GetFileIcon(context)" Style="font-size: 1.2rem;" />
-                                    <FluentButton Appearance="Appearance.Hypertext" 
+                                    <FluentButton Appearance="Appearance.Lightweight" 
                                                 OnClick="@(() => OnItemClick(context))"
-                                                Style="padding: 0;">
+                                                Style="padding: 0; text-decoration: underline;">
                                         @context.Name
                                     </FluentButton>
                                 </FluentStack>

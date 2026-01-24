@@ -377,6 +377,34 @@
     </FluentDialogFooter>
 </FluentDialog>
 
+<!-- Delete Confirmation Dialog -->
+<FluentDialog @ref="deleteDialog" @bind-Hidden="@isDeleteDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Delete())" Color="Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">Confirm Delete</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+            <FluentLabel>Are you sure you want to delete this @(itemToDelete?.IsDirectory == true ? "folder" : "file")?</FluentLabel>
+            <FluentLabel Style="font-weight: bold;">@itemToDelete?.Name</FluentLabel>
+            @if (itemToDelete?.IsDirectory == true)
+            {
+                <FluentMessageBar Intent="MessageIntent.Warning">
+                    Warning: This will delete the folder and all its contents.
+                </FluentMessageBar>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDelete" Style="background-color: var(--error);">
+            Delete
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isDeleteDialogHidden = true)">Cancel</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
 @code {
     [Parameter]
     public string? InitialPath { get; set; }
@@ -402,6 +430,7 @@
     private FluentDialog? copyMoveDialog;
     private FluentDialog? previewDialog;
     private FluentDialog? favoritesDialog;
+    private FluentDialog? deleteDialog;
     
     private bool isCreateFolderDialogHidden = true;
     private bool isUploadDialogHidden = true;
@@ -409,12 +438,14 @@
     private bool isCopyMoveDialogHidden = true;
     private bool isPreviewDialogHidden = true;
     private bool isFavoritesDialogHidden = true;
+    private bool isDeleteDialogHidden = true;
 
     // Dialog data
     private string newFolderName = string.Empty;
     private string newItemName = string.Empty;
     private string destinationPath = string.Empty;
     private FileItemInfo? selectedItem;
+    private FileItemInfo? itemToDelete;
     private bool isMoveOperation = false;
     private string previewImageData = string.Empty;
     private string previewFileName = string.Empty;
@@ -589,27 +620,38 @@
         }
     }
 
-    private async Task DeleteItem(FileItemInfo item)
+    private void DeleteItem(FileItemInfo item)
     {
-        // TODO: Add confirmation dialog
+        itemToDelete = item;
+        isDeleteDialogHidden = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (itemToDelete == null) return;
+
         try
         {
-            if (item.IsDirectory)
+            if (itemToDelete.IsDirectory)
             {
-                await FileService.DeleteDirectoryAsync(item.Path);
+                await FileService.DeleteDirectoryAsync(itemToDelete.Path);
             }
             else
             {
-                await FileService.DeleteFileAsync(item.Path);
+                await FileService.DeleteFileAsync(itemToDelete.Path);
             }
             
-            ToastService.ShowSuccess($"'{item.Name}' deleted successfully");
+            ToastService.ShowSuccess($"'{itemToDelete.Name}' deleted successfully");
+            isDeleteDialogHidden = true;
+            itemToDelete = null;
             await LoadFiles();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error deleting item: {Path}", item.Path);
+            Logger.LogError(ex, "Error deleting item: {Path}", itemToDelete?.Path);
             ToastService.ShowError($"Failed to delete: {ex.Message}");
+            isDeleteDialogHidden = true;
+            itemToDelete = null;
         }
     }
 

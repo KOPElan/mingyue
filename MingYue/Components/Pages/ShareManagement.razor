@@ -1,0 +1,613 @@
+@page "/share-management"
+@using MingYue.Models
+@using MingYue.Services
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject IShareManagementService ShareService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<ShareManagement> Logger
+@inject IToastService ToastService
+
+<PageTitle>Share Management - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>Access denied. You must be an administrator to access this page.</p>
+    </FluentMessageBar>
+    return;
+}
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">Share Management</h2>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(currentTabType))">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
+            Add @(currentTabType == ShareType.CIFS ? "Samba" : "NFS") Share
+        </FluentButton>
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else
+    {
+        <FluentTabs @bind-ActiveTabId="@activeTabId" OnTabChange="@OnTabChanged">
+            <FluentTab Id="samba" Label="Samba Shares">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 20px;">
+                    <!-- Service Status -->
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentLabel Typo="Typography.Body">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
+                            Samba Service
+                        </FluentLabel>
+                        <FluentSpacer />
+                        <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSync())" />
+                            Restart Service
+                        </FluentButton>
+                    </FluentStack>
+
+                    @if (sambaShares.Count == 0)
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Info">
+                            No Samba shares configured. Click "Add Samba Share" to create one.
+                        </FluentMessageBar>
+                    }
+                    else
+                    {
+                        <FluentDataGrid Items="@sambaShares.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1fr 1fr">
+                            <PropertyColumn Property="@(s => s.Name)" Title="Share Name" Sortable="true" />
+                            <PropertyColumn Property="@(s => s.Path)" Title="Path" Sortable="true" />
+                            <TemplateColumn Title="Read-Only" Sortable="true">
+                                @if (context.ReadOnly)
+                                {
+                                    <FluentBadge Fill="neutral">Yes</FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">No</FluentBadge>
+                                }
+                            </TemplateColumn>
+                            <TemplateColumn Title="Guest Access" Sortable="true">
+                                @if (context.GuestOk)
+                                {
+                                    <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Enabled</FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Fill="neutral">Disabled</FluentBadge>
+                                }
+                            </TemplateColumn>
+                            <TemplateColumn Title="Actions">
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(context))">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                </FluentButton>
+                            </TemplateColumn>
+                        </FluentDataGrid>
+                    }
+                </FluentStack>
+            </FluentTab>
+
+            <FluentTab Id="nfs" Label="NFS Shares">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 20px;">
+                    <!-- Service Status -->
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentLabel Typo="Typography.Body">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
+                            NFS Service
+                        </FluentLabel>
+                        <FluentSpacer />
+                        <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSync())" />
+                            Restart Service
+                        </FluentButton>
+                    </FluentStack>
+
+                    @if (nfsShares.Count == 0)
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Info">
+                            No NFS shares configured. Click "Add NFS Share" to create one.
+                        </FluentMessageBar>
+                    }
+                    else
+                    {
+                        <FluentDataGrid Items="@nfsShares.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1.5fr 1fr">
+                            <PropertyColumn Property="@(s => s.Name)" Title="Export Name" Sortable="true" />
+                            <PropertyColumn Property="@(s => s.Path)" Title="Path" Sortable="true" />
+                            <TemplateColumn Title="Read-Only" Sortable="true">
+                                @if (context.ReadOnly)
+                                {
+                                    <FluentBadge Fill="neutral">Yes</FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">No</FluentBadge>
+                                }
+                            </TemplateColumn>
+                            <PropertyColumn Property="@(s => s.AllowedHosts)" Title="Allowed Hosts" Sortable="true" />
+                            <TemplateColumn Title="Actions">
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(context))">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                </FluentButton>
+                            </TemplateColumn>
+                        </FluentDataGrid>
+                    }
+                </FluentStack>
+            </FluentTab>
+        </FluentTabs>
+    }
+</FluentStack>
+
+<!-- Add/Edit Share Dialog -->
+<FluentDialog @ref="shareDialog" @bind-Hidden="@isShareDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 600px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                @(editingShare == null ? "Add" : "Edit") @(currentShare.Type == ShareType.CIFS ? "Samba" : "NFS") Share
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <EditForm Model="@currentShare" OnValidSubmit="@SaveShare">
+            <DataAnnotationsValidator />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentTextField 
+                    @bind-Value="currentShare.Name"
+                    Label="@(currentShare.Type == ShareType.CIFS ? "Share Name" : "Export Name")"
+                    Required="true"
+                    Placeholder="@(currentShare.Type == ShareType.CIFS ? "MyShare" : "data")"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentShare.Path"
+                    Label="Directory Path"
+                    Required="true"
+                    Placeholder="/path/to/directory"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="currentShare.Comment"
+                    Label="Description"
+                    Placeholder="Optional description"
+                    Style="width: 100%;" />
+                
+                <FluentCheckbox 
+                    @bind-Value="currentShare.ReadOnly"
+                    Label="Read-only" />
+                
+                @if (currentShare.Type == ShareType.CIFS)
+                {
+                    <!-- Samba-specific options -->
+                    <FluentCheckbox 
+                        @bind-Value="currentShare.GuestOk"
+                        Label="Allow guest access (no password required)" />
+                    
+                    <FluentCheckbox 
+                        @bind-Value="currentShare.Browseable"
+                        Label="Browseable" />
+                    
+                    <FluentTextField 
+                        @bind-Value="currentShare.ValidUsers"
+                        Label="Valid Users (optional)"
+                        Placeholder="user1, user2, group"
+                        Style="width: 100%;">
+                        <FluentLabel Slot="help-text">Comma-separated list of users or groups (prefix groups with at symbol)</FluentLabel>
+                    </FluentTextField>
+                    
+                    <FluentTextField 
+                        @bind-Value="currentShare.WriteList"
+                        Label="Write List (optional)"
+                        Placeholder="user1, user2, group"
+                        Style="width: 100%;">
+                        <FluentLabel Slot="help-text">Users who can write (if read-only is enabled)</FluentLabel>
+                    </FluentTextField>
+                    
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10">
+                        <FluentTextField 
+                            @bind-Value="currentShare.CreateMask"
+                            Label="Create Mask"
+                            Placeholder="0744"
+                            Style="flex: 1;" />
+                        
+                        <FluentTextField 
+                            @bind-Value="currentShare.DirectoryMask"
+                            Label="Directory Mask"
+                            Placeholder="0755"
+                            Style="flex: 1;" />
+                    </FluentStack>
+                }
+                else
+                {
+                    <!-- NFS-specific options -->
+                    <FluentTextField 
+                        @bind-Value="currentShare.AllowedHosts"
+                        Label="Allowed Hosts"
+                        Required="true"
+                        Placeholder="* or 192.168.1.0/24"
+                        Style="width: 100%;">
+                        <FluentLabel Slot="help-text">IP addresses or networks allowed to access (use * for all)</FluentLabel>
+                    </FluentTextField>
+                    
+                    <FluentTextField 
+                        @bind-Value="currentShare.NfsOptions"
+                        Label="NFS Options"
+                        Placeholder="rw,sync,no_subtree_check"
+                        Style="width: 100%;">
+                        <FluentLabel Slot="help-text">Comma-separated NFS export options</FluentLabel>
+                    </FluentTextField>
+                }
+            </FluentStack>
+        </EditForm>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveShare">
+            Save
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseShareDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Delete Confirmation Dialog -->
+<FluentDialog @ref="deleteDialog" @bind-Hidden="@isDeleteDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Warning())" Color="@Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Confirm Delete
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentLabel Typo="Typography.Body">
+            Are you sure you want to delete the share "@shareToDelete?.Name"?
+        </FluentLabel>
+        <FluentMessageBar Intent="MessageIntent.Warning" Style="margin-top: 15px;">
+            This action cannot be undone. The directory will not be deleted, only the share configuration.
+        </FluentMessageBar>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDeleteShare">
+            Delete
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDeleteDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<ShareInfo> sambaShares = new();
+    private List<ShareInfo> nfsShares = new();
+    
+    private FluentDialog? shareDialog;
+    private FluentDialog? deleteDialog;
+    private bool isLoading = true;
+    private bool isAuthorized = false;
+    private bool isShareDialogHidden = true;
+    private bool isDeleteDialogHidden = true;
+    
+    private string activeTabId = "samba";
+    private ShareType currentTabType = ShareType.CIFS;
+    
+    private ShareInfo? editingShare;
+    private ShareRequest currentShare = new();
+    private ShareInfo? shareToDelete;
+
+    /// <summary>
+    /// Initialize the page
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        // Authentication is handled by AuthenticationGuard
+        // Only check if user is admin
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access share management", 
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
+        await LoadShares();
+    }
+
+    /// <summary>
+    /// Load all shares (CIFS and NFS)
+    /// </summary>
+    private async Task LoadShares()
+    {
+        isLoading = true;
+        try
+        {
+            var cifsTask = ShareService.GetCifsSharesAsync();
+            var nfsTask = ShareService.GetNfsSharesAsync();
+
+            await Task.WhenAll(cifsTask, nfsTask);
+
+            sambaShares = cifsTask.Result;
+            nfsShares = nfsTask.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading shares");
+            ToastService.ShowError("Failed to load shares");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Handle tab change
+    /// </summary>
+    private void OnTabChanged(FluentTab tab)
+    {
+        currentTabType = tab.Id == "samba" ? ShareType.CIFS : ShareType.NFS;
+    }
+
+    #region Share Management
+
+    /// <summary>
+    /// Open add share dialog
+    /// </summary>
+    private void OpenAddDialog(ShareType type)
+    {
+        editingShare = null;
+        currentShare = new ShareRequest
+        {
+            Type = type,
+            Browseable = true,
+            CreateMask = "0744",
+            DirectoryMask = "0755",
+            AllowedHosts = "*",
+            NfsOptions = "rw,sync,no_subtree_check"
+        };
+        isShareDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Open edit share dialog
+    /// </summary>
+    private void OpenEditDialog(ShareInfo share)
+    {
+        editingShare = share;
+        currentShare = new ShareRequest
+        {
+            Name = share.Name,
+            Path = share.Path,
+            Type = share.Type,
+            Comment = share.Comment,
+            Browseable = share.Browseable,
+            ReadOnly = share.ReadOnly,
+            GuestOk = share.GuestOk,
+            ValidUsers = share.ValidUsers,
+            WriteList = share.WriteList,
+            CreateMask = share.CreateMask,
+            DirectoryMask = share.DirectoryMask,
+            AllowedHosts = share.AllowedHosts,
+            NfsOptions = share.NfsOptions
+        };
+        isShareDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Save share (add or update)
+    /// </summary>
+    private async Task SaveShare()
+    {
+        try
+        {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(currentShare.Name))
+            {
+                ToastService.ShowError("Share name is required");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(currentShare.Path))
+            {
+                ToastService.ShowError("Directory path is required");
+                return;
+            }
+
+            if (currentShare.Type == ShareType.NFS && string.IsNullOrWhiteSpace(currentShare.AllowedHosts))
+            {
+                ToastService.ShowError("Allowed hosts is required for NFS shares");
+                return;
+            }
+
+            OperationResult result;
+
+            if (editingShare == null)
+            {
+                // Add new share
+                if (currentShare.Type == ShareType.CIFS)
+                {
+                    result = await ShareService.AddCifsShareAsync(currentShare);
+                }
+                else
+                {
+                    result = await ShareService.AddNfsShareAsync(currentShare);
+                }
+
+                if (result.Success)
+                {
+                    ToastService.ShowSuccess($"{currentShare.Type} share created successfully");
+                }
+            }
+            else
+            {
+                // Update existing share
+                if (currentShare.Type == ShareType.CIFS)
+                {
+                    result = await ShareService.UpdateCifsShareAsync(editingShare.Name, currentShare);
+                }
+                else
+                {
+                    result = await ShareService.UpdateNfsShareAsync(editingShare.Path, currentShare);
+                }
+
+                if (result.Success)
+                {
+                    ToastService.ShowSuccess($"{currentShare.Type} share updated successfully");
+                }
+            }
+
+            if (result.Success)
+            {
+                await LoadShares();
+                CloseShareDialog();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving share");
+            ToastService.ShowError("Failed to save share");
+        }
+    }
+
+    /// <summary>
+    /// Open delete confirmation dialog
+    /// </summary>
+    private void DeleteShare(ShareInfo share)
+    {
+        shareToDelete = share;
+        isDeleteDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Confirm and delete share
+    /// </summary>
+    private async Task ConfirmDeleteShare()
+    {
+        if (shareToDelete == null) return;
+
+        try
+        {
+            OperationResult result;
+
+            if (shareToDelete.Type == ShareType.CIFS)
+            {
+                result = await ShareService.RemoveCifsShareAsync(shareToDelete.Name);
+            }
+            else
+            {
+                result = await ShareService.RemoveNfsShareAsync(shareToDelete.Path);
+            }
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess($"{shareToDelete.Type} share deleted successfully");
+                await LoadShares();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+
+            CloseDeleteDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting share");
+            ToastService.ShowError("Failed to delete share");
+        }
+    }
+
+    /// <summary>
+    /// Close share dialog
+    /// </summary>
+    private void CloseShareDialog()
+    {
+        isShareDialogHidden = true;
+        editingShare = null;
+    }
+
+    /// <summary>
+    /// Close delete confirmation dialog
+    /// </summary>
+    private void CloseDeleteDialog()
+    {
+        isDeleteDialogHidden = true;
+        shareToDelete = null;
+    }
+
+    #endregion
+
+    #region Service Management
+
+    /// <summary>
+    /// Restart Samba service
+    /// </summary>
+    private async Task RestartSambaService()
+    {
+        try
+        {
+            var result = await ShareService.RestartSambaServiceAsync();
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess("Samba service restarted successfully");
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error restarting Samba service");
+            ToastService.ShowError("Failed to restart Samba service");
+        }
+    }
+
+    /// <summary>
+    /// Restart NFS service
+    /// </summary>
+    private async Task RestartNfsService()
+    {
+        try
+        {
+            var result = await ShareService.RestartNfsServiceAsync();
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess("NFS service restarted successfully");
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error restarting NFS service");
+            ToastService.ShowError("Failed to restart NFS service");
+        }
+    }
+
+    #endregion
+}

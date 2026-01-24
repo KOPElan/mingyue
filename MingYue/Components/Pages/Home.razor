@@ -5,85 +5,176 @@
 
 <PageTitle>Home</PageTitle>
 
-<FluentGrid Spacing="3" Justify="JustifyContent.Center">
-    <FluentGridItem xs="12">
-        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
-            <FluentLabel Typo="Typography.HeroTitle">@TimeNow</FluentLabel>
-            <FluentLabel Typo="Typography.HeroTitle">@DateNow</FluentLabel>
-        </FluentStack>
-    </FluentGridItem>
-    <FluentGridItem HiddenWhen="GridItemHidden.XsAndDown" md="1"></FluentGridItem>
-    <FluentGridItem xs="12" md="3">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>CPU</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>RAM</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Max="100" />
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>
-    <FluentGridItem xs="12" md="3">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>CPU</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>RAM</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Max="100" />
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>
-    <FluentGridItem xs="12" md="3">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>CPU</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>RAM</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Min="0" Max="100"/>
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>   
-    <FluentGridItem HiddenWhen="GridItemHidden.XsAndDown" md="1"></FluentGridItem>
-    <FluentGridItem xs="12" Justify="JustifyContent.FlexStart">
-        <FluentLabel>应用</FluentLabel>
-    </FluentGridItem>
-</FluentGrid>
+<div class="home-shell">
+    <div class="home-bg">
+        <div class="bg-layer gradient-one"></div>
+        <div class="bg-layer gradient-two"></div>
+        <div class="bg-layer grain"></div>
+    </div>
+
+    <div class="home-container">
+        <header class="home-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Grid())" />
+                </div>
+                <div>
+                    <div class="brand-title">My Portal</div>
+                    <div class="brand-subtitle">Home Server</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" Title="搜索">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Search())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" Title="设置">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Settings())" />
+                </FluentButton>
+                <div class="avatar">
+                    <span>M</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="home-main">
+            <section class="hero">
+                <div class="hero-time">@TimeNow</div>
+                <div class="hero-date">@DateNow</div>
+            </section>
+
+            <section class="status-grid">
+                <FluentCard class="glass-card accent-amber">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-label">天气</div>
+                            <div class="card-title">@WeatherTemperature°</div>
+                            <div class="card-sub">@WeatherSummary</div>
+                            <div class="card-meta">最高 22° / 最低 14°</div>
+                        </div>
+                        <div class="pill">晴</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div style="width:60%"></div>
+                    </div>
+                </FluentCard>
+
+                <FluentCard class="glass-card accent-blue">
+                    <div class="card-header spaced">
+                        <div class="card-label">系统监控</div>
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DeveloperBoard())" />
+                    </div>
+                    <div class="metric">
+                        <div class="metric-row">
+                            <span>CPU</span>
+                            <span class="metric-value">@systemInfo.Cpu.UsagePercent.ToString("F1")%</span>
+                        </div>
+                        <div class="progress-bar small">
+                            <div style="width:@Math.Clamp(systemInfo.Cpu.UsagePercent,0,100)%"></div>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-row">
+                            <span>RAM</span>
+                            <span class="metric-value purple">@systemInfo.Memory.UsedGB</span>
+                        </div>
+                        <div class="progress-bar small">
+                            <div class="purple" style="width:@Math.Clamp(systemInfo.Memory.UsagePercent,0,100)%"></div>
+                        </div>
+                    </div>
+                </FluentCard>
+
+                <FluentCard class="glass-card accent-green">
+                    <div class="card-header spaced">
+                        <div class="card-label">网络状态</div>
+                        <div class="status-dot"></div>
+                    </div>
+                    <div class="network-grid">
+                        <div class="network-chip">
+                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
+                            <div class="metric-number">24</div>
+                            <div class="metric-unit">MB/s</div>
+                        </div>
+                        <div class="network-chip">
+                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())" />
+                            <div class="metric-number">12</div>
+                            <div class="metric-unit">MB/s</div>
+                        </div>
+                    </div>
+                </FluentCard>
+            </section>
+
+            <section class="apps">
+                <div class="section-head">
+                    <h3>应用程序</h3>
+                    <FluentButton Appearance="Appearance.Stealth">查看全部</FluentButton>
+                </div>
+                <div class="apps-grid">
+                    @foreach (var app in AppShortcuts)
+                    {
+                        <a class="app-tile" href="@app.Link">
+                            <div class="app-icon" style=@($"background: {app.Gradient}")>
+                                <span>@app.Initials</span>
+                            </div>
+                            <div class="app-meta">
+                                <div class="app-name">@app.Title</div>
+                                <div class="app-tag">@app.Category</div>
+                            </div>
+                        </a>
+                    }
+                    <button class="app-tile add-tile" type="button">
+                        <div class="app-icon add-icon">
+                            <span>+</span>
+                        </div>
+                        <div class="app-meta">
+                            <div class="app-name">添加</div>
+                            <div class="app-tag">新应用</div>
+                        </div>
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="dock">
+            <div class="dock-inner">
+                @foreach (var item in DockItems)
+                {
+                    <a class="dock-btn" href="@item.Link" title="@item.Label">
+                        <FluentIcon Value="@item.Icon" />
+                        <span>@item.Label</span>
+                    </a>
+                }
+            </div>
+        </footer>
+    </div>
+</div>
 
 
 @code {
     public string TimeNow => DateTime.Now.ToString("HH:mm");
-    public string DateNow => DateTime.Now.ToString("yyyy年MM月dd日 星期") + GetDayOfWeek();
+    public string DateNow => $"{DateTime.Now:yyyy年MM月dd日}, {GetDayOfWeek()}";
+    public string WeatherSummary => "晴朗";
+    public int WeatherTemperature => 18;
     public SystemResourceInfo systemInfo = new();
+
+    public List<AppShortcut> AppShortcuts { get; set; } = new()
+    {
+        new("Jellyfin", "Media", "JF", "linear-gradient(135deg, #7c3aed, #312e81)", "#"),
+        new("Plex", "Media", "PL", "linear-gradient(135deg, #f59e0b, #b45309)", "#"),
+        new("Home Asst", "Smart", "HA", "linear-gradient(135deg, #3b82f6, #06b6d4)", "#"),
+        new("Pi-hole", "Security", "PH", "linear-gradient(135deg, #ef4444, #dc2626)", "#"),
+        new("Nextcloud", "Storage", "NC", "linear-gradient(135deg, #2563eb, #1d4ed8)", "#"),
+        new("TrueNAS", "NAS", "TN", "linear-gradient(135deg, #475569, #1f2937)", "#"),
+        new("Grafana", "Stats", "GF", "linear-gradient(135deg, #f97316, #ea580c)", "#"),
+        new("Portainer", "Docker", "PT", "linear-gradient(135deg, #22d3ee, #0ea5e9)", "#"),
+    };
+
+    public List<DockItem> DockItems { get; set; } = new()
+    {
+        new("概览", new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.LayoutDashboard(), "#"),
+        new("终端", new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.CommandLine(), "#"),
+        new("文件", new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.FolderOpen(), "#"),
+        new("设置", new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Settings(), "#")
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -96,18 +187,17 @@
 
     public string GetDayOfWeek()
     {
-        return "一";
-        // return DateTime.Now.DayOfWeek switch
-        // {
-        //     DayOfWeek.Monday => LocalizationService.GetString("Monday"),
-        //     DayOfWeek.Tuesday => LocalizationService.GetString("Tuesday"),
-        //     DayOfWeek.Wednesday => LocalizationService.GetString("Wednesday"),
-        //     DayOfWeek.Thursday => LocalizationService.GetString("Thursday"),
-        //     DayOfWeek.Friday => LocalizationService.GetString("Friday"),
-        //     DayOfWeek.Saturday => LocalizationService.GetString("Saturday"),
-        //     DayOfWeek.Sunday => LocalizationService.GetString("Sunday"),
-        //     _ => ""
-        // };
+        return DateTime.Now.DayOfWeek switch
+        {
+            DayOfWeek.Monday => "星期一",
+            DayOfWeek.Tuesday => "星期二",
+            DayOfWeek.Wednesday => "星期三",
+            DayOfWeek.Thursday => "星期四",
+            DayOfWeek.Friday => "星期五",
+            DayOfWeek.Saturday => "星期六",
+            DayOfWeek.Sunday => "星期日",
+            _ => ""
+        };
     }
 
     public async Task LoadDataAsync()
@@ -115,10 +205,13 @@
         try
         {
             systemInfo = await SystemMonitorService.GetSystemResourceInfoAsync();
+            await InvokeAsync(StateHasChanged);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Handle exceptions
         }
     }
+
+    public record AppShortcut(string Title, string Category, string Initials, string Gradient, string Link);
+    public record DockItem(string Label, FluentIcon Icon, string Link);
 }

@@ -20,19 +20,19 @@
     </div>
 
     <!-- Main Content Container -->
-    <div class="home-content">
+    <FluentStack Orientation="Orientation.Vertical" Class="home-content">
         <!-- Header -->
-        <div class="home-header">
-            <div class="home-header-left">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-header">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
                 <div class="home-logo">
                     <FluentIcon Value="@(new Icons.Regular.Size24.GridDots())" Color="Color.Accent" />
                 </div>
-                <div class="home-title">
-                    <div class="home-title-main">My Portal</div>
-                    <div class="home-title-sub">Home Server</div>
-                </div>
-            </div>
-            <div class="home-header-right">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0">
+                    <FluentLabel Typo="Typography.Body" Class="home-title-main">My Portal</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
+                </FluentStack>
+            </FluentStack>
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Search())" />
                 </FluentButton>
@@ -40,145 +40,146 @@
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
                 </FluentButton>
                 <div class="home-user-avatar"></div>
-            </div>
-        </div>
+            </FluentStack>
+        </FluentStack>
 
         <!-- Clock Section -->
-        <div class="home-clock-section">
+        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="home-clock-section">
             <div class="home-clock">@TimeNow</div>
-            <div class="home-date">@DateNow</div>
-        </div>
+            <FluentLabel Typo="Typography.Body" Class="home-date">@DateNow</FluentLabel>
+        </FluentStack>
 
         <!-- Info Cards -->
-        <div class="home-info-cards">
-            <!-- Weather Card (placeholder for now) -->
-            <div class="info-card info-card-weather">
+        <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="24" Class="home-info-cards">
+            <!-- Weather Card -->
+            <FluentCard Class="info-card info-card-weather">
                 <div class="info-card-glow weather-glow"></div>
-                <div class="info-card-content">
-                    <div class="info-card-header">
-                        <span class="info-card-label">天气</span>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">天气</FluentLabel>
                         <div class="info-card-icon weather-icon">
                             <FluentIcon Value="@(new Icons.Regular.Size24.WeatherSunny())" Color="Color.Custom" CustomColor="#facc15" />
                         </div>
-                    </div>
-                    <div class="weather-temp">18°</div>
-                    <div class="weather-condition">晴朗</div>
-                    <div class="weather-range">最高 22° / 最低 14°</div>
-                </div>
-            </div>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <div class="weather-temp">18°</div>
+                        <FluentLabel Typo="Typography.Body" Class="weather-condition">晴朗</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="weather-range">最高 22° / 最低 14°</FluentLabel>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
 
             <!-- System Monitor Card -->
-            <div class="info-card info-card-system">
+            <FluentCard Class="info-card info-card-system">
                 <div class="info-card-glow system-glow"></div>
-                <div class="info-card-content">
-                    <div class="info-card-header">
-                        <span class="info-card-label">系统监控</span>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">系统监控</FluentLabel>
                         <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
-                    </div>
-                    <div class="system-stats">
-                        <div class="stat-item">
-                            <div class="stat-row">
-                                <span class="stat-label">CPU</span>
-                                <span class="stat-value stat-value-cyan">@systemInfo.Cpu.UsagePercent.ToString("F0")%</span>
-                            </div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-fill stat-bar-cyan" style="width: @systemInfo.Cpu.UsagePercent%"></div>
-                            </div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-row">
-                                <span class="stat-label">RAM</span>
-                                <span class="stat-value stat-value-purple">@systemInfo.Memory.UsedGB</span>
-                            </div>
-                            <div class="stat-bar">
-                                <div class="stat-bar-fill stat-bar-purple" style="width: @systemInfo.Memory.UsagePercent%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                                <FluentLabel Typo="Typography.Body" Class="stat-label">CPU</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="stat-value-cyan">@systemInfo.Cpu.UsagePercent.ToString("F0")%</FluentLabel>
+                            </FluentStack>
+                            <FluentProgress Min="0" Max="100" Value="@((int)systemInfo.Cpu.UsagePercent)" Class="progress-bar-cyan" />
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                                <FluentLabel Typo="Typography.Body" Class="stat-label">RAM</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="stat-value-purple">@systemInfo.Memory.UsedGB</FluentLabel>
+                            </FluentStack>
+                            <FluentProgress Min="0" Max="100" Value="@((int)systemInfo.Memory.UsagePercent)" Class="progress-bar-purple" />
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
 
             <!-- Network Status Card -->
-            <div class="info-card info-card-network">
+            <FluentCard Class="info-card info-card-network">
                 <div class="info-card-glow network-glow"></div>
-                <div class="info-card-content">
-                    <div class="info-card-header">
-                        <span class="info-card-label">网络状态</span>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">网络状态</FluentLabel>
                         <div class="network-indicator"></div>
-                    </div>
-                    <div class="network-stats">
-                        <div class="network-stat-item">
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="4" Class="network-stat-item">
                             <FluentIcon Value="@(new Icons.Regular.Size20.ArrowDownload())" Color="Color.Custom" CustomColor="#22c55e" />
-                            <div class="network-stat-value">@downloadSpeed</div>
-                            <div class="network-stat-unit">MB/S</div>
-                        </div>
-                        <div class="network-stat-item">
+                            <FluentLabel Typo="Typography.Body">@downloadSpeed</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">MB/S</FluentLabel>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="4" Class="network-stat-item">
                             <FluentIcon Value="@(new Icons.Regular.Size20.ArrowUpload())" Color="Color.Custom" CustomColor="#60a5fa" />
-                            <div class="network-stat-value">@uploadSpeed</div>
-                            <div class="network-stat-unit">MB/S</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                            <FluentLabel Typo="Typography.Body">@uploadSpeed</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">MB/S</FluentLabel>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        </FluentStack>
 
-        <!-- Applications Section -->
-        <div class="home-applications">
-            <div class="home-section-header">
-                <h2 class="home-section-title">应用程序</h2>
-                <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" class="view-all-link">查看全部</FluentAnchor>
-            </div>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" Class="home-applications">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-section-header">
+                <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
+                <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
+            </FluentStack>
             <div class="app-grid">
                 @foreach (var app in visibleApplications)
                 {
-                    <a href="@app.Url" class="app-card" target="_blank">
-                        <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
-                            @if (!string.IsNullOrEmpty(app.Icon))
-                            {
-                                <FluentIcon Value="@GetIcon(app.Icon)" />
-                            }
-                            else
-                            {
-                                <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
-                            }
-                        </div>
-                        <div class="app-info">
-                            <div class="app-title">@app.Title</div>
-                            <div class="app-category">@app.Category</div>
-                        </div>
-                    </a>
+                    <FluentCard Class="app-card" @onclick="@(() => Navigation.NavigateTo(app.Url, true))">
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
+                            <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
+                                @if (!string.IsNullOrEmpty(app.Icon))
+                                {
+                                    <FluentIcon Value="@GetIcon(app.Icon)" />
+                                }
+                                else
+                                {
+                                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+                                }
+                            </div>
+                            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="2" Class="app-info">
+                                <FluentLabel Typo="Typography.Body" Class="app-title">@app.Title</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="app-category">@app.Category</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
                 }
-                <button class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
-                    <div class="app-icon app-icon-add">
-                        <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
-                    </div>
-                    <div class="app-info">
-                        <div class="app-title">添加</div>
-                    </div>
-                </button>
+                <FluentCard Class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
+                        <div class="app-icon app-icon-add">
+                            <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
+                        </div>
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
+                            <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentCard>
             </div>
-        </div>
-    </div>
+        </FluentStack>
+    </FluentStack>
 
     <!-- Bottom Dock -->
-    <div class="home-dock">
-        <div class="dock-container">
-            @foreach (var item in dockItems.Take(4))
-            {
-                <a href="@item.Url" class="dock-item" title="@item.Title">
-                    @if (!string.IsNullOrEmpty(item.Icon))
-                    {
-                        <FluentIcon Value="@GetIcon(item.Icon)" />
-                    }
-                    else
-                    {
-                        <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
-                    }
-                    <div class="dock-tooltip">@item.Title</div>
-                </a>
-            }
-        </div>
-    </div>
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="8" Class="home-dock">
+        @foreach (var item in dockItems.Take(4))
+        {
+            <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" Class="dock-item" 
+                          @onclick="@(() => Navigation.NavigateTo(item.Url))" 
+                          title="@item.Title">
+                @if (!string.IsNullOrEmpty(item.Icon))
+                {
+                    <FluentIcon Value="@GetIcon(item.Icon)" />
+                }
+                else
+                {
+                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+                }
+                <FluentTooltip Anchor="@item.ItemId" Position="TooltipPosition.Top">@item.Title</FluentTooltip>
+            </FluentButton>
+        }
+    </FluentStack>
 </div>
 
 @code {

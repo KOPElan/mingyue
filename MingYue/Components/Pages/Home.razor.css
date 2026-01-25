@@ -1,9 +1,11 @@
-/* Home Page Styles */
+/* Home Page Styles - FluentUI Component Based with Design Tokens */
+
+/* Main Page Container */
 .home-page {
     position: relative;
     min-height: 100vh;
-    background: #0a0a0c;
-    color: #ffffff;
+    background: var(--neutral-layer-1, #0a0a0c);
+    color: var(--neutral-foreground-rest, #ffffff);
     overflow-x: hidden;
 }
 
@@ -75,17 +77,8 @@
 
 /* Header */
 .home-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     padding: 1.5rem 0;
     margin-bottom: 2rem;
-}
-
-.home-header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
 }
 
 .home-logo {
@@ -94,35 +87,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.1));
+    border-radius: var(--control-corner-radius, 0.5rem);
     backdrop-filter: blur(10px);
 }
 
 .home-title-main {
-    font-size: 1rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.9));
 }
 
 .home-title-sub {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.home-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.5));
 }
 
 .home-user-avatar {
     width: 2.25rem;
     height: 2.25rem;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, var(--accent-fill-rest, #3b82f6) 0%, #06b6d4 100%);
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.2));
     cursor: pointer;
 }
 
@@ -137,43 +121,41 @@
     font-size: clamp(4rem, 15vw, 9rem);
     font-weight: 200;
     letter-spacing: -0.02em;
-    color: #ffffff;
+    color: var(--neutral-foreground-rest, #ffffff);
     line-height: 1;
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: var(--body-font, 'Segoe UI', system-ui, -apple-system, sans-serif);
 }
 
 .home-date {
-    font-size: clamp(1rem, 3vw, 1.25rem);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.7));
     font-weight: 300;
     margin-top: 0.5rem;
 }
 
-/* Info Cards */
+/* Info Cards using FluentCard */
 .home-info-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
     margin-bottom: 3rem;
 }
 
 .info-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 1rem;
-    padding: 1.25rem;
+    background: var(--neutral-layer-3, rgba(255, 255, 255, 0.05)) !important;
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.05)) !important;
+    border-radius: var(--control-corner-radius, 1rem) !important;
+    padding: 1.25rem !important;
     backdrop-filter: blur(10px);
-    transition: all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+    transition: all 0.2s var(--curve-decelerate-mid, cubic-bezier(0.1, 0.9, 0.2, 1));
     overflow: hidden;
     cursor: pointer;
+    min-width: 280px;
+    flex: 1;
 }
 
 .info-card:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.09)) !important;
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+    border-color: var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.1)) !important;
+    box-shadow: var(--elevation-shadow-card-rest, 0 8px 16px rgba(0, 0, 0, 0.25)) !important;
 }
 
 .info-card-glow {
@@ -201,23 +183,11 @@
     background: rgba(34, 197, 94, 0.15);
 }
 
-.info-card-content {
-    position: relative;
-    z-index: 1;
-}
-
-.info-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
 .info-card-label {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.6));
     font-weight: 500;
 }
 
@@ -227,14 +197,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.05));
     border-radius: 50%;
     transition: all 0.3s;
 }
 
 .info-card:hover .info-card-icon {
     transform: scale(1.1);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.1));
 }
 
 /* Weather Card */
@@ -242,45 +212,19 @@
     font-size: 2rem;
     font-weight: 300;
     line-height: 1;
-    margin-bottom: 0.25rem;
 }
 
 .weather-condition {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 0.5rem;
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.8));
 }
 
 .weather-range {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.5));
 }
 
-/* System Monitor Card */
-.system-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-}
-
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-}
-
+/* System Monitor Card - Custom Progress Bar Styling */
 .stat-label {
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.stat-value {
-    font-weight: 600;
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.8));
 }
 
 .stat-value-cyan {
@@ -291,28 +235,13 @@
     color: #c084fc;
 }
 
-.stat-bar {
-    width: 100%;
-    height: 0.25rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 0.125rem;
-    overflow: hidden;
+/* Override FluentProgress colors */
+::deep .progress-bar-cyan fluent-progress {
+    --accent-fill-rest: #60cdff;
 }
 
-.stat-bar-fill {
-    height: 100%;
-    border-radius: 0.125rem;
-    transition: width 0.3s ease;
-}
-
-.stat-bar-cyan {
-    background: #60cdff;
-    box-shadow: 0 0 8px rgba(96, 205, 255, 0.4);
-}
-
-.stat-bar-purple {
-    background: #c084fc;
-    box-shadow: 0 0 8px rgba(192, 132, 252, 0.4);
+::deep .progress-bar-purple fluent-progress {
+    --accent-fill-rest: #c084fc;
 }
 
 /* Network Status Card */
@@ -330,38 +259,20 @@
     50% { opacity: 0.5; }
 }
 
-.network-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
 .network-stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 0.5rem;
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.05));
+    border-radius: var(--control-corner-radius, 0.5rem);
     transition: background 0.2s;
+    flex: 1;
 }
 
 .network-stat-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.network-stat-value {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin: 0.25rem 0;
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.1));
 }
 
 .network-stat-unit {
-    font-size: 0.625rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.5));
     text-transform: uppercase;
 }
 
@@ -374,30 +285,24 @@
 }
 
 .home-section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
     padding: 0 0.5rem;
 }
 
 .home-section-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.9));
     margin: 0;
 }
 
 .view-all-link {
     font-size: 0.75rem;
     font-weight: 500;
-    color: #60cdff;
+    color: var(--accent-fill-rest, #60cdff);
     text-decoration: none;
     transition: color 0.2s;
 }
 
 .view-all-link:hover {
-    color: #ffffff;
+    color: var(--neutral-foreground-rest, #ffffff);
 }
 
 .app-grid {
@@ -412,24 +317,21 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
     aspect-ratio: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 1rem;
-    padding: 1rem;
+    background: var(--neutral-layer-3, rgba(255, 255, 255, 0.05)) !important;
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.05)) !important;
+    border-radius: var(--control-corner-radius, 1rem) !important;
+    padding: 1rem !important;
     backdrop-filter: blur(10px);
-    transition: all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+    transition: all 0.2s var(--curve-decelerate-mid, cubic-bezier(0.1, 0.9, 0.2, 1));
     cursor: pointer;
-    text-decoration: none;
-    color: inherit;
 }
 
 .app-card:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.09)) !important;
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+    border-color: var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.1)) !important;
+    box-shadow: var(--elevation-shadow-card-rest, 0 8px 16px rgba(0, 0, 0, 0.25)) !important;
 }
 
 .app-card:active {
@@ -437,12 +339,12 @@
 }
 
 .app-card-add {
-    border-style: dashed;
-    border-color: rgba(255, 255, 255, 0.2);
+    border-style: dashed !important;
+    border-color: var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.2)) !important;
 }
 
 .app-card-add:hover {
-    border-color: rgba(96, 205, 255, 0.5);
+    border-color: var(--accent-fill-rest, rgba(96, 205, 255, 0.5)) !important;
 }
 
 .app-icon {
@@ -451,9 +353,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1rem;
+    border-radius: var(--control-corner-radius, 1rem);
     color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--elevation-shadow-card-rest, 0 4px 12px rgba(0, 0, 0, 0.3));
     transition: transform 0.3s;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -463,13 +365,13 @@
 }
 
 .app-icon-add {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.4);
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.05));
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.4));
 }
 
 .app-card-add:hover .app-icon-add {
-    color: #60cdff;
-    background: rgba(96, 205, 255, 0.1);
+    color: var(--accent-fill-rest, #60cdff);
+    background: var(--accent-fill-rest, rgba(96, 205, 255, 0.1));
 }
 
 .app-info {
@@ -478,21 +380,17 @@
 }
 
 .app-title {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.9));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .app-category {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
-    margin-top: 0.125rem;
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.4));
 }
 
-/* Bottom Dock */
+/* Bottom Dock using FluentStack */
 .home-dock {
     position: fixed;
     bottom: 1.5rem;
@@ -501,59 +399,28 @@
     z-index: 50;
     width: auto;
     max-width: 95vw;
-}
-
-.dock-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     padding: 0.5rem;
-    background: rgba(30, 30, 30, 0.75);
+    background: var(--neutral-layer-2, rgba(30, 30, 30, 0.75));
     backdrop-filter: blur(30px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 1.5rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.08));
+    border-radius: var(--control-corner-radius, 1.5rem);
+    box-shadow: var(--elevation-shadow-flyout, 0 10px 40px rgba(0, 0, 0, 0.4));
 }
 
 .dock-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border-radius: 1rem;
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
+    width: 3rem !important;
+    height: 3rem !important;
+    min-width: 3rem !important;
+    min-height: 3rem !important;
+    border-radius: var(--control-corner-radius, 1rem) !important;
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.8)) !important;
     transition: all 0.2s;
+    background: transparent !important;
 }
 
 .dock-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-.dock-item:hover .dock-tooltip {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-.dock-tooltip {
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-0.5rem) scale(0.9);
-    margin-bottom: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #27272a;
-    color: white;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transition: all 0.2s;
+    background: var(--neutral-fill-stealth-hover, rgba(255, 255, 255, 0.1)) !important;
+    color: var(--neutral-foreground-rest, #ffffff) !important;
 }
 
 /* Responsive Design */
@@ -563,7 +430,11 @@
     }
 
     .home-info-cards {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+
+    .info-card {
+        min-width: 100%;
     }
 
     .app-grid {
@@ -572,10 +443,6 @@
 
     .home-clock {
         font-size: 4rem;
-    }
-
-    .home-date {
-        font-size: 1rem;
     }
 }
 

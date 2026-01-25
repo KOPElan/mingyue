@@ -97,7 +97,7 @@
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshFiles" Title="Refresh">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(async () => await ToggleViewMode())" Title="@(viewMode == ViewMode.List ? "Grid View" : "List View")">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@ToggleViewMode" Title="@(viewMode == ViewMode.List ? "Grid View" : "List View")">
                         <FluentIcon Value="@GetViewModeIcon()" />
                     </FluentButton>
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenFavoritesDialog" Title="Manage Favorites">
@@ -531,11 +531,22 @@
     private async Task LoadThumbnails()
     {
         // Load thumbnails for image files in grid view
-        if (viewMode != ViewMode.Grid) return;
+        if (viewMode != ViewMode.Grid)
+        {
+            // Clear thumbnail data when not in grid view to save memory
+            foreach (var item in fileItems)
+            {
+                item.ThumbnailData = null;
+            }
+            return;
+        }
 
         try
         {
-            foreach (var item in fileItems.Where(f => !f.IsDirectory && IsImageFile(f)))
+            var imageFiles = fileItems.Where(f => !f.IsDirectory && IsImageFile(f)).ToList();
+            
+            // Load thumbnails in parallel for better performance
+            var thumbnailTasks = imageFiles.Select(async item =>
             {
                 try
                 {
@@ -549,18 +560,15 @@
                 {
                     Logger.LogWarning(ex, "Failed to load thumbnail for {Path}", item.Path);
                 }
-            }
+            });
+            
+            await Task.WhenAll(thumbnailTasks);
             StateHasChanged();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading thumbnails");
         }
-    }
-
-    private void ShowContextMenu(FileItemInfo item, MouseEventArgs e)
-    {
-        // Context menu can be implemented in the future
     }
 
     /// <summary>

@@ -10,6 +10,8 @@ namespace MingYue.Services
         Task StopContainerAsync(string containerId);
         Task RestartContainerAsync(string containerId);
         Task RemoveContainerAsync(string containerId);
+        Task RemoveImageAsync(string imageId);
+        Task PullImageAsync(string imageName);
         Task<bool> IsDockerAvailableAsync();
         Task<string> GetContainerLogsAsync(string containerId, int tailLines = 1000);
     }

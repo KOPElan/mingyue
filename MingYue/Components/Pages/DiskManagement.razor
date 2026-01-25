@@ -1,0 +1,710 @@
+@page "/disk-management"
+@using MingYue.Models
+@using MingYue.Services
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject IDiskManagementService DiskService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<DiskManagement> Logger
+@inject IToastService ToastService
+
+<PageTitle>Disk Management - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>Access denied. You must be an administrator to access this page.</p>
+    </FluentMessageBar>
+    return;
+}
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">Disk Management</h2>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
+            Add Network Disk
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@RefreshDisks">
+            <FluentIcon Value="@(new Icons.Regular.Size20.ArrowSync())" />
+            Refresh
+        </FluentButton>
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else
+    {
+        <!-- Local Disks Section -->
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+            <h3>Local Disks</h3>
+            @if (localDisks.Count == 0)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info">
+                    No local disks found.
+                </FluentMessageBar>
+            }
+            else
+            {
+                <FluentDataGrid Items="@localDisks.AsQueryable()" GridTemplateColumns="1.5fr 1.5fr 1fr 1fr 1fr 1fr 1fr">
+                    <PropertyColumn Property="@(d => d.Name)" Title="Name" Sortable="true" />
+                    <PropertyColumn Property="@(d => d.MountPoint)" Title="Mount Point" Sortable="true" />
+                    <PropertyColumn Property="@(d => d.FileSystem)" Title="File System" Sortable="true" />
+                    <PropertyColumn Property="@(d => d.SizeDisplay)" Title="Size" Sortable="true" />
+                    <TemplateColumn Title="Used" Sortable="true">
+                        <div>
+                            @context.UsedGB (@context.UsagePercent.ToString("F1")%)
+                            <FluentProgress Min="0" Max="100" Value="@((int)context.UsagePercent)" 
+                                           Style="width: 100%; margin-top: 4px;" />
+                        </div>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Status" Sortable="true">
+                        @if (context.IsReady)
+                        {
+                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Mounted</FluentBadge>
+                        }
+                        else
+                        {
+                            <FluentBadge Fill="neutral">Not Mounted</FluentBadge>
+                        }
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions">
+                        <FluentButton Appearance="Appearance.Lightweight" 
+                                    OnClick="@(() => ToggleDiskMount(context))"
+                                    Disabled="@(string.IsNullOrEmpty(context.DevicePath))">
+                            @if (context.IsReady)
+                            {
+                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugDisconnected())" />
+                            }
+                            else
+                            {
+                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugConnected())" />
+                            }
+                        </FluentButton>
+                        <FluentButton Appearance="Appearance.Lightweight" 
+                                    OnClick="@(() => OpenPowerManagementDialog(context))"
+                                    Disabled="@(string.IsNullOrEmpty(context.DevicePath))">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Battery10())" />
+                        </FluentButton>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            }
+        </FluentStack>
+
+        <!-- Network Disks Section -->
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+            <h3>Network Disks</h3>
+            @if (networkDisks.Count == 0)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info">
+                    No network disks configured. Click "Add Network Disk" to add one.
+                </FluentMessageBar>
+            }
+            else
+            {
+                <FluentDataGrid Items="@networkDisks.AsQueryable()" GridTemplateColumns="1fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr">
+                    <TemplateColumn Title="Type" Sortable="true">
+                        <FluentBadge Fill="highlight" BackgroundColor="@(context.DiskType == NetworkDiskType.NFS ? "blue" : "purple")" Color="white">
+                            @context.DiskType.ToString()
+                        </FluentBadge>
+                    </TemplateColumn>
+                    <PropertyColumn Property="@(d => d.FullPath)" Title="Network Path" Sortable="true" />
+                    <PropertyColumn Property="@(d => d.MountPoint)" Title="Mount Point" Sortable="true" />
+                    <PropertyColumn Property="@(d => d.SizeDisplay)" Title="Size" Sortable="true" />
+                    <TemplateColumn Title="Used" Sortable="true">
+                        <div>
+                            @context.UsedGB (@context.UsagePercent.ToString("F1")%)
+                            <FluentProgress Min="0" Max="100" Value="@((int)context.UsagePercent)" 
+                                           Style="width: 100%; margin-top: 4px;" />
+                        </div>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Status" Sortable="true">
+                        @if (context.IsReady)
+                        {
+                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Mounted</FluentBadge>
+                        }
+                        else
+                        {
+                            <FluentBadge Fill="neutral">Not Mounted</FluentBadge>
+                        }
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions">
+                        <FluentButton Appearance="Appearance.Lightweight" 
+                                    OnClick="@(() => ToggleNetworkDiskMount(context))">
+                            @if (context.IsReady)
+                            {
+                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugDisconnected())" />
+                            }
+                            else
+                            {
+                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugConnected())" />
+                            }
+                        </FluentButton>
+                        <FluentButton Appearance="Appearance.Lightweight" 
+                                    OnClick="@(() => DeleteNetworkDisk(context))">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                        </FluentButton>
+                    </TemplateColumn>
+                </FluentDataGrid>
+            }
+        </FluentStack>
+    }
+</FluentStack>
+
+<!-- Network Disk Wizard Dialog -->
+<FluentDialog @ref="wizardDialog" @bind-Hidden="@isWizardHidden" TrapFocus="true" Modal="true" Style="min-width: 600px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.HardDrive())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Add Network Disk - Step @wizardStep of 4
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        @if (wizardStep == 1)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentLabel Typo="Typography.Body">Choose the type of network disk you want to add:</FluentLabel>
+                
+                <FluentRadioGroup @bind-Value="networkDiskConfig.DiskType" Orientation="Orientation.Vertical">
+                    <FluentRadio Value="@NetworkDiskType.CIFS">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
+                            <FluentLabel Weight="FontWeight.Bold">SMB/CIFS</FluentLabel>
+                            <FluentLabel>Windows file shares, Samba servers</FluentLabel>
+                        </FluentStack>
+                    </FluentRadio>
+                    <FluentRadio Value="@NetworkDiskType.NFS">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
+                            <FluentLabel Weight="FontWeight.Bold">NFS</FluentLabel>
+                            <FluentLabel>Unix/Linux network file system</FluentLabel>
+                        </FluentStack>
+                    </FluentRadio>
+                </FluentRadioGroup>
+            </FluentStack>
+        }
+        else if (wizardStep == 2)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentLabel Typo="Typography.Body">Enter connection details:</FluentLabel>
+                
+                <FluentTextField 
+                    @bind-Value="networkDiskConfig.Server"
+                    Label="Server (IP or hostname)"
+                    Required="true"
+                    Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "192.168.1.10 or server.local" : "192.168.1.10")"
+                    Style="width: 100%;" />
+                
+                <FluentTextField 
+                    @bind-Value="networkDiskConfig.SharePath"
+                    Label="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "Share Name" : "Export Path")"
+                    Required="true"
+                    Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "MyShare" : "/export/data")"
+                    Style="width: 100%;" />
+                
+                @if (networkDiskConfig.DiskType == NetworkDiskType.CIFS)
+                {
+                    <FluentTextField 
+                        @bind-Value="networkDiskConfig.Username"
+                        Label="Username (optional)"
+                        Placeholder="username"
+                        Style="width: 100%;" />
+                    
+                    <FluentTextField 
+                        @bind-Value="networkDiskConfig.Password"
+                        Label="Password (optional)"
+                        TextFieldType="TextFieldType.Password"
+                        Placeholder="password"
+                        Style="width: 100%;" />
+                    
+                    <FluentTextField 
+                        @bind-Value="networkDiskConfig.Domain"
+                        Label="Domain (optional)"
+                        Placeholder="WORKGROUP"
+                        Style="width: 100%;" />
+                }
+            </FluentStack>
+        }
+        else if (wizardStep == 3)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentLabel Typo="Typography.Body">Choose mount options:</FluentLabel>
+                
+                <FluentTextField 
+                    @bind-Value="networkDiskConfig.MountPoint"
+                    Label="Mount Point"
+                    Required="true"
+                    Placeholder="/mnt/network-share"
+                    Style="width: 100%;" />
+                
+                <FluentCheckbox 
+                    @bind-Value="networkDiskConfig.ReadOnly"
+                    Label="Read-only" />
+                
+                <FluentCheckbox 
+                    @bind-Value="networkDiskConfig.AutoMount"
+                    Label="Auto-mount on boot (permanent)" />
+            </FluentStack>
+        }
+        else if (wizardStep == 4)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentLabel Typo="Typography.Body">Confirm your settings:</FluentLabel>
+                
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="background: var(--neutral-layer-2); padding: 15px; border-radius: 4px;">
+                    <FluentLabel><strong>Type:</strong> @networkDiskConfig.DiskType</FluentLabel>
+                    <FluentLabel><strong>Server:</strong> @networkDiskConfig.Server</FluentLabel>
+                    <FluentLabel><strong>@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "Share" : "Path"):</strong> @networkDiskConfig.SharePath</FluentLabel>
+                    <FluentLabel><strong>Mount Point:</strong> @networkDiskConfig.MountPoint</FluentLabel>
+                    @if (!string.IsNullOrEmpty(networkDiskConfig.Username))
+                    {
+                        <FluentLabel><strong>Username:</strong> @networkDiskConfig.Username</FluentLabel>
+                    }
+                    <FluentLabel><strong>Read-only:</strong> @(networkDiskConfig.ReadOnly ? "Yes" : "No")</FluentLabel>
+                    <FluentLabel><strong>Auto-mount:</strong> @(networkDiskConfig.AutoMount ? "Yes" : "No")</FluentLabel>
+                </FluentStack>
+            </FluentStack>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        @if (wizardStep > 1)
+        {
+            <FluentButton Appearance="Appearance.Neutral" OnClick="@PreviousWizardStep">
+                Previous
+            </FluentButton>
+        }
+        @if (wizardStep < 4)
+        {
+            <FluentButton Appearance="Appearance.Accent" OnClick="@NextWizardStep" 
+                         Disabled="@(!IsCurrentWizardStepValid())">
+                Next
+            </FluentButton>
+        }
+        else
+        {
+            <FluentButton Appearance="Appearance.Accent" OnClick="@MountNetworkDisk">
+                Mount
+            </FluentButton>
+        }
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseWizard">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Power Management Dialog -->
+<FluentDialog @ref="powerDialog" @bind-Hidden="@isPowerDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Battery10())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Power Management - @selectedDisk?.Name
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentLabel Typo="Typography.Body">Configure power management settings for this disk:</FluentLabel>
+            
+            <FluentNumberField 
+                @bind-Value="spinDownTimeout"
+                Label="Spin Down Timeout (minutes)"
+                Min="0"
+                Max="240"
+                Placeholder="0 = Disabled"
+                Style="width: 100%;">
+                <FluentLabel Slot="help-text">Time before disk spins down when idle (0 to disable)</FluentLabel>
+            </FluentNumberField>
+            
+            <FluentMessageBar Intent="MessageIntent.Info">
+                Note: Power management settings may not be supported on all drives.
+            </FluentMessageBar>
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ApplyPowerSettings">
+            Apply
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@ClosePowerDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<DiskInfo> localDisks = new();
+    private List<NetworkDiskInfo> networkDisks = new();
+    
+    private FluentDialog? wizardDialog;
+    private FluentDialog? powerDialog;
+    private bool isLoading = true;
+    private bool isAuthorized = false;
+    private bool isWizardHidden = true;
+    private bool isPowerDialogHidden = true;
+    
+    private int wizardStep = 1;
+    private NetworkDiskConfiguration networkDiskConfig = new();
+    
+    private DiskInfo? selectedDisk;
+    private int spinDownTimeout = 0;
+
+    /// <summary>
+    /// Initialize the page
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        // Authentication is handled by AuthenticationGuard
+        // Only check if user is admin
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access disk management", 
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
+        await LoadDisks();
+    }
+
+    /// <summary>
+    /// Load all disks (local and network)
+    /// </summary>
+    private async Task LoadDisks()
+    {
+        isLoading = true;
+        try
+        {
+            var allDisksTask = DiskService.GetAllDisksAsync();
+            var networkDisksTask = DiskService.GetNetworkDisksAsync();
+
+            await Task.WhenAll(allDisksTask, networkDisksTask);
+
+            localDisks = allDisksTask.Result;
+            networkDisks = networkDisksTask.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading disks");
+            ToastService.ShowError("Failed to load disks");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Refresh disk list
+    /// </summary>
+    private async Task RefreshDisks()
+    {
+        await LoadDisks();
+        ToastService.ShowInfo("Disks refreshed");
+    }
+
+    /// <summary>
+    /// Toggle mount status of a local disk
+    /// </summary>
+    private async Task ToggleDiskMount(DiskInfo disk)
+    {
+        try
+        {
+            DiskOperationResult result;
+            
+            if (disk.IsReady)
+            {
+                // Unmount
+                result = await DiskService.UnmountDiskAsync(disk.MountPoint);
+            }
+            else
+            {
+                // Mount - need to prompt for mount point
+                // For simplicity, using auto-generated mount point with sanitization
+                var deviceName = disk.Name.Replace("/dev/", "");
+                // Sanitize the device name to create a valid mount point
+                var invalidChars = Path.GetInvalidFileNameChars().Concat(new[] { ' ', '.' }).ToArray();
+                foreach (var c in invalidChars)
+                {
+                    deviceName = deviceName.Replace(c, '_');
+                }
+                var mountPoint = $"/mnt/{deviceName}";
+                result = await DiskService.MountDiskAsync(disk.DevicePath, mountPoint);
+            }
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess(result.Message);
+                await LoadDisks();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error toggling disk mount for {DiskName}", disk.Name);
+            ToastService.ShowError("Failed to toggle disk mount");
+        }
+    }
+
+    /// <summary>
+    /// Toggle mount status of a network disk
+    /// </summary>
+    private async Task ToggleNetworkDiskMount(NetworkDiskInfo disk)
+    {
+        try
+        {
+            var result = disk.IsReady
+                ? await DiskService.UnmountDiskAsync(disk.MountPoint)
+                : await DiskService.MountNetworkDiskAsync(
+                    disk.Server, 
+                    disk.SharePath, 
+                    disk.MountPoint, 
+                    disk.DiskType
+                );
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess(result.Message);
+                await LoadDisks();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error toggling network disk mount");
+            ToastService.ShowError("Failed to toggle network disk mount");
+        }
+    }
+
+    /// <summary>
+    /// Delete a network disk configuration
+    /// </summary>
+    private async Task DeleteNetworkDisk(NetworkDiskInfo disk)
+    {
+        try
+        {
+            // First unmount if mounted
+            if (disk.IsReady)
+            {
+                var unmountResult = await DiskService.UnmountDiskAsync(disk.MountPoint);
+                if (!unmountResult.Success)
+                {
+                    ToastService.ShowWarning($"Could not unmount: {unmountResult.Message}");
+                    return;
+                }
+            }
+
+            ToastService.ShowSuccess("Network disk removed successfully");
+            await LoadDisks();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting network disk");
+            ToastService.ShowError("Failed to delete network disk");
+        }
+    }
+
+    #region Network Disk Wizard
+
+    /// <summary>
+    /// Open the network disk wizard
+    /// </summary>
+    private void OpenNetworkDiskWizard()
+    {
+        wizardStep = 1;
+        networkDiskConfig = new NetworkDiskConfiguration
+        {
+            DiskType = NetworkDiskType.CIFS
+        };
+        isWizardHidden = false;
+    }
+
+    /// <summary>
+    /// Move to next wizard step
+    /// </summary>
+    private void NextWizardStep()
+    {
+        if (wizardStep < 4)
+        {
+            wizardStep++;
+        }
+    }
+
+    /// <summary>
+    /// Move to previous wizard step
+    /// </summary>
+    private void PreviousWizardStep()
+    {
+        if (wizardStep > 1)
+        {
+            wizardStep--;
+        }
+    }
+
+    /// <summary>
+    /// Check if current wizard step is valid
+    /// </summary>
+    private bool IsCurrentWizardStepValid()
+    {
+        return wizardStep switch
+        {
+            1 => true, // Type selection always valid
+            2 => !string.IsNullOrWhiteSpace(networkDiskConfig.Server) && 
+                 !string.IsNullOrWhiteSpace(networkDiskConfig.SharePath),
+            3 => !string.IsNullOrWhiteSpace(networkDiskConfig.MountPoint),
+            4 => true, // Confirmation always valid
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Mount the network disk
+    /// </summary>
+    private async Task MountNetworkDisk()
+    {
+        try
+        {
+            var options = networkDiskConfig.ReadOnly ? "ro" : null;
+            
+            var result = networkDiskConfig.AutoMount
+                ? await DiskService.MountNetworkDiskPermanentAsync(
+                    networkDiskConfig.Server,
+                    networkDiskConfig.SharePath,
+                    networkDiskConfig.MountPoint,
+                    networkDiskConfig.DiskType,
+                    networkDiskConfig.Username,
+                    networkDiskConfig.Password,
+                    networkDiskConfig.Domain,
+                    options
+                )
+                : await DiskService.MountNetworkDiskAsync(
+                    networkDiskConfig.Server,
+                    networkDiskConfig.SharePath,
+                    networkDiskConfig.MountPoint,
+                    networkDiskConfig.DiskType,
+                    networkDiskConfig.Username,
+                    networkDiskConfig.Password,
+                    networkDiskConfig.Domain,
+                    options
+                );
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess(result.Message);
+                await LoadDisks();
+                CloseWizard();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error mounting network disk");
+            ToastService.ShowError("Failed to mount network disk");
+        }
+    }
+
+    /// <summary>
+    /// Close the wizard
+    /// </summary>
+    private void CloseWizard()
+    {
+        isWizardHidden = true;
+        wizardStep = 1;
+    }
+
+    #endregion
+
+    #region Power Management
+
+    /// <summary>
+    /// Open power management dialog
+    /// </summary>
+    private async Task OpenPowerManagementDialog(DiskInfo disk)
+    {
+        selectedDisk = disk;
+        
+        try
+        {
+            var settings = await DiskService.GetDiskPowerSettingsAsync(disk.DevicePath);
+            spinDownTimeout = settings.SpinDownTimeoutMinutes;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading power settings for {DiskName}", disk.Name);
+            spinDownTimeout = 0;
+        }
+        
+        isPowerDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Apply power management settings
+    /// </summary>
+    private async Task ApplyPowerSettings()
+    {
+        if (selectedDisk == null) return;
+
+        try
+        {
+            var result = await DiskService.SetDiskSpinDownAsync(selectedDisk.DevicePath, spinDownTimeout);
+
+            if (result.Success)
+            {
+                ToastService.ShowSuccess(result.Message);
+                ClosePowerDialog();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error applying power settings");
+            ToastService.ShowError("Failed to apply power settings");
+        }
+    }
+
+    /// <summary>
+    /// Close power management dialog
+    /// </summary>
+    private void ClosePowerDialog()
+    {
+        isPowerDialogHidden = true;
+        selectedDisk = null;
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Network disk configuration class
+    /// </summary>
+    private class NetworkDiskConfiguration
+    {
+        public NetworkDiskType DiskType { get; set; } = NetworkDiskType.CIFS;
+        public string Server { get; set; } = string.Empty;
+        public string SharePath { get; set; } = string.Empty;
+        public string MountPoint { get; set; } = string.Empty;
+        public string? Username { get; set; }
+        public string? Password { get; set; }
+        public string? Domain { get; set; }
+        public bool ReadOnly { get; set; } = false;
+        public bool AutoMount { get; set; } = false;
+    }
+}

@@ -667,7 +667,7 @@
         {
             var query = searchQuery.ToLowerInvariant();
             filtered = filtered.Where(m =>
-                m.Content.ToLowerInvariant().Contains(query) ||
+                (m.Content != null && m.Content.ToLowerInvariant().Contains(query)) ||
                 m.SenderDeviceName.ToLowerInvariant().Contains(query) ||
                 m.SenderDeviceId.ToLowerInvariant().Contains(query) ||
                 (m.Attachments?.Any(a => a.FileName.ToLowerInvariant().Contains(query)) == true)
@@ -700,7 +700,17 @@
         selectedMessage = message;
         if (!message.IsRead)
         {
-            _ = MarkMessageAsRead(message.Id);
+            InvokeAsync(async () =>
+            {
+                try
+                {
+                    await MarkMessageAsRead(message.Id);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error marking message as read on selection");
+                }
+            });
         }
     }
 

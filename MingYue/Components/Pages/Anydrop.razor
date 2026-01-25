@@ -1,0 +1,499 @@
+@page "/anydrop"
+@using MingYue.Models
+@using MingYue.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject IAnydropService AnydropService
+@inject IFileUploadService FileUploadService
+@inject IFileManagementService FileManagementService
+@inject IToastService ToastService
+@inject ILogger<Anydrop> Logger
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<PageTitle>Anydrop - MingYue</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" Style="height: 100%; padding: 20px;">
+    <!-- Device Info Header -->
+    <FluentCard Style="padding: 20px;">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.DeviceMeetingRoom())" Color="Color.Accent" />
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                <FluentLabel Typo="Typography.Subject" Style="font-weight: 600;">@deviceName</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">设备 ID: @deviceId</FluentLabel>
+            </FluentStack>
+            <FluentSpacer />
+            <FluentButton Appearance="Appearance.Accent" OnClick="@OpenSendMessageDialog">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Send())" />
+                发送消息
+            </FluentButton>
+        </FluentStack>
+    </FluentCard>
+
+    <!-- Messages List -->
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="flex: 1; overflow-y: auto;">
+        @if (isLoading)
+        {
+            <FluentStack HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="flex: 1;">
+                <FluentProgressRing />
+            </FluentStack>
+        }
+        else if (messages.Count == 0)
+        {
+            <!-- Empty State -->
+            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="flex: 1;" VerticalGap="15">
+                <FluentIcon Value="@(new Icons.Regular.Size48.ChatEmpty())" Color="Color.Custom" CustomColor="var(--neutral-foreground-hint)" />
+                <FluentLabel Typo="Typography.Subject" Style="color: var(--neutral-foreground-hint);">暂无消息</FluentLabel>
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">点击"发送消息"开始跨设备分享</FluentLabel>
+            </FluentStack>
+        }
+        else
+        {
+            @foreach (var message in messages)
+            {
+                <FluentCard Style="@GetMessageCardStyle(message)">
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                        <!-- Message Header -->
+                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.Phone())" Color="Color.Accent" />
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
+                                    <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">@message.SenderDeviceName</FluentLabel>
+                                    <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">@message.SenderDeviceId</FluentLabel>
+                                </FluentStack>
+                                @if (!message.IsRead)
+                                {
+                                    <FluentBadge Fill="important" BackgroundColor="red" Color="white" Circular="true">新</FluentBadge>
+                                }
+                            </FluentStack>
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">@GetRelativeTime(message.CreatedAt)</FluentLabel>
+                                @if (!message.IsRead)
+                                {
+                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => MarkMessageAsRead(message.Id))" title="标记为已读">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.MailRead())" />
+                                    </FluentButton>
+                                }
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteMessage(message.Id))" title="删除">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                </FluentButton>
+                            </FluentStack>
+                        </FluentStack>
+
+                        <!-- Message Content -->
+                        @if (!string.IsNullOrWhiteSpace(message.Content))
+                        {
+                            <FluentLabel Typo="Typography.Body" Style="white-space: pre-wrap; word-break: break-word;">@message.Content</FluentLabel>
+                        }
+
+                        <!-- Attachments -->
+                        @if (message.Attachments?.Any() == true)
+                        {
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                                <FluentDivider />
+                                <FluentLabel Typo="Typography.Body" Style="font-weight: 600; font-size: 12px; color: var(--neutral-foreground-hint);">附件 (@message.Attachments.Count)</FluentLabel>
+                                @foreach (var attachment in message.Attachments)
+                                {
+                                    <FluentCard Style="background: var(--neutral-layer-2); padding: 12px;">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                                <FluentIcon Value="@GetFileIcon(attachment.FileName)" />
+                                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
+                                                    <FluentLabel Typo="Typography.Body" Style="font-weight: 500;">@attachment.FileName</FluentLabel>
+                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 11px; color: var(--neutral-foreground-hint);">@FormatFileSize(attachment.FileSize)</FluentLabel>
+                                                </FluentStack>
+                                            </FluentStack>
+                                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DownloadAttachment(attachment))">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                                下载
+                                            </FluentButton>
+                                        </FluentStack>
+                                    </FluentCard>
+                                }
+                            </FluentStack>
+                        }
+                    </FluentStack>
+                </FluentCard>
+            }
+        }
+    </FluentStack>
+</FluentStack>
+
+<!-- Send Message Dialog -->
+<FluentDialog @ref="sendMessageDialog" @bind-Hidden="@isSendDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 600px; max-width: 800px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Send())" />
+            <FluentLabel Typo="Typography.PaneHeader">发送消息</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentTextArea 
+                @bind-Value="newMessageContent"
+                Label="消息内容"
+                Placeholder="输入消息内容..."
+                Style="width: 100%;"
+                Rows="5"
+                Resize="TextAreaResize.Vertical" />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">附件</FluentLabel>
+                
+                <!-- File Upload Area -->
+                <FluentInputFile 
+                    @ref="fileInput"
+                    Multiple="true"
+                    OnCompleted="@OnFilesSelected"
+                    MaximumFileCount="10"
+                    MaximumFileSize="@(1024 * 1024 * 100)"
+                    Accept="*/*"
+                    DragDropZoneVisible="true"
+                    Mode="InputFileMode.Stream">
+                    <ChildContent>
+                        <FluentIcon Value="@(new Icons.Regular.Size24.ArrowUpload())" />
+                        <FluentLabel Typo="Typography.Body">拖拽文件到此处或点击选择文件</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Style="font-size: 11px; color: var(--neutral-foreground-hint);">最多10个文件，每个最大100MB</FluentLabel>
+                    </ChildContent>
+                </FluentInputFile>
+
+                <!-- Selected Files List -->
+                @if (selectedFiles.Any())
+                {
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="6" Style="margin-top: 8px;">
+                        @foreach (var file in selectedFiles)
+                        {
+                            <FluentCard Style="background: var(--neutral-layer-2); padding: 10px;">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                        <FluentIcon Value="@GetFileIcon(file.Name)" />
+                                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
+                                            <FluentLabel Typo="Typography.Body">@file.Name</FluentLabel>
+                                            <FluentLabel Typo="Typography.Body" Style="font-size: 11px; color: var(--neutral-foreground-hint);">@FormatFileSize(file.Size)</FluentLabel>
+                                        </FluentStack>
+                                    </FluentStack>
+                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => RemoveFile(file))">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Dismiss())" Color="@Color.Error" />
+                                    </FluentButton>
+                                </FluentStack>
+                            </FluentCard>
+                        }
+                    </FluentStack>
+                }
+            </FluentStack>
+
+            @if (isUploading)
+            {
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+                    <FluentLabel Typo="Typography.Body">正在上传...</FluentLabel>
+                    <FluentProgress />
+                </FluentStack>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SendMessage" Disabled="@(isUploading || (string.IsNullOrWhiteSpace(newMessageContent) && !selectedFiles.Any()))">
+            <FluentIcon Value="@(new Icons.Regular.Size16.Send())" />
+            发送
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseSendMessageDialog" Disabled="@isUploading">
+            取消
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private const string ANYDROP_UPLOAD_PATH = "/var/lib/mingyue/anydrop";
+    
+    private FluentDialog? sendMessageDialog;
+    private FluentInputFile? fileInput;
+    private bool isSendDialogHidden = true;
+    private bool isLoading = true;
+    private bool isUploading = false;
+
+    private string deviceId = string.Empty;
+    private string deviceName = string.Empty;
+    private List<AnydropMessage> messages = new();
+    
+    private string newMessageContent = string.Empty;
+    private List<FluentInputFileEventArgs> selectedFiles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            deviceId = AnydropService.GetDeviceId();
+            deviceName = AnydropService.GetDeviceName();
+            
+            AnydropService.MessagesChanged += OnMessagesChanged;
+            
+            await LoadMessagesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing Anydrop page");
+            ToastService.ShowError("加载失败，请刷新页面重试");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadMessagesAsync()
+    {
+        try
+        {
+            messages = await AnydropService.GetAllMessagesAsync();
+            messages = messages.OrderByDescending(m => m.CreatedAt).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading messages");
+            ToastService.ShowError("加载消息失败");
+        }
+    }
+
+    private void OnMessagesChanged(object? sender, EventArgs e)
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadMessagesAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void OpenSendMessageDialog()
+    {
+        newMessageContent = string.Empty;
+        selectedFiles.Clear();
+        isSendDialogHidden = false;
+    }
+
+    private void CloseSendMessageDialog()
+    {
+        isSendDialogHidden = true;
+        newMessageContent = string.Empty;
+        selectedFiles.Clear();
+    }
+
+    private void OnFilesSelected(IEnumerable<FluentInputFileEventArgs> files)
+    {
+        foreach (var file in files)
+        {
+            if (!selectedFiles.Any(f => f.Name == file.Name))
+            {
+                selectedFiles.Add(file);
+            }
+        }
+    }
+
+    private void RemoveFile(FluentInputFileEventArgs file)
+    {
+        selectedFiles.Remove(file);
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(newMessageContent) && !selectedFiles.Any())
+        {
+            ToastService.ShowWarning("请输入消息内容或选择附件");
+            return;
+        }
+
+        try
+        {
+            isUploading = true;
+            StateHasChanged();
+
+            // Create message
+            var message = await AnydropService.CreateMessageAsync(
+                newMessageContent ?? string.Empty,
+                deviceId,
+                deviceName
+            );
+
+            // Upload attachments if any
+            if (selectedFiles.Any())
+            {
+                foreach (var file in selectedFiles)
+                {
+                    try
+                    {
+                        // Create unique filename
+                        var fileName = $"{DateTime.UtcNow:yyyyMMddHHmmssfff}_{file.Name}";
+                        var filePath = Path.Combine(ANYDROP_UPLOAD_PATH, fileName);
+
+                        // Ensure directory exists
+                        Directory.CreateDirectory(ANYDROP_UPLOAD_PATH);
+
+                        // Upload file
+                        var stream = file.Stream;
+                        if (stream != null)
+                        {
+                            var success = await FileUploadService.UploadFileAsync(ANYDROP_UPLOAD_PATH, stream, fileName);
+                            
+                            if (success)
+                            {
+                                // Add attachment to message
+                                await AnydropService.AddAttachmentAsync(
+                                    message.Id,
+                                    file.Name,
+                                    filePath,
+                                    file.Size,
+                                    file.ContentType
+                                );
+                            }
+                            else
+                            {
+                                Logger.LogWarning("Failed to upload file: {FileName}", file.Name);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Error uploading file: {FileName}", file.Name);
+                    }
+                }
+            }
+
+            ToastService.ShowSuccess("消息发送成功");
+            CloseSendMessageDialog();
+            await LoadMessagesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error sending message");
+            ToastService.ShowError("发送消息失败");
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarkMessageAsRead(int messageId)
+    {
+        try
+        {
+            await AnydropService.MarkAsReadAsync(messageId);
+            await LoadMessagesAsync();
+            ToastService.ShowSuccess("已标记为已读");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error marking message as read");
+            ToastService.ShowError("操作失败");
+        }
+    }
+
+    private async Task DeleteMessage(int messageId)
+    {
+        try
+        {
+            await AnydropService.DeleteMessageAsync(messageId);
+            await LoadMessagesAsync();
+            ToastService.ShowSuccess("消息已删除");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting message");
+            ToastService.ShowError("删除失败");
+        }
+    }
+
+    private async Task DownloadAttachment(AnydropAttachment attachment)
+    {
+        try
+        {
+            // Read file data from disk
+            var fileData = await FileManagementService.DownloadFileAsync(attachment.FilePath);
+            
+            // Convert to base64 and trigger download via JavaScript
+            await JSRuntime.InvokeVoidAsync("downloadFile", attachment.FileName, Convert.ToBase64String(fileData));
+            ToastService.ShowSuccess("正在下载文件");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error downloading attachment: {FilePath}", attachment.FilePath);
+            ToastService.ShowError("下载失败");
+        }
+    }
+
+    private string GetMessageCardStyle(AnydropMessage message)
+    {
+        var baseStyle = "padding: 16px; transition: all 0.3s ease;";
+        if (!message.IsRead)
+        {
+            return baseStyle + " border-left: 4px solid var(--accent-fill-rest); background: var(--neutral-layer-2);";
+        }
+        return baseStyle;
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var localTime = dateTime.ToLocalTime();
+        var now = DateTime.Now;
+        var diff = now - localTime;
+
+        if (diff.TotalSeconds < 60)
+            return "刚刚";
+        
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}分钟前";
+        
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}小时前";
+        
+        if (diff.TotalDays < 2)
+            return "昨天";
+        
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}天前";
+        
+        return localTime.ToString("yyyy-MM-dd HH:mm");
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private Icon GetFileIcon(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        
+        return extension switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".svg" or ".webp" => new Icons.Regular.Size20.Image(),
+            ".mp4" or ".avi" or ".mov" or ".wmv" or ".flv" or ".mkv" => new Icons.Regular.Size20.Video(),
+            ".mp3" or ".wav" or ".flac" or ".aac" or ".ogg" => new Icons.Regular.Size20.MusicNote2(),
+            ".pdf" => new Icons.Regular.Size20.DocumentPdf(),
+            ".doc" or ".docx" => new Icons.Regular.Size20.DocumentText(),
+            ".xls" or ".xlsx" => new Icons.Regular.Size20.DocumentTable(),
+            ".ppt" or ".pptx" => new Icons.Regular.Size20.SlideText(),
+            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" => new Icons.Regular.Size20.FolderZip(),
+            ".txt" or ".log" => new Icons.Regular.Size20.DocumentText(),
+            ".html" or ".css" or ".js" or ".ts" or ".json" or ".xml" => new Icons.Regular.Size20.Code(),
+            _ => new Icons.Regular.Size20.Document()
+        };
+    }
+
+    public void Dispose()
+    {
+        AnydropService.MessagesChanged -= OnMessagesChanged;
+    }
+}

@@ -32,7 +32,13 @@ builder.Services.AddScoped<IDiskManagementService, DiskManagementService>();
 builder.Services.AddScoped<IShareManagementService, ShareManagementService>();
 builder.Services.AddScoped<IDockerManagementService, DockerManagementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
+builder.Services.AddScoped<IScheduledTaskService, ScheduledTaskService>();
+builder.Services.AddScoped<IAnydropService, AnydropService>();
 builder.Services.AddScoped<AuthenticationStateService>();
+
+// Add background services
+builder.Services.AddHostedService<ScheduledTaskExecutorService>();
 var app = builder.Build();
 
 // Apply database migrations automatically

@@ -96,6 +96,10 @@ namespace MingYue.Services
                         return await ExecuteScriptTaskAsync(task);
                     case "http":
                         return await ExecuteHttpTaskAsync(task);
+                    case "fileindex":
+                        return await ExecuteFileIndexTaskAsync(task);
+                    case "anydropmigration":
+                        return await ExecuteAnydropMigrationTaskAsync(task);
                     default:
                         return (false, "", $"Unknown task type: {task.TaskType}");
                 }
@@ -238,6 +242,130 @@ namespace MingYue.Services
             {
                 return (false, "", ex.Message);
             }
+        }
+
+        private async Task<(bool Success, string Output, string ErrorMessage)> ExecuteFileIndexTaskAsync(ScheduledTask task)
+        {
+            try
+            {
+                var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
+                if (taskData == null || !taskData.ContainsKey("path"))
+                {
+                    return (false, "", "Invalid task data: missing 'path' field");
+                }
+
+                var path = taskData["path"];
+                var recursive = taskData.ContainsKey("recursive") && taskData["recursive"].ToLowerInvariant() == "true";
+
+                // Get FileIndexService from service provider
+                using var scope = _serviceProvider.CreateScope();
+                var fileIndexService = scope.ServiceProvider.GetService<IFileIndexService>();
+                
+                if (fileIndexService == null)
+                {
+                    return (false, "", "FileIndexService not available");
+                }
+
+                // Index files
+                var startTime = DateTime.UtcNow;
+                await fileIndexService.IndexDirectoryAsync(path, recursive);
+                var duration = (DateTime.UtcNow - startTime).TotalSeconds;
+
+                var output = $"File indexing completed for path: {path}\n";
+                output += $"Recursive: {recursive}\n";
+                output += $"Duration: {duration:F2} seconds";
+
+                return (true, output, "");
+            }
+            catch (Exception ex)
+            {
+                return (false, "", ex.Message);
+            }
+        }
+
+        private async Task<(bool Success, string Output, string ErrorMessage)> ExecuteAnydropMigrationTaskAsync(ScheduledTask task)
+        {
+            try
+            {
+                var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
+                if (taskData == null || !taskData.ContainsKey("daysToKeep"))
+                {
+                    return (false, "", "Invalid task data: missing 'daysToKeep' field");
+                }
+
+                if (!int.TryParse(taskData["daysToKeep"], out int daysToKeep))
+                {
+                    return (false, "", "Invalid daysToKeep value: must be an integer");
+                }
+
+                // Get services from service provider
+                using var scope = _serviceProvider.CreateScope();
+                var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<MingYueDbContext>>();
+                
+                using var context = await contextFactory.CreateDbContextAsync();
+                var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);
+                
+                // Find old messages
+                var oldMessages = await context.AnydropMessages
+                    .Include(m => m.Attachments)
+                    .Where(m => m.CreatedAt < cutoffDate && m.IsRead)
+                    .ToListAsync();
+
+                var messageCount = oldMessages.Count;
+                var attachmentCount = 0;
+                long totalSize = 0;
+
+                // Delete old messages and their attachments
+                foreach (var message in oldMessages)
+                {
+                    foreach (var attachment in message.Attachments)
+                    {
+                        attachmentCount++;
+                        totalSize += attachment.FileSize;
+                        
+                        // Delete physical file
+                        try
+                        {
+                            if (File.Exists(attachment.FilePath))
+                            {
+                                File.Delete(attachment.FilePath);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to delete file: {FilePath}", attachment.FilePath);
+                        }
+                    }
+                    
+                    context.AnydropMessages.Remove(message);
+                }
+
+                await context.SaveChangesAsync();
+
+                var output = $"Anydrop migration completed\n";
+                output += $"Deleted {messageCount} messages older than {daysToKeep} days\n";
+                output += $"Removed {attachmentCount} attachments\n";
+                output += $"Freed {FormatFileSize(totalSize)} of disk space";
+
+                return (true, output, "");
+            }
+            catch (Exception ex)
+            {
+                return (false, "", ex.Message);
+            }
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
         }
 
         private DateTime? CalculateNextRunTime(string cronExpression)

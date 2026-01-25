@@ -143,6 +143,36 @@
                     Rows="5"
                     Resize="TextAreaResize.Vertical" />
                 
+                @if (!string.IsNullOrEmpty(currentTask?.TaskType))
+                {
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="5" Style="margin-top: -10px; padding: 10px; background-color: var(--neutral-layer-2); border-radius: 4px;">
+                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">@currentTask.TaskType 任务数据示例：</small>
+                        @if (currentTask.TaskType == "FileIndex")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"path": "/path/to/directory", "recursive": "true"}</code></small>
+                            <small style="color: var(--neutral-foreground-hint);">• path: 要索引的目录路径</small>
+                            <small style="color: var(--neutral-foreground-hint);">• recursive: 是否递归索引子目录（true/false）</small>
+                        }
+                        else if (currentTask.TaskType == "AnydropMigration")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"daysToKeep": "30"}</code></small>
+                            <small style="color: var(--neutral-foreground-hint);">• daysToKeep: 保留最近N天的已读消息，超过此天数的将被删除</small>
+                        }
+                        else if (currentTask.TaskType == "Command")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"command": "ls -la", "workingDirectory": "/tmp"}</code></small>
+                        }
+                        else if (currentTask.TaskType == "Script")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"script": "#!/bin/bash\necho 'Hello'", "interpreter": "/bin/bash"}</code></small>
+                        }
+                        else if (currentTask.TaskType == "Http")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"url": "https://api.example.com", "method": "GET"}</code></small>
+                        }
+                    </FluentStack>
+                }
+                
                 <div>
                     <FluentTextField 
                         @bind-Value="currentTask!.CronExpression"
@@ -364,7 +394,7 @@
     private List<ScheduledTaskExecutionHistory> executionHistory = new();
     private ScheduledTaskExecutionHistory? selectedHistory;
     
-    private readonly string[] taskTypes = new[] { "Script", "Command", "Http" };
+    private readonly string[] taskTypes = new[] { "Script", "Command", "Http", "FileIndex", "AnydropMigration" };
     
     private FluentDialog? taskDialog;
     private FluentDialog? deleteDialog;
@@ -386,6 +416,8 @@
             "Script" => "Script - 脚本执行",
             "Command" => "Command - 命令执行",
             "Http" => "Http - HTTP请求",
+            "FileIndex" => "FileIndex - 文件索引",
+            "AnydropMigration" => "AnydropMigration - Anydrop清理",
             _ => type
         };
     }

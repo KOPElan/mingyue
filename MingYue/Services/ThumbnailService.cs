@@ -64,6 +64,14 @@ namespace MingYue.Services
                     return null;
                 }
 
+                // Check if file is too large for thumbnail generation (e.g., > 50MB)
+                var fileInfo = new FileInfo(filePath);
+                if (fileInfo.Length > 50 * 1024 * 1024) // 50MB limit
+                {
+                    _logger.LogWarning("File too large for thumbnail generation: {FilePath} ({Size} bytes)", filePath, fileInfo.Length);
+                    return null;
+                }
+
                 // Generate thumbnail
                 byte[] thumbnailData;
                 using (var image = await Image.LoadAsync(filePath))
@@ -122,7 +130,7 @@ namespace MingYue.Services
                 if (string.IsNullOrEmpty(filePath))
                 {
                     // Clear all thumbnails
-                    await context.Database.ExecuteSqlRawAsync("DELETE FROM Thumbnails");
+                    await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM Thumbnails");
                     _logger.LogInformation("All thumbnail cache cleared");
                 }
                 else

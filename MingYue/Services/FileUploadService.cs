@@ -15,7 +15,15 @@ namespace MingYue.Services
         {
             try
             {
-                var fullPath = Path.Combine(targetPath, fileName);
+                // Sanitize filename to prevent path traversal
+                var sanitizedFileName = SanitizeFileName(fileName);
+                if (string.IsNullOrEmpty(sanitizedFileName))
+                {
+                    _logger.LogWarning("Invalid filename rejected: {FileName}", fileName);
+                    return false;
+                }
+
+                var fullPath = Path.Combine(targetPath, sanitizedFileName);
                 
                 // Ensure target directory exists
                 var directory = Path.GetDirectoryName(fullPath);
@@ -70,6 +78,23 @@ namespace MingYue.Services
                 _logger.LogError(ex, "Error deleting uploaded file: {FilePath}", filePath);
                 return false;
             }
+        }
+
+        private static string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return string.Empty;
+
+            // Remove path separators and traversal attempts
+            if (fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\"))
+                return string.Empty;
+
+            // Remove invalid characters
+            var invalidChars = Path.GetInvalidFileNameChars();
+            if (invalidChars.Any(c => fileName.Contains(c)))
+                return string.Empty;
+
+            return fileName;
         }
     }
 }

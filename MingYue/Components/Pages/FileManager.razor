@@ -418,7 +418,7 @@
     private List<FileItemInfo> searchResults = new();
     private List<FavoriteFolder> favoriteFolders = new();
     private bool isLoading = true;
-    private bool showFavorites = true;
+    private readonly bool showFavorites = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
     private (long total, long available) storageInfo;
@@ -565,12 +565,16 @@
         if (string.IsNullOrEmpty(currentPath) || currentPath == "/") return segments;
 
         var parts = currentPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-        var path = string.Empty;
+        var pathBuilder = new System.Text.StringBuilder();
         
         foreach (var part in parts)
         {
-            path += (path.Length > 0 ? "/" : "") + part;
-            segments.Add((part, path));
+            if (pathBuilder.Length > 0)
+            {
+                pathBuilder.Append('/');
+            }
+            pathBuilder.Append(part);
+            segments.Add((part, pathBuilder.ToString()));
         }
         
         return segments;
@@ -594,6 +598,16 @@
         if (string.IsNullOrWhiteSpace(newFolderName))
         {
             ToastService.ShowWarning("Please enter a folder name");
+            return;
+        }
+
+        // Validate folder name for path traversal attempts
+        if (newFolderName.Contains("..") || 
+            newFolderName.Contains("/") || 
+            newFolderName.Contains("\\") ||
+            Path.GetInvalidFileNameChars().Any(c => newFolderName.Contains(c)))
+        {
+            ToastService.ShowError("Invalid folder name. Please avoid special characters and path separators.");
             return;
         }
 
@@ -761,6 +775,17 @@
         {
             foreach (var file in selectedFiles)
             {
+                // Validate filename for path traversal attempts
+                if (string.IsNullOrWhiteSpace(file.Name) || 
+                    file.Name.Contains("..") || 
+                    file.Name.Contains("/") || 
+                    file.Name.Contains("\\") ||
+                    Path.GetInvalidFileNameChars().Any(c => file.Name.Contains(c)))
+                {
+                    ToastService.ShowError($"Invalid filename: {file.Name}");
+                    continue;
+                }
+
                 uploadProgress = $"{uploadedCount + 1} / {selectedFiles.Count}";
                 StateHasChanged();
 
@@ -798,6 +823,13 @@
 
         try
         {
+            // Check file size before loading (e.g., warn if > 10MB)
+            var fileInfo = new System.IO.FileInfo(file.Path);
+            if (fileInfo.Length > 10 * 1024 * 1024) // 10MB limit for preview
+            {
+                ToastService.ShowWarning($"File is large ({fileInfo.Length / 1024 / 1024}MB). Preview may be slow.");
+            }
+
             var imageData = await FileService.DownloadFileAsync(file.Path);
             var base64 = Convert.ToBase64String(imageData);
             var mimeType = GetMimeType(file.Extension);

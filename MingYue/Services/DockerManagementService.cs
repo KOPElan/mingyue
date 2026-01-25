@@ -40,22 +40,52 @@ namespace MingYue.Services
 
                 var containers = new List<DockerContainerInfo>();
                 
+                // Helper to safely get string properties
+                static string GetStringProperty(JsonElement element, string propertyName)
+                {
+                    if (element.TryGetProperty(propertyName, out var property) &&
+                        property.ValueKind == JsonValueKind.String)
+                    {
+                        return property.GetString() ?? string.Empty;
+                    }
+                    return string.Empty;
+                }
+
+                // Helper to safely get CreatedAt as DateTime from a Unix timestamp
+                static DateTime GetCreatedAt(JsonElement element)
+                {
+                    if (element.TryGetProperty("CreatedAt", out var property) &&
+                        property.ValueKind == JsonValueKind.Number &&
+                        property.TryGetInt64(out var seconds))
+                    {
+                        return DateTimeOffset.FromUnixTimeSeconds(seconds).DateTime;
+                    }
+                    return DateTime.MinValue;
+                }
+
                 // Docker outputs one JSON object per line
                 foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
                 {
                     try
                     {
                         var json = JsonSerializer.Deserialize<JsonElement>(line);
+                        var id = GetStringProperty(json, "ID");
+                        var name = GetStringProperty(json, "Names");
+                        if (!string.IsNullOrEmpty(name) && name.StartsWith('/'))
+                        {
+                            name = name.TrimStart('/');
+                        }
+
                         containers.Add(new DockerContainerInfo
                         {
-                            Id = json.GetProperty("ID").GetString() ?? string.Empty,
-                            Name = json.GetProperty("Names").GetString()?.TrimStart('/') ?? string.Empty,
-                            Image = json.GetProperty("Image").GetString() ?? string.Empty,
-                            Status = json.GetProperty("Status").GetString() ?? string.Empty,
-                            State = json.GetProperty("State").GetString() ?? string.Empty,
-                            Created = DateTimeOffset.FromUnixTimeSeconds(json.GetProperty("CreatedAt").GetInt64()).DateTime,
-                            Ports = ParsePorts(json.GetProperty("Ports").GetString() ?? string.Empty),
-                            Labels = ParseLabels(json.GetProperty("Labels").GetString() ?? string.Empty)
+                            Id = id,
+                            Name = name,
+                            Image = GetStringProperty(json, "Image"),
+                            Status = GetStringProperty(json, "Status"),
+                            State = GetStringProperty(json, "State"),
+                            Created = GetCreatedAt(json),
+                            Ports = ParsePorts(GetStringProperty(json, "Ports")),
+                            Labels = ParseLabels(GetStringProperty(json, "Labels"))
                         });
                     }
                     catch (Exception ex)
@@ -171,12 +201,17 @@ namespace MingYue.Services
             var psi = new ProcessStartInfo
             {
                 FileName = "docker",
-                Arguments = string.Join(" ", args),
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+
+            // Use ArgumentList for safer command execution
+            foreach (var arg in args)
+            {
+                psi.ArgumentList.Add(arg);
+            }
 
             using var process = new Process { StartInfo = psi };
             process.Start();

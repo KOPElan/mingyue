@@ -440,14 +440,9 @@
             if (editingShare == null)
             {
                 // Add new share
-                if (currentShare.Type == ShareType.CIFS)
-                {
-                    result = await ShareService.AddCifsShareAsync(currentShare);
-                }
-                else
-                {
-                    result = await ShareService.AddNfsShareAsync(currentShare);
-                }
+                result = currentShare.Type == ShareType.CIFS
+                    ? await ShareService.AddCifsShareAsync(currentShare)
+                    : await ShareService.AddNfsShareAsync(currentShare);
 
                 if (result.Success)
                 {
@@ -457,14 +452,9 @@
             else
             {
                 // Update existing share
-                if (currentShare.Type == ShareType.CIFS)
-                {
-                    result = await ShareService.UpdateCifsShareAsync(editingShare.Name, currentShare);
-                }
-                else
-                {
-                    result = await ShareService.UpdateNfsShareAsync(editingShare.Path, currentShare);
-                }
+                result = currentShare.Type == ShareType.CIFS
+                    ? await ShareService.UpdateCifsShareAsync(editingShare.Name, currentShare)
+                    : await ShareService.UpdateNfsShareAsync(editingShare.Path, currentShare);
 
                 if (result.Success)
                 {
@@ -507,16 +497,9 @@
 
         try
         {
-            OperationResult result;
-
-            if (shareToDelete.Type == ShareType.CIFS)
-            {
-                result = await ShareService.RemoveCifsShareAsync(shareToDelete.Name);
-            }
-            else
-            {
-                result = await ShareService.RemoveNfsShareAsync(shareToDelete.Path);
-            }
+            var result = shareToDelete.Type == ShareType.CIFS
+                ? await ShareService.RemoveCifsShareAsync(shareToDelete.Name)
+                : await ShareService.RemoveNfsShareAsync(shareToDelete.Path);
 
             if (result.Success)
             {

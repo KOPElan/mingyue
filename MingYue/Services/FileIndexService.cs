@@ -104,8 +104,14 @@ namespace MingYue.Services
                         .ToListAsync();
                 }
 
-                // Simple wildcard search
-                var pattern = searchPattern.Replace("*", "%").Replace("?", "_");
+                // Escape SQL LIKE special characters before wildcard replacement
+                var escapedPattern = searchPattern
+                    .Replace("[", "[[]")
+                    .Replace("%", "[%]")
+                    .Replace("_", "[_]");
+
+                // Simple wildcard search - replace * with % and ? with _
+                var pattern = escapedPattern.Replace("*", "%").Replace("?", "_");
 
                 return await context.FileIndexes
                     .Where(f => EF.Functions.Like(f.FileName, $"%{pattern}%"))
@@ -148,7 +154,7 @@ namespace MingYue.Services
             try
             {
                 await using var context = await _dbContextFactory.CreateDbContextAsync();
-                await context.Database.ExecuteSqlRawAsync("DELETE FROM FileIndexes");
+                await context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM FileIndexes");
                 _logger.LogInformation("File index cleared");
             }
             catch (Exception ex)

@@ -32,10 +32,13 @@
             
             <FluentSpacer></FluentSpacer>
             
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Alert())"></FluentIcon>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/scheduled-tasks"))" Title="计划任务">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.CalendarClock())"></FluentIcon>
                 </FluentButton>
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/anydrop"))" Title="Anydrop">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.ShareAndroid())"></FluentIcon>
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="系统设置">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
                 </FluentButton>                                
                 @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)

@@ -19,14 +19,7 @@
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">Share Management</h2>
-        <FluentSpacer />
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.CIFS))">
-            <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
-            Add Share
-        </FluentButton>
-    </FluentStack>
+    <h2 style="margin: 0;">Share Management</h2>
 
     @if (isLoading)
     {

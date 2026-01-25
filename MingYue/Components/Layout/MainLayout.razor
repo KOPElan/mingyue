@@ -9,22 +9,35 @@
 @implements IDisposable
 
 <FluentDesignTheme @bind-Mode="@Settings.Mode" @bind-OfficeColor="@Settings.OfficeColor" StorageName="theme" />
-
-@if (IsHomePage)
-{
-    <!-- Home page with custom layout -->
-    @Body
-}
-else
-{
+<!-- Background Effects -->
+<div class="home-bg-effects">
+    <div class="bg-gradient-blob bg-gradient-blob-1"></div>
+    <div class="bg-gradient-blob bg-gradient-blob-2"></div>
+    <div class="bg-gradient-blob bg-gradient-blob-3"></div>
+    <div class="bg-grid-pattern"></div>
+</div>
     <!-- Standard layout for other pages -->
-    <FluentMainLayout>
-        <Header>
-            <FluentStack>
-                明月 Portal
-            </FluentStack>
-            <FluentSpacer />
-            <FluentStack HorizontalAlignment="HorizontalAlignment.Right" VerticalGap="10">
+    <FluentLayout>    
+        <!-- Header -->
+        <div class="home-header">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
+                <div class="home-logo">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.GridDots())" Color="Color.Accent" />
+                </div>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0">
+                    <FluentLabel Typo="Typography.Body" Class="home-title-main">MingYue</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
+                </FluentStack>
+            
+            <FluentSpacer></FluentSpacer>
+            
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Alert())"></FluentIcon>
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
+                </FluentButton>                                
                 @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
                 {
                     <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>
@@ -36,15 +49,14 @@ else
                         <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
                     </FluentButton>
                 }
-                <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="@Color.Fill"></FluentIcon>
-                <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="@Color.Fill" Title="设置" @onclick="OpenSetting" />
-            </FluentStack>
-        </Header>
-        <Body>
+            </FluentStack>            
+        </FluentStack>     
+    </div>
+        <div class="home-content">
             @Body
-        </Body>
-    </FluentMainLayout>
-}
+        </div>        
+    </FluentLayout>
+
 
 <FluentToastProvider />
 <FluentDialogProvider />
@@ -59,8 +71,7 @@ else
 
 @code {
     public SettingModel Settings { get; set; } = new();
-    private string _currentPath = "";
-    private bool IsHomePage => _currentPath == "" || _currentPath == "/";
+    private string _currentPath = "";    
 
     protected override void OnInitialized()
     {

@@ -10,47 +10,16 @@
 
 <PageTitle>MingYue - Home Server Portal</PageTitle>
 
-<div class="home-page">
-    <!-- Background Effects -->
-    <div class="home-bg-effects">
-        <div class="bg-gradient-blob bg-gradient-blob-1"></div>
-        <div class="bg-gradient-blob bg-gradient-blob-2"></div>
-        <div class="bg-gradient-blob bg-gradient-blob-3"></div>
-        <div class="bg-grid-pattern"></div>
-    </div>
-
-    <!-- Main Content Container -->
-    <FluentStack Orientation="Orientation.Vertical" Class="home-content">
-        <!-- Header -->
-        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-header">
-            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
-                <div class="home-logo">
-                    <FluentIcon Value="@(new Icons.Regular.Size24.GridDots())" Color="Color.Accent" />
-                </div>
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0">
-                    <FluentLabel Typo="Typography.Body" Class="home-title-main">My Portal</FluentLabel>
-                    <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
-                </FluentStack>
-            </FluentStack>
-            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Search())" />
-                </FluentButton>
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
-                </FluentButton>
-                <div class="home-user-avatar"></div>
-            </FluentStack>
-        </FluentStack>
-
-        <!-- Clock Section -->
-        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="home-clock-section">
-            <div class="home-clock">@TimeNow</div>
-            <FluentLabel Typo="Typography.Body" Class="home-date">@DateNow</FluentLabel>
-        </FluentStack>
-
-        <!-- Info Cards -->
-        <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="24" Class="home-info-cards">
+<!-- Main Content Container -->
+<FluentStack Orientation="Orientation.Vertical" Class="home-content">
+    <!-- Clock Section -->
+    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="home-clock-section">
+        <div class="home-clock">@TimeNow</div>
+        <FluentLabel Typo="Typography.Body" Class="home-date">@DateNow</FluentLabel>
+    </FluentStack>
+    <!-- Info Cards -->
+    <FluentGrid Justify="JustifyContent.Center" Class="home-info-cards" Style="width:100%">
+        <FluentGridItem sm="4">
             <!-- Weather Card -->
             <FluentCard Class="info-card info-card-weather">
                 <div class="info-card-glow weather-glow"></div>
@@ -68,7 +37,8 @@
                     </FluentStack>
                 </FluentStack>
             </FluentCard>
-
+        </FluentGridItem>
+        <FluentGridItem sm="4">
             <!-- System Monitor Card -->
             <FluentCard Class="info-card info-card-system">
                 <div class="info-card-glow system-glow"></div>
@@ -95,7 +65,8 @@
                     </FluentStack>
                 </FluentStack>
             </FluentCard>
-
+        </FluentGridItem>
+        <FluentGridItem sm="4">
             <!-- Network Status Card -->
             <FluentCard Class="info-card info-card-network">
                 <div class="info-card-glow network-glow"></div>
@@ -118,69 +89,70 @@
                     </FluentStack>
                 </FluentStack>
             </FluentCard>
-        </FluentStack>
+        </FluentGridItem>
+    </FluentGrid>
 
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" Class="home-applications">
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-section-header">
-                <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
-                <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
-            </FluentStack>
-            <div class="app-grid">
-                @foreach (var app in visibleApplications)
-                {
-                    <FluentCard Class="app-card" @onclick="@(() => Navigation.NavigateTo(app.Url, true))">
-                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
-                            <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
-                                @if (!string.IsNullOrEmpty(app.Icon))
-                                {
-                                    <FluentIcon Value="@GetIcon(app.Icon)" />
-                                }
-                                else
-                                {
-                                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
-                                }
-                            </div>
-                            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="2" Class="app-info">
-                                <FluentLabel Typo="Typography.Body" Class="app-title">@app.Title</FluentLabel>
-                                <FluentLabel Typo="Typography.Body" Class="app-category">@app.Category</FluentLabel>
-                            </FluentStack>
-                        </FluentStack>
-                    </FluentCard>
-                }
-                <FluentCard Class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" Class="home-applications">
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-section-header">
+            <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
+            <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
+        </FluentStack>
+        <div class="app-grid">
+            @foreach (var app in visibleApplications)
+            {
+                <FluentCard Class="app-card" @onclick="@(() => Navigation.NavigateTo(app.Url, true))">
                     <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
-                        <div class="app-icon app-icon-add">
-                            <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
+                        <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
+                            @if (!string.IsNullOrEmpty(app.Icon))
+                            {
+                                <FluentIcon Value="@GetIcon(app.Icon)" />
+                            }
+                            else
+                            {
+                                <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+                            }
                         </div>
-                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
-                            <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="2" Class="app-info">
+                            <FluentLabel Typo="Typography.Body" Class="app-title">@app.Title</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="app-category">@app.Category</FluentLabel>
                         </FluentStack>
                     </FluentStack>
                 </FluentCard>
-            </div>
-        </FluentStack>
+            }
+            <FluentCard Class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
+                <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
+                    <div class="app-icon app-icon-add">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
+                    </div>
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
+                        <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        </div>
     </FluentStack>
+</FluentStack>
 
-    <!-- Bottom Dock -->
-    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="8" Class="home-dock">
-        @foreach (var item in dockItems.Take(4))
-        {
-            <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" Class="dock-item" 
-                          @onclick="@(() => Navigation.NavigateTo(item.Url))" 
-                          title="@item.Title">
-                @if (!string.IsNullOrEmpty(item.Icon))
-                {
-                    <FluentIcon Value="@GetIcon(item.Icon)" />
-                }
-                else
-                {
-                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
-                }
-                <FluentTooltip Anchor="@item.ItemId" Position="TooltipPosition.Top">@item.Title</FluentTooltip>
-            </FluentButton>
-        }
-    </FluentStack>
-</div>
+<!-- Bottom Dock -->
+<FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="8" Class="home-dock">
+    @foreach (var item in dockItems.Take(4))
+    {
+        <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" Class="dock-item"
+                      @onclick="@(() => Navigation.NavigateTo(item.Url))"
+                      title="@item.Title">
+            @if (!string.IsNullOrEmpty(item.Icon))
+            {
+                <FluentIcon Value="@GetIcon(item.Icon)" />
+            }
+            else
+            {
+                <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+            }
+            <FluentTooltip Anchor="@item.ItemId" Position="TooltipPosition.Top">@item.Title</FluentTooltip>
+        </FluentButton>
+    }
+</FluentStack>
+
 
 @code {
     private string TimeNow => DateTime.Now.ToString("HH:mm");
@@ -196,7 +168,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
-        
+
         // Update time and system info every 3 seconds
         updateTimer = new System.Threading.Timer(async _ =>
         {
@@ -222,7 +194,7 @@
         try
         {
             systemInfo = await SystemMonitorService.GetSystemResourceInfoAsync();
-            
+
             // TODO: Implement proper network speed calculation with delta between time intervals
             // This is placeholder logic for demonstration purposes
             if (systemInfo.Networks.Any())

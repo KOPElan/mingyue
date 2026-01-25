@@ -398,6 +398,10 @@ FodyWeavers.xsd
 
 # VS Code files for those working on multiple tools
 .vscode/*
+
+# 忽略项目生成的输出目录（明确指定以防已被跟踪）
+/MingYue/bin/
+/MingYue/obj/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json

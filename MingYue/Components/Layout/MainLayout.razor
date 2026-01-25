@@ -5,6 +5,7 @@
 @using MingYue.Services
 @inject IDialogService DialogService
 @inject AuthenticationStateService AuthStateService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -37,6 +38,16 @@
                 </FluentButton>
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/anydrop"))" Title="Anydrop">
                     <FluentIcon Value="@(new Icons.Regular.Size20.ShareAndroid())"></FluentIcon>
+                </FluentButton>
+                <!-- Notification Button with Badge -->
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="OpenNotificationPanel" Title="通知" Style="position: relative;">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" />
+                    @if (unreadCount > 0)
+                    {
+                        <FluentBadge Appearance="Appearance.Accent" Style="position: absolute; top: 0; right: 0; min-width: 18px; height: 18px; padding: 0 4px; font-size: 10px;">
+                            @(unreadCount > 99 ? "99+" : unreadCount.ToString())
+                        </FluentBadge>
+                    }
                 </FluentButton>
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="系统设置">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
@@ -74,13 +85,27 @@
 
 @code {
     public SettingModel Settings { get; set; } = new();
-    private string _currentPath = "";    
+    private string _currentPath = "";
+    private int unreadCount = 0;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         AuthStateService.OnAuthenticationStateChanged += StateHasChanged;
         Navigation.LocationChanged += OnLocationChanged;
+        NotificationService.NotificationsChanged += OnNotificationsChanged;
         UpdateCurrentPath();
+        await UpdateUnreadCountAsync();
+    }
+
+    private async void OnNotificationsChanged(object? sender, EventArgs e)
+    {
+        await UpdateUnreadCountAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateUnreadCountAsync()
+    {
+        unreadCount = await NotificationService.GetUnreadCountAsync();
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -92,6 +117,18 @@
     private void UpdateCurrentPath()
     {
         _currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+    }
+
+    public async Task OpenNotificationPanel()
+    {
+        var dialog = await DialogService.ShowPanelAsync<NotificationPanel>(new DialogParameters()
+        {
+            Alignment = HorizontalAlignment.Right,
+            Title = "通知中心",
+            PrimaryAction = null,
+            SecondaryAction = null,
+        });
+        await dialog.Result;
     }
 
     public async Task OpenSetting()
@@ -117,5 +154,6 @@
     {
         AuthStateService.OnAuthenticationStateChanged -= StateHasChanged;
         Navigation.LocationChanged -= OnLocationChanged;
+        NotificationService.NotificationsChanged -= OnNotificationsChanged;
     }
 }

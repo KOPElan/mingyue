@@ -1,0 +1,236 @@
+@using MingYue.Models
+@using MingYue.Services
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IToastService ToastService
+@implements IDialogContentComponent
+@implements IDisposable
+
+<FluentDialogBody>
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="8" Style="width: 400px; max-height: 600px;">
+    <!-- Header -->
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+        <FluentLabel Typo="Typography.Subject" Weight="FontWeight.Bold">通知</FluentLabel>
+        @if (notifications.Any(n => !n.IsRead))
+        {
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="MarkAllAsReadAsync">
+                全部已读
+            </FluentButton>
+        }
+    </FluentStack>
+
+    <FluentDivider Style="width: 100%;" />
+
+    <!-- Notification List -->
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" Style="overflow-y: auto; max-height: 500px;">
+        @if (notifications.Any())
+        {
+            foreach (var notification in notifications)
+            {
+                <FluentCard Class="@GetNotificationCardClass(notification)" Style="padding: 12px; cursor: pointer;" @onclick="() => HandleNotificationClick(notification)">
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" HorizontalGap="12">
+                        <!-- Icon -->
+                        <div style="flex-shrink: 0;">
+                            @if (!string.IsNullOrEmpty(notification.Icon))
+                            {
+                                <FluentIcon Value="@GetIconForNotification(notification)" Color="@GetColorForType(notification.Type)" />
+                            }
+                            else
+                            {
+                                <FluentIcon Value="@GetDefaultIconForType(notification.Type)" Color="@GetColorForType(notification.Type)" />
+                            }
+                        </div>
+
+                        <!-- Content -->
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4" Style="flex: 1; min-width: 0;">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                                <FluentLabel Typo="Typography.Body" Weight="@(notification.IsRead ? FontWeight.Normal : FontWeight.Bold)" Style="word-break: break-word;">
+                                    @notification.Title
+                                </FluentLabel>
+                                @if (!notification.IsRead)
+                                {
+                                    <FluentBadge Appearance="Appearance.Accent" Circular="true" Style="width: 8px; height: 8px; min-width: 8px;" />
+                                }
+                            </FluentStack>
+                            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px; word-break: break-word;">
+                                @notification.Message
+                            </FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 11px;">
+                                @FormatRelativeTime(notification.CreatedAt)
+                            </FluentLabel>
+                        </FluentStack>
+
+                        <!-- Actions -->
+                        <FluentStack Orientation="Orientation.Horizontal" VerticalGap="4" Style="flex-shrink: 0;">
+                            @if (!notification.IsRead)
+                            {
+                                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" 
+                                            OnClick="@(() => MarkAsReadAsync(notification.Id))"
+                                            Title="标记为已读">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" />
+                                </FluentButton>
+                            }
+                            <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" 
+                                        OnClick="@(() => DeleteNotificationAsync(notification.Id))"
+                                        Title="删除">
+                                <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" />
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentCard>
+            }
+        }
+        else
+        {
+            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="padding: 40px 20px;">
+                <FluentIcon Value="@(new Icons.Regular.Size48.CheckmarkCircle())" Color="Color.Neutral" />
+                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); margin-top: 16px;">
+                    暂无通知
+                </FluentLabel>
+            </FluentStack>
+        }
+    </FluentStack>
+
+    @if (notifications.Any(n => n.IsRead))
+    {
+        <FluentDivider Style="width: 100%;" />
+        <FluentButton Appearance="Appearance.Lightweight" OnClick="ClearReadNotificationsAsync" Style="width: 100%;">
+            清除已读通知
+        </FluentButton>
+    }
+</FluentStack>
+</FluentDialogBody>
+
+@code {
+    private List<Notification> notifications = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotificationsAsync();
+        NotificationService.NotificationsChanged += OnNotificationsChanged;
+    }
+
+    private async void OnNotificationsChanged(object? sender, EventArgs e)
+    {
+        await LoadNotificationsAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        notifications = await NotificationService.GetAllNotificationsAsync();
+        notifications = notifications.OrderByDescending(n => n.CreatedAt).Take(20).ToList();
+    }
+
+    private async Task MarkAsReadAsync(int id)
+    {
+        await NotificationService.MarkAsReadAsync(id);
+    }
+
+    private async Task MarkAllAsReadAsync()
+    {
+        await NotificationService.MarkAllAsReadAsync();
+    }
+
+    private async Task DeleteNotificationAsync(int id)
+    {
+        await NotificationService.DeleteNotificationAsync(id);
+    }
+
+    private async Task ClearReadNotificationsAsync()
+    {
+        await NotificationService.DeleteAllReadAsync();
+    }
+
+    private void HandleNotificationClick(Notification notification)
+    {
+        // Mark as read
+        _ = NotificationService.MarkAsReadAsync(notification.Id);
+
+        // Navigate if action URL exists
+        if (!string.IsNullOrEmpty(notification.ActionUrl))
+        {
+            Navigation.NavigateTo(notification.ActionUrl);
+        }
+    }
+
+    private string GetNotificationCardClass(Notification notification)
+    {
+        return notification.IsRead ? "notification-card-read" : "notification-card-unread";
+    }
+
+    private Color GetColorForType(string type)
+    {
+        return type.ToLowerInvariant() switch
+        {
+            "success" => Color.Success,
+            "warning" => Color.Warning,
+            "error" => Color.Error,
+            _ => Color.Info
+        };
+    }
+
+    private Icon GetDefaultIconForType(string type)
+    {
+        return type.ToLowerInvariant() switch
+        {
+            "success" => new Icons.Regular.Size20.CheckmarkCircle(),
+            "warning" => new Icons.Regular.Size20.Warning(),
+            "error" => new Icons.Regular.Size20.ErrorCircle(),
+            _ => new Icons.Regular.Size20.Info()
+        };
+    }
+
+    private Icon GetIconForNotification(Notification notification)
+    {
+        // Parse icon string to Icon object - for simplicity, use default icons
+        return GetDefaultIconForType(notification.Type);
+    }
+
+    private string FormatRelativeTime(DateTime dateTime)
+    {
+        var now = DateTime.UtcNow;
+        var diff = now - dateTime;
+
+        if (diff.TotalMinutes < 1)
+            return "刚刚";
+        if (diff.TotalMinutes < 60)
+            return $"{(int)diff.TotalMinutes}分钟前";
+        if (diff.TotalHours < 24)
+            return $"{(int)diff.TotalHours}小时前";
+        if (diff.TotalDays < 2)
+            return "昨天";
+        if (diff.TotalDays < 7)
+            return $"{(int)diff.TotalDays}天前";
+        if (diff.TotalDays < 30)
+            return $"{(int)(diff.TotalDays / 7)}周前";
+        if (diff.TotalDays < 365)
+            return $"{(int)(diff.TotalDays / 30)}个月前";
+        return $"{(int)(diff.TotalDays / 365)}年前";
+    }
+
+    public void Dispose()
+    {
+        NotificationService.NotificationsChanged -= OnNotificationsChanged;
+    }
+}
+
+<style>
+    .notification-card-unread {
+        background-color: var(--accent-fill-rest);
+        background: linear-gradient(90deg, var(--accent-fill-rest) 0%, var(--neutral-fill-rest) 100%);
+        border-left: 3px solid var(--accent-fill-active);
+    }
+
+    .notification-card-read {
+        background-color: var(--neutral-fill-rest);
+        opacity: 0.8;
+    }
+
+    .notification-card-unread:hover,
+    .notification-card-read:hover {
+        background-color: var(--neutral-fill-hover);
+        opacity: 1;
+    }
+</style>

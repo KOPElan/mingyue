@@ -39,6 +39,14 @@ namespace MingYue.Services
 
         public async Task<List<DiskInfo>> GetAllDisksAsync()
         {
+            // On Linux, use GetAllBlockDevicesAsync for better device information and filtering
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var allDevices = await GetAllBlockDevicesAsync();
+                return FilterLocalDisks(allDevices);
+            }
+
+            // Fallback for non-Linux systems
             var disks = new List<DiskInfo>();
 
             foreach (var drive in DriveInfo.GetDrives())
@@ -74,6 +82,40 @@ namespace MingYue.Services
             }
 
             return disks;
+        }
+
+        /// <summary>
+        /// Filter disks to show only local, internal, mounted, and external disks.
+        /// Excludes: loop devices, ram disks, rom/cd drives, and other virtual devices.
+        /// </summary>
+        private List<DiskInfo> FilterLocalDisks(List<DiskInfo> allDisks)
+        {
+            var filtered = new List<DiskInfo>();
+
+            foreach (var disk in allDisks)
+            {
+                // Only include physical disks and their partitions
+                // Type can be: disk, part (partition), rom, loop, lvm, raid, etc.
+                if (disk.Type.Equals("disk", StringComparison.OrdinalIgnoreCase) ||
+                    disk.Type.Equals("part", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Exclude loop devices (virtual block devices)
+                    if (disk.Name.StartsWith("loop", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Filter children recursively
+                    if (disk.Children.Count > 0)
+                    {
+                        disk.Children = FilterLocalDisks(disk.Children);
+                    }
+
+                    filtered.Add(disk);
+                }
+            }
+
+            return filtered;
         }
 
         public async Task<List<DiskInfo>> GetAllBlockDevicesAsync()

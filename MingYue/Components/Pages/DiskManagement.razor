@@ -10,6 +10,155 @@
 
 <PageTitle>Disk Management - MingYue</PageTitle>
 
+<style>
+    .disk-header {
+        padding: 24px 0 16px 0;
+    }
+
+    .disk-header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--neutral-foreground-rest);
+    }
+
+    .disk-section {
+        background: var(--neutral-layer-1);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--neutral-foreground-rest);
+        margin: 0;
+    }
+
+    .disk-card {
+        background: var(--neutral-layer-2);
+        border: 1px solid var(--neutral-stroke-divider-rest);
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .disk-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+        border-color: var(--accent-fill-rest);
+    }
+
+    .disk-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .disk-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .disk-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent-fill-rest);
+        border-radius: 6px;
+        color: white;
+    }
+
+    .disk-details {
+        flex: 1;
+    }
+
+    .disk-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--neutral-foreground-rest);
+        margin: 0 0 4px 0;
+    }
+
+    .disk-meta {
+        font-size: 13px;
+        color: var(--neutral-foreground-hint);
+        display: flex;
+        gap: 16px;
+    }
+
+    .disk-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .disk-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--neutral-foreground-hint);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--neutral-foreground-rest);
+    }
+
+    .usage-bar {
+        margin-top: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--neutral-foreground-hint);
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state-text {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+    }
+</style>
+
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
@@ -18,139 +167,305 @@
     return;
 }
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">Disk Management</h2>
-        <FluentSpacer />
-        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
-            <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
-            Add Network Disk
-        </FluentButton>
-        <FluentButton Appearance="Appearance.Neutral" OnClick="@RefreshDisks">
-            <FluentIcon Value="@(new Icons.Regular.Size20.ArrowSync())" />
-            Refresh
-        </FluentButton>
-    </FluentStack>
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="24">
+    <!-- Header -->
+    <div class="disk-header">
+        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" Style="gap: 12px;">
+                <FluentIcon Value="@(new Icons.Regular.Size24.HardDrive())" Color="@Color.Accent" />
+                <h1>Disk Management</h1>
+            </FluentStack>
+            <FluentSpacer />
+            <div class="action-buttons">
+                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Add())" Slot="start" />
+                    Add Network Disk
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Outline" OnClick="@RefreshDisks">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.ArrowSync())" Slot="start" />
+                    Refresh
+                </FluentButton>
+            </div>
+        </FluentStack>
+    </div>
 
     @if (isLoading)
     {
-        <FluentProgressRing />
+        <div style="display: flex; justify-content: center; padding: 48px;">
+            <FluentProgressRing />
+        </div>
     }
     else
     {
         <!-- Local Disks Section -->
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-            <h3>Local Disks</h3>
+        <div class="disk-section">
+            <div class="section-header">
+                <FluentIcon Value="@(new Icons.Regular.Size20.HardDrive())" Color="@Color.Accent" />
+                <h2 class="section-title">Local & Internal Disks</h2>
+                <FluentBadge Appearance="Appearance.Neutral">@localDisks.Count disk@(localDisks.Count != 1 ? "s" : "")</FluentBadge>
+            </div>
+            
             @if (localDisks.Count == 0)
             {
-                <FluentMessageBar Intent="MessageIntent.Info">
-                    No local disks found.
-                </FluentMessageBar>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.HardDrive())" />
+                    </div>
+                    <p class="empty-state-text">No local disks found.</p>
+                </div>
             }
             else
             {
-                <FluentDataGrid Items="@localDisks.AsQueryable()" GridTemplateColumns="1.5fr 1.5fr 1fr 1fr 1fr 1fr 1fr">
-                    <PropertyColumn Property="@(d => d.Name)" Title="Name" Sortable="true" />
-                    <PropertyColumn Property="@(d => d.MountPoint)" Title="Mount Point" Sortable="true" />
-                    <PropertyColumn Property="@(d => d.FileSystem)" Title="File System" Sortable="true" />
-                    <PropertyColumn Property="@(d => d.SizeDisplay)" Title="Size" Sortable="true" />
-                    <TemplateColumn Title="Used" Sortable="true">
-                        <div>
-                            @context.UsedGB (@context.UsagePercent.ToString("F1")%)
-                            <FluentProgress Min="0" Max="100" Value="@((int)context.UsagePercent)" 
-                                           Style="width: 100%; margin-top: 4px;" />
+                @foreach (var disk in localDisks)
+                {
+                    <div class="disk-card">
+                        <div class="disk-card-header">
+                            <div class="disk-info">
+                                <div class="disk-icon">
+                                    @if (disk.IsRemovable)
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size24.UsbStick())" />
+                                    }
+                                    else
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size24.HardDrive())" />
+                                    }
+                                </div>
+                                <div class="disk-details">
+                                    <h3 class="disk-name">@disk.Name</h3>
+                                    <div class="disk-meta">
+                                        @if (!string.IsNullOrEmpty(disk.Label))
+                                        {
+                                            <span><FluentIcon Value="@(new Icons.Regular.Size16.Tag())" Style="margin-right: 4px;" />@disk.Label</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(disk.Model))
+                                        {
+                                            <span>@disk.Model</span>
+                                        }
+                                        @if (disk.IsRemovable)
+                                        {
+                                            <FluentBadge Appearance="Appearance.Accent">Removable</FluentBadge>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="disk-actions">
+                                @if (disk.IsReady)
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="var(--success-color, green)" Color="white">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Slot="start" />
+                                        Mounted
+                                    </FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Appearance="Appearance.Neutral">Not Mounted</FluentBadge>
+                                }
+                                <FluentButton Appearance="Appearance.Outline" 
+                                            OnClick="@(() => ToggleDiskMount(disk))"
+                                            Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                            Title="@(disk.IsReady ? "Unmount" : "Mount")">
+                                    @if (disk.IsReady)
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size20.PlugDisconnected())" />
+                                    }
+                                    else
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size20.PlugConnected())" />
+                                    }
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Outline" 
+                                            OnClick="@(() => OpenPowerManagementDialog(disk))"
+                                            Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                            Title="Power Management">
+                                    <FluentIcon Value="@(new Icons.Regular.Size20.Battery10())" />
+                                </FluentButton>
+                            </div>
                         </div>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Status" Sortable="true">
-                        @if (context.IsReady)
+                        
+                        @if (disk.IsReady)
                         {
-                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Mounted</FluentBadge>
+                            <div class="disk-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Mount Point</span>
+                                    <span class="stat-value">@disk.MountPoint</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">File System</span>
+                                    <span class="stat-value">@(string.IsNullOrEmpty(disk.FileSystem) ? "N/A" : disk.FileSystem)</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Size</span>
+                                    <span class="stat-value">@disk.SizeDisplay</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Used</span>
+                                    <span class="stat-value">@disk.UsedGB</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Available</span>
+                                    <span class="stat-value">@disk.AvailableGB</span>
+                                </div>
+                            </div>
+                            <div class="usage-bar">
+                                <FluentProgress Min="0" Max="100" Value="@((int)disk.UsagePercent)" 
+                                               Style="width: 100%;" />
+                                <div style="font-size: 12px; color: var(--neutral-foreground-hint); margin-top: 4px;">
+                                    @disk.UsagePercent.ToString("F1")% used
+                                </div>
+                            </div>
                         }
                         else
                         {
-                            <FluentBadge Fill="neutral">Not Mounted</FluentBadge>
+                            <div class="disk-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Device Path</span>
+                                    <span class="stat-value">@disk.DevicePath</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Size</span>
+                                    <span class="stat-value">@disk.SizeDisplay</span>
+                                </div>
+                            </div>
                         }
-                    </TemplateColumn>
-                    <TemplateColumn Title="Actions">
-                        <FluentButton Appearance="Appearance.Lightweight" 
-                                    OnClick="@(() => ToggleDiskMount(context))"
-                                    Disabled="@(string.IsNullOrEmpty(context.DevicePath))">
-                            @if (context.IsReady)
-                            {
-                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugDisconnected())" />
-                            }
-                            else
-                            {
-                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugConnected())" />
-                            }
-                        </FluentButton>
-                        <FluentButton Appearance="Appearance.Lightweight" 
-                                    OnClick="@(() => OpenPowerManagementDialog(context))"
-                                    Disabled="@(string.IsNullOrEmpty(context.DevicePath))">
-                            <FluentIcon Value="@(new Icons.Regular.Size16.Battery10())" />
-                        </FluentButton>
-                    </TemplateColumn>
-                </FluentDataGrid>
+                    </div>
+                }
             }
-        </FluentStack>
+        </div>
 
         <!-- Network Disks Section -->
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-            <h3>Network Disks</h3>
+        <div class="disk-section">
+            <div class="section-header">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Cloud())" Color="@Color.Accent" />
+                <h2 class="section-title">Network Disks</h2>
+                <FluentBadge Appearance="Appearance.Neutral">@networkDisks.Count disk@(networkDisks.Count != 1 ? "s" : "")</FluentBadge>
+            </div>
+            
             @if (networkDisks.Count == 0)
             {
-                <FluentMessageBar Intent="MessageIntent.Info">
-                    No network disks configured. Click "Add Network Disk" to add one.
-                </FluentMessageBar>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Cloud())" />
+                    </div>
+                    <p class="empty-state-text">No network disks configured.</p>
+                    <p class="empty-state-text">Click "Add Network Disk" to add one.</p>
+                </div>
             }
             else
             {
-                <FluentDataGrid Items="@networkDisks.AsQueryable()" GridTemplateColumns="1fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr">
-                    <TemplateColumn Title="Type" Sortable="true">
-                        <FluentBadge Fill="highlight" BackgroundColor="@(context.DiskType == NetworkDiskType.NFS ? "blue" : "purple")" Color="white">
-                            @context.DiskType.ToString()
-                        </FluentBadge>
-                    </TemplateColumn>
-                    <PropertyColumn Property="@(d => d.FullPath)" Title="Network Path" Sortable="true" />
-                    <PropertyColumn Property="@(d => d.MountPoint)" Title="Mount Point" Sortable="true" />
-                    <PropertyColumn Property="@(d => d.SizeDisplay)" Title="Size" Sortable="true" />
-                    <TemplateColumn Title="Used" Sortable="true">
-                        <div>
-                            @context.UsedGB (@context.UsagePercent.ToString("F1")%)
-                            <FluentProgress Min="0" Max="100" Value="@((int)context.UsagePercent)" 
-                                           Style="width: 100%; margin-top: 4px;" />
+                @foreach (var disk in networkDisks)
+                {
+                    <div class="disk-card">
+                        <div class="disk-card-header">
+                            <div class="disk-info">
+                                <div class="disk-icon">
+                                    @if (disk.DiskType == NetworkDiskType.NFS)
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size24.Database())" />
+                                    }
+                                    else
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" />
+                                    }
+                                </div>
+                                <div class="disk-details">
+                                    <h3 class="disk-name">@disk.FullPath</h3>
+                                    <div class="disk-meta">
+                                        <FluentBadge Appearance="@(disk.DiskType == NetworkDiskType.NFS ? Appearance.Accent : Appearance.Neutral)">
+                                            @disk.DiskType.ToString()
+                                        </FluentBadge>
+                                        @if (!string.IsNullOrEmpty(disk.MountPoint))
+                                        {
+                                            <span><FluentIcon Value="@(new Icons.Regular.Size16.FolderOpen())" Style="margin-right: 4px;" />@disk.MountPoint</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="disk-actions">
+                                @if (disk.IsReady)
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="var(--success-color, green)" Color="white">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Slot="start" />
+                                        Mounted
+                                    </FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Appearance="Appearance.Neutral">Not Mounted</FluentBadge>
+                                }
+                                <FluentButton Appearance="Appearance.Outline" 
+                                            OnClick="@(() => ToggleNetworkDiskMount(disk))"
+                                            Title="@(disk.IsReady ? "Unmount" : "Mount")">
+                                    @if (disk.IsReady)
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size20.PlugDisconnected())" />
+                                    }
+                                    else
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size20.PlugConnected())" />
+                                    }
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Outline" 
+                                            OnClick="@(() => DeleteNetworkDisk(disk))"
+                                            Title="Remove">
+                                    <FluentIcon Value="@(new Icons.Regular.Size20.Delete())" Color="@Color.Error" />
+                                </FluentButton>
+                            </div>
                         </div>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Status" Sortable="true">
-                        @if (context.IsReady)
+                        
+                        @if (disk.IsReady)
                         {
-                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Mounted</FluentBadge>
+                            <div class="disk-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Server</span>
+                                    <span class="stat-value">@disk.Server</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Share Path</span>
+                                    <span class="stat-value">@disk.SharePath</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Size</span>
+                                    <span class="stat-value">@disk.SizeDisplay</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Used</span>
+                                    <span class="stat-value">@disk.UsedGB</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Available</span>
+                                    <span class="stat-value">@disk.AvailableGB</span>
+                                </div>
+                            </div>
+                            <div class="usage-bar">
+                                <FluentProgress Min="0" Max="100" Value="@((int)disk.UsagePercent)" 
+                                               Style="width: 100%;" />
+                                <div style="font-size: 12px; color: var(--neutral-foreground-hint); margin-top: 4px;">
+                                    @disk.UsagePercent.ToString("F1")% used
+                                </div>
+                            </div>
                         }
                         else
                         {
-                            <FluentBadge Fill="neutral">Not Mounted</FluentBadge>
+                            <div class="disk-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Server</span>
+                                    <span class="stat-value">@disk.Server</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Share Path</span>
+                                    <span class="stat-value">@disk.SharePath</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Mount Point</span>
+                                    <span class="stat-value">@disk.MountPoint</span>
+                                </div>
+                            </div>
                         }
-                    </TemplateColumn>
-                    <TemplateColumn Title="Actions">
-                        <FluentButton Appearance="Appearance.Lightweight" 
-                                    OnClick="@(() => ToggleNetworkDiskMount(context))">
-                            @if (context.IsReady)
-                            {
-                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugDisconnected())" />
-                            }
-                            else
-                            {
-                                <FluentIcon Value="@(new Icons.Regular.Size16.PlugConnected())" />
-                            }
-                        </FluentButton>
-                        <FluentButton Appearance="Appearance.Lightweight" 
-                                    OnClick="@(() => DeleteNetworkDisk(context))">
-                            <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                        </FluentButton>
-                    </TemplateColumn>
-                </FluentDataGrid>
+                    </div>
+                }
             }
-        </FluentStack>
+        </div>
     }
 </FluentStack>
 

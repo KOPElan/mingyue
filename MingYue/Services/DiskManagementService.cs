@@ -105,13 +105,32 @@ namespace MingYue.Services
                         continue;
                     }
 
-                    // Filter children recursively
-                    if (disk.Children.Count > 0)
+                    // Create a shallow copy to avoid mutating original object
+                    var filteredDisk = new DiskInfo
                     {
-                        disk.Children = FilterLocalDisks(disk.Children);
-                    }
+                        Name = disk.Name,
+                        DevicePath = disk.DevicePath,
+                        Type = disk.Type,
+                        TotalBytes = disk.TotalBytes,
+                        FileSystem = disk.FileSystem,
+                        UUID = disk.UUID,
+                        Label = disk.Label,
+                        IsRemovable = disk.IsRemovable,
+                        IsReadOnly = disk.IsReadOnly,
+                        Model = disk.Model,
+                        Serial = disk.Serial,
+                        MountPoint = disk.MountPoint,
+                        IsReady = disk.IsReady,
+                        UsedBytes = disk.UsedBytes,
+                        AvailableBytes = disk.AvailableBytes,
+                        UsagePercent = disk.UsagePercent,
+                        IsSpinningDown = disk.IsSpinningDown,
+                        ApmLevel = disk.ApmLevel,
+                        // Recursively filter children
+                        Children = disk.Children.Count > 0 ? FilterLocalDisks(disk.Children) : new List<DiskInfo>()
+                    };
 
-                    filtered.Add(disk);
+                    filtered.Add(filteredDisk);
                 }
             }
 

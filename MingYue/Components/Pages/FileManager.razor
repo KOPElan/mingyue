@@ -97,7 +97,7 @@
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshFiles" Title="Refresh">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => ToggleViewMode())" Title="@(viewMode == ViewMode.List ? "Grid View" : "List View")">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(async () => await ToggleViewMode())" Title="@(viewMode == ViewMode.List ? "Grid View" : "List View")">
                         <FluentIcon Value="@GetViewModeIcon()" />
                     </FluentButton>
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenFavoritesDialog" Title="Manage Favorites">
@@ -515,7 +515,6 @@
         }
         await LoadFavorites();
         await LoadFiles();
-        await LoadThumbnails();
     }
 
     private void SetCurrentView(string view)
@@ -680,9 +679,15 @@
         return segments;
     }
 
-    private void ToggleViewMode()
+    private async Task ToggleViewMode()
     {
         viewMode = viewMode == ViewMode.List ? ViewMode.Grid : ViewMode.List;
+        
+        // Load thumbnails when switching to grid view
+        if (viewMode == ViewMode.Grid)
+        {
+            await LoadThumbnails();
+        }
     }
 
     #region File Operations

@@ -13,111 +13,489 @@
 
 <PageTitle>Anydrop - MingYue</PageTitle>
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="20" Style="height: 100%; padding: 20px;">
-    <!-- Device Info Header -->
-    <FluentCard Style="padding: 20px;">
-        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-            <FluentIcon Value="@(new Icons.Regular.Size24.DeviceMeetingRoom())" Color="Color.Accent" />
-            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                <FluentLabel Typo="Typography.Subject" Style="font-weight: 600;">@deviceName</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">设备 ID: @deviceId</FluentLabel>
-            </FluentStack>
-            <FluentSpacer />
-            <FluentButton Appearance="Appearance.Accent" OnClick="@OpenSendMessageDialog">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Send())" />
-                发送消息
-            </FluentButton>
-        </FluentStack>
-    </FluentCard>
+<style>
+    .chat-container {
+        display: flex;
+        height: calc(100vh - 120px);
+        gap: 0;
+        padding: 0;
+        overflow: hidden;
+    }
 
-    <!-- Messages List -->
-    <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="flex: 1; overflow-y: auto;">
-        @if (isLoading)
-        {
-            <FluentStack HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="flex: 1;">
-                <FluentProgressRing />
-            </FluentStack>
+    .sidebar {
+        width: 30%;
+        min-width: 300px;
+        border-right: 1px solid var(--neutral-stroke-rest);
+        display: flex;
+        flex-direction: column;
+        background: var(--neutral-layer-1);
+    }
+
+    .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--neutral-stroke-rest);
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--neutral-stroke-rest);
+        overflow-x: auto;
+    }
+
+    .filter-btn {
+        white-space: nowrap;
+        padding: 6px 14px;
+        border-radius: 16px;
+        cursor: pointer;
+        border: 1px solid var(--neutral-stroke-rest);
+        background: transparent;
+        transition: all 0.2s;
+        font-size: 13px;
+    }
+
+    .filter-btn:hover {
+        background: var(--neutral-layer-2);
+    }
+
+    .filter-btn.active {
+        background: var(--accent-fill-rest);
+        color: white;
+        border-color: var(--accent-fill-rest);
+    }
+
+    .message-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .message-preview {
+        padding: 14px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--neutral-stroke-rest);
+        transition: background 0.2s;
+        position: relative;
+    }
+
+    .message-preview:hover {
+        background: var(--neutral-layer-2);
+    }
+
+    .message-preview.active {
+        background: var(--neutral-layer-3);
+        border-left: 3px solid var(--accent-fill-rest);
+    }
+
+    .message-preview.unread {
+        background: var(--neutral-layer-card-hover);
+        font-weight: 500;
+    }
+
+    .preview-sender {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .preview-content {
+        font-size: 13px;
+        color: var(--neutral-foreground-hint);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 4px;
+    }
+
+    .preview-time {
+        font-size: 11px;
+        color: var(--neutral-foreground-hint);
+    }
+
+    .unread-badge {
+        width: 8px;
+        height: 8px;
+        background: var(--accent-fill-rest);
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .main-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--neutral-layer-1);
+        position: relative;
+    }
+
+    .main-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--neutral-stroke-rest);
+        background: var(--neutral-layer-card);
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .date-divider {
+        text-align: center;
+        margin: 20px 0;
+        position: relative;
+    }
+
+    .date-divider span {
+        background: var(--neutral-layer-1);
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: var(--neutral-foreground-hint);
+        display: inline-block;
+        border: 1px solid var(--neutral-stroke-rest);
+    }
+
+    .message-bubble-container {
+        display: flex;
+        margin-bottom: 16px;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
         }
-        else if (messages.Count == 0)
-        {
-            <!-- Empty State -->
-            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="flex: 1;" VerticalGap="15">
-                <FluentIcon Value="@(new Icons.Regular.Size48.ChatEmpty())" Color="Color.Custom" CustomColor="var(--neutral-foreground-hint)" />
-                <FluentLabel Typo="Typography.Subject" Style="color: var(--neutral-foreground-hint);">暂无消息</FluentLabel>
-                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint);">点击"发送消息"开始跨设备分享</FluentLabel>
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message-bubble-container.own {
+        justify-content: flex-end;
+    }
+
+    .message-bubble-container.other {
+        justify-content: flex-start;
+    }
+
+    .message-bubble {
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        position: relative;
+    }
+
+    .message-bubble.own {
+        background: var(--accent-fill-rest);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message-bubble.other {
+        background: var(--neutral-layer-3);
+        border-bottom-left-radius: 4px;
+    }
+
+    .bubble-sender {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        opacity: 0.9;
+    }
+
+    .bubble-content {
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.5;
+        font-size: 14px;
+    }
+
+    .bubble-time {
+        font-size: 10px;
+        margin-top: 6px;
+        opacity: 0.7;
+        text-align: right;
+    }
+
+    .bubble-actions {
+        position: absolute;
+        top: 8px;
+        right: -100px;
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .message-bubble-container:hover .bubble-actions {
+        opacity: 1;
+    }
+
+    .attachment-cards {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .attachment-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .message-bubble.other .attachment-card {
+        background: var(--neutral-layer-2);
+        border: 1px solid var(--neutral-stroke-rest);
+    }
+
+    .empty-chat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--neutral-foreground-hint);
+        gap: 12px;
+    }
+
+    .floating-send-btn {
+        position: absolute;
+        bottom: 24px;
+        right: 24px;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .search-results-info {
+        padding: 8px 16px;
+        background: var(--accent-fill-rest);
+        color: white;
+        text-align: center;
+        font-size: 12px;
+    }
+
+    @@media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+            min-width: auto;
+        }
+        
+        .main-area {
+            display: none;
+        }
+        
+        .main-area.show-mobile {
+            display: flex;
+        }
+        
+        .message-bubble {
+            max-width: 85%;
+        }
+    }
+</style>
+
+<div class="chat-container">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <!-- Search Header -->
+        <div class="sidebar-header">
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.DeviceMeetingRoom())" Color="Color.Accent" />
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
+                        <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">@deviceName</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Style="font-size: 11px; color: var(--neutral-foreground-hint);">@deviceId</FluentLabel>
+                    </FluentStack>
+                </FluentStack>
+                <FluentTextField @bind-Value="searchQuery" 
+                                Placeholder="搜索消息..." 
+                                @oninput="OnSearchInput"
+                                Style="width: 100%;">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Search())" Slot="start" />
+                </FluentTextField>
             </FluentStack>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="filter-buttons">
+            <button class="filter-btn @(activeFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
+                全部 (@allMessages.Count)
+            </button>
+            <button class="filter-btn @(activeFilter == "unread" ? "active" : "")" @onclick='() => SetFilter("unread")'>
+                未读 (@allMessages.Count(m => !m.IsRead))
+            </button>
+            <button class="filter-btn @(activeFilter == "files" ? "active" : "")" @onclick='() => SetFilter("files")'>
+                文件 (@allMessages.Count(m => m.Attachments?.Any() == true))
+            </button>
+            <button class="filter-btn @(activeFilter == "today" ? "active" : "")" @onclick='() => SetFilter("today")'>
+                今天 (@allMessages.Count(m => IsToday(m.CreatedAt)))
+            </button>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(searchQuery) && filteredMessages.Any())
+        {
+            <div class="search-results-info">
+                找到 @filteredMessages.Count 条结果
+            </div>
+        }
+
+        <!-- Message List -->
+        <div class="message-list">
+            @if (isLoading)
+            {
+                <FluentStack HorizontalAlignment="HorizontalAlignment.Center" Style="padding: 40px;">
+                    <FluentProgressRing />
+                </FluentStack>
+            }
+            else if (!filteredMessages.Any())
+            {
+                <div style="padding: 40px; text-align: center; color: var(--neutral-foreground-hint);">
+                    <FluentIcon Value="@(new Icons.Regular.Size48.ChatEmpty())" />
+                    <p style="margin-top: 12px;">@GetEmptyStateMessage()</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var message in filteredMessages)
+                {
+                    <div class="message-preview @(selectedMessage?.Id == message.Id ? "active" : "") @(!message.IsRead ? "unread" : "")"
+                         @onclick="() => SelectMessage(message)">
+                        <div class="preview-sender">
+                            @if (!message.IsRead)
+                            {
+                                <span class="unread-badge"></span>
+                            }
+                            @message.SenderDeviceName
+                        </div>
+                        <div class="preview-content">
+                            @if (message.Attachments?.Any() == true)
+                            {
+                                <FluentIcon Value="@(new Icons.Regular.Size16.Attach())" Style="vertical-align: middle; margin-right: 4px;" />
+                            }
+                            @GetPreviewContent(message)
+                        </div>
+                        <div class="preview-time">
+                            @GetRelativeTime(message.CreatedAt)
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="main-area">
+        @if (selectedMessage == null)
+        {
+            <div class="empty-chat">
+                <FluentIcon Value="@(new Icons.Regular.Size48.Chat())" Color="Color.Custom" CustomColor="var(--neutral-foreground-hint)" />
+                <FluentLabel Typo="Typography.Subject">选择一条消息开始查看</FluentLabel>
+                <FluentLabel Typo="Typography.Body">从左侧列表选择消息或发送新消息</FluentLabel>
+            </div>
         }
         else
         {
-            @foreach (var message in messages)
-            {
-                <FluentCard Style="@GetMessageCardStyle(message)">
-                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                        <!-- Message Header -->
-                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                                <FluentIcon Value="@(new Icons.Regular.Size20.Phone())" Color="Color.Accent" />
-                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
-                                    <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">@message.SenderDeviceName</FluentLabel>
-                                    <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">@message.SenderDeviceId</FluentLabel>
-                                </FluentStack>
-                                @if (!message.IsRead)
-                                {
-                                    <FluentBadge Fill="important" BackgroundColor="red" Color="white" Circular="true">新</FluentBadge>
-                                }
-                            </FluentStack>
-                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                                <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">@GetRelativeTime(message.CreatedAt)</FluentLabel>
-                                @if (!message.IsRead)
-                                {
-                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => MarkMessageAsRead(message.Id))" title="标记为已读">
-                                        <FluentIcon Value="@(new Icons.Regular.Size16.MailRead())" />
-                                    </FluentButton>
-                                }
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteMessage(message.Id))" title="删除">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                </FluentButton>
-                            </FluentStack>
+            <!-- Message Header -->
+            <div class="main-header">
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="12" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Phone())" Color="Color.Accent" />
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
+                            <FluentLabel Typo="Typography.Body" Style="font-weight: 600;">@selectedMessage.SenderDeviceName</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">
+                                @selectedMessage.SenderDeviceId • @GetRelativeTime(selectedMessage.CreatedAt)
+                            </FluentLabel>
                         </FluentStack>
-
-                        <!-- Message Content -->
-                        @if (!string.IsNullOrWhiteSpace(message.Content))
-                        {
-                            <FluentLabel Typo="Typography.Body" Style="white-space: pre-wrap; word-break: break-word;">@message.Content</FluentLabel>
-                        }
-
-                        <!-- Attachments -->
-                        @if (message.Attachments?.Any() == true)
-                        {
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
-                                <FluentDivider />
-                                <FluentLabel Typo="Typography.Body" Style="font-weight: 600; font-size: 12px; color: var(--neutral-foreground-hint);">附件 (@message.Attachments.Count)</FluentLabel>
-                                @foreach (var attachment in message.Attachments)
-                                {
-                                    <FluentCard Style="background: var(--neutral-layer-2); padding: 12px;">
-                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-                                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                                                <FluentIcon Value="@GetFileIcon(attachment.FileName)" />
-                                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2">
-                                                    <FluentLabel Typo="Typography.Body" Style="font-weight: 500;">@attachment.FileName</FluentLabel>
-                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 11px; color: var(--neutral-foreground-hint);">@FormatFileSize(attachment.FileSize)</FluentLabel>
-                                                </FluentStack>
-                                            </FluentStack>
-                                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DownloadAttachment(attachment))">
-                                                <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
-                                                下载
-                                            </FluentButton>
-                                        </FluentStack>
-                                    </FluentCard>
-                                }
-                            </FluentStack>
-                        }
                     </FluentStack>
-                </FluentCard>
-            }
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8">
+                        @if (!selectedMessage.IsRead)
+                        {
+                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => MarkMessageAsRead(selectedMessage.Id))" title="标记为已读">
+                                <FluentIcon Value="@(new Icons.Regular.Size20.MailRead())" />
+                            </FluentButton>
+                        }
+                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteMessage(selectedMessage.Id))" title="删除">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.Delete())" Color="@Color.Error" />
+                        </FluentButton>
+                    </FluentStack>
+                </FluentStack>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages">
+                @foreach (var group in GetGroupedMessages())
+                {
+                    <div class="date-divider">
+                        <span>@group.Key</span>
+                    </div>
+
+                    @foreach (var msg in group.Value)
+                    {
+                        var isOwn = msg.SenderDeviceId == deviceId;
+                        <div class="message-bubble-container @(isOwn ? "own" : "other")">
+                            <div class="message-bubble @(isOwn ? "own" : "other")">
+                                @if (!isOwn)
+                                {
+                                    <div class="bubble-sender">@msg.SenderDeviceName</div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(msg.Content))
+                                {
+                                    <div class="bubble-content">@msg.Content</div>
+                                }
+                                @if (msg.Attachments?.Any() == true)
+                                {
+                                    <div class="attachment-cards">
+                                        @foreach (var attachment in msg.Attachments)
+                                        {
+                                            <div class="attachment-card">
+                                                <FluentIcon Value="@GetFileIcon(attachment.FileName)" />
+                                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2" Style="flex: 1; min-width: 0;">
+                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                        @attachment.FileName
+                                                    </FluentLabel>
+                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 11px; opacity: 0.7;">
+                                                        @FormatFileSize(attachment.FileSize)
+                                                    </FluentLabel>
+                                                </FluentStack>
+                                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DownloadAttachment(attachment))" title="下载">
+                                                    <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                                </FluentButton>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                <div class="bubble-time">@msg.CreatedAt.ToLocalTime().ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
         }
-    </FluentStack>
-</FluentStack>
+
+        <!-- Floating Send Button -->
+        <FluentButton Appearance="Appearance.Accent" 
+                     OnClick="@OpenSendMessageDialog" 
+                     class="floating-send-btn"
+                     title="发送新消息">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Send())" />
+        </FluentButton>
+    </div>
+</div>
 
 <!-- Send Message Dialog -->
 <FluentDialog @ref="sendMessageDialog" @bind-Hidden="@isSendDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 600px; max-width: 800px;">
@@ -215,7 +593,12 @@
 
     private string deviceId = string.Empty;
     private string deviceName = string.Empty;
-    private List<AnydropMessage> messages = new();
+    private List<AnydropMessage> allMessages = new();
+    private List<AnydropMessage> filteredMessages = new();
+    private AnydropMessage? selectedMessage = null;
+    
+    private string searchQuery = string.Empty;
+    private string activeFilter = "all";
     
     private string newMessageContent = string.Empty;
     private List<FluentInputFileEventArgs> selectedFiles = new();
@@ -246,8 +629,9 @@
     {
         try
         {
-            messages = await AnydropService.GetAllMessagesAsync();
-            messages = messages.OrderByDescending(m => m.CreatedAt).ToList();
+            allMessages = await AnydropService.GetAllMessagesAsync();
+            allMessages = allMessages.OrderByDescending(m => m.CreatedAt).ToList();
+            ApplyFilters();
         }
         catch (Exception ex)
         {
@@ -263,6 +647,140 @@
             await LoadMessagesAsync();
             StateHasChanged();
         });
+    }
+
+    private void ApplyFilters()
+    {
+        var filtered = allMessages.AsEnumerable();
+
+        // Apply active filter
+        filtered = activeFilter switch
+        {
+            "unread" => filtered.Where(m => !m.IsRead),
+            "files" => filtered.Where(m => m.Attachments?.Any() == true),
+            "today" => filtered.Where(m => IsToday(m.CreatedAt)),
+            _ => filtered
+        };
+
+        // Apply search query
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var query = searchQuery.ToLowerInvariant();
+            filtered = filtered.Where(m =>
+                m.Content.ToLowerInvariant().Contains(query) ||
+                m.SenderDeviceName.ToLowerInvariant().Contains(query) ||
+                m.SenderDeviceId.ToLowerInvariant().Contains(query) ||
+                (m.Attachments?.Any(a => a.FileName.ToLowerInvariant().Contains(query)) == true)
+            );
+        }
+
+        filteredMessages = filtered.ToList();
+
+        // If selected message is no longer in filtered list, deselect it
+        if (selectedMessage != null && !filteredMessages.Any(m => m.Id == selectedMessage.Id))
+        {
+            selectedMessage = null;
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        activeFilter = filter;
+        ApplyFilters();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? string.Empty;
+        ApplyFilters();
+    }
+
+    private void SelectMessage(AnydropMessage message)
+    {
+        selectedMessage = message;
+        if (!message.IsRead)
+        {
+            _ = MarkMessageAsRead(message.Id);
+        }
+    }
+
+    private bool IsToday(DateTime dateTime)
+    {
+        var localTime = dateTime.ToLocalTime();
+        return localTime.Date == DateTime.Now.Date;
+    }
+
+    private string GetPreviewContent(AnydropMessage message)
+    {
+        if (!string.IsNullOrWhiteSpace(message.Content))
+        {
+            var firstLine = message.Content.Split('\n')[0];
+            return firstLine.Length > 50 ? firstLine.Substring(0, 50) + "..." : firstLine;
+        }
+        
+        if (message.Attachments?.Any() == true)
+        {
+            var count = message.Attachments.Count;
+            return count == 1 ? message.Attachments.First().FileName : $"{count} 个附件";
+        }
+        
+        return "无内容";
+    }
+
+    private string GetEmptyStateMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+            return "未找到匹配的消息";
+        
+        return activeFilter switch
+        {
+            "unread" => "暂无未读消息",
+            "files" => "暂无文件消息",
+            "today" => "今天还没有消息",
+            _ => "暂无消息"
+        };
+    }
+
+    private Dictionary<string, List<AnydropMessage>> GetGroupedMessages()
+    {
+        if (selectedMessage == null)
+            return new Dictionary<string, List<AnydropMessage>>();
+
+        var messages = new List<AnydropMessage> { selectedMessage };
+        var grouped = new Dictionary<string, List<AnydropMessage>>();
+
+        foreach (var msg in messages)
+        {
+            var dateKey = GetDateGroupKey(msg.CreatedAt);
+            if (!grouped.ContainsKey(dateKey))
+            {
+                grouped[dateKey] = new List<AnydropMessage>();
+            }
+            grouped[dateKey].Add(msg);
+        }
+
+        return grouped;
+    }
+
+    private string GetDateGroupKey(DateTime dateTime)
+    {
+        var localTime = dateTime.ToLocalTime();
+        var now = DateTime.Now;
+        var diff = now.Date - localTime.Date;
+
+        if (diff.TotalDays == 0)
+            return "今天";
+        
+        if (diff.TotalDays == 1)
+            return "昨天";
+        
+        if (diff.TotalDays < 7)
+            return localTime.ToString("dddd");
+        
+        if (localTime.Year == now.Year)
+            return localTime.ToString("M月d日");
+        
+        return localTime.ToString("yyyy年M月d日");
     }
 
     private void OpenSendMessageDialog()
@@ -395,6 +913,13 @@
         try
         {
             await AnydropService.DeleteMessageAsync(messageId);
+            
+            // Clear selection if deleted message was selected
+            if (selectedMessage?.Id == messageId)
+            {
+                selectedMessage = null;
+            }
+            
             await LoadMessagesAsync();
             ToastService.ShowSuccess("消息已删除");
         }

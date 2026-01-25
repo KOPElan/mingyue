@@ -97,39 +97,43 @@
             <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
             <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
         </FluentStack>
-        <div class="app-grid">
+        <FluentGrid class="app-grid">
             @foreach (var app in visibleApplications)
             {
-                <FluentCard Class="app-card" @onclick="@(() => Navigation.NavigateTo(app.Url, true))">
+                <FluentGridItem xs="6" sm="4" md="2">
+                    <FluentCard Class="app-card" @onclick="@(() => Navigation.NavigateTo(app.Url, true))">
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
+                            <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
+                                @if (!string.IsNullOrEmpty(app.Icon))
+                                {
+                                    <FluentIcon Value="@GetIcon(app.Icon)" />
+                                }
+                                else
+                                {
+                                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+                                }
+                            </div>
+                            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="2" Class="app-info">
+                                <FluentLabel Typo="Typography.Body" Class="app-title">@app.Title</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="app-category">@app.Category</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                </FluentGridItem>
+            }
+            <FluentGridItem xs="6" sm="4" md="2">
+                <FluentCard Class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
                     <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
-                        <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
-                            @if (!string.IsNullOrEmpty(app.Icon))
-                            {
-                                <FluentIcon Value="@GetIcon(app.Icon)" />
-                            }
-                            else
-                            {
-                                <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
-                            }
+                        <div class="app-icon app-icon-add">
+                            <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
                         </div>
-                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="2" Class="app-info">
-                            <FluentLabel Typo="Typography.Body" Class="app-title">@app.Title</FluentLabel>
-                            <FluentLabel Typo="Typography.Body" Class="app-category">@app.Category</FluentLabel>
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
+                            <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
                         </FluentStack>
                     </FluentStack>
                 </FluentCard>
-            }
-            <FluentCard Class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
-                <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
-                    <div class="app-icon app-icon-add">
-                        <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
-                    </div>
-                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
-                        <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
-                    </FluentStack>
-                </FluentStack>
-            </FluentCard>
-        </div>
+            </FluentGridItem>
+        </FluentGrid>
     </FluentStack>
 </FluentStack>
 

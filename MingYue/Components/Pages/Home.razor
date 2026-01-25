@@ -1,124 +1,313 @@
 ﻿@page "/"
 @using MingYue.Models
 @using MingYue.Services
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject ISystemMonitorService SystemMonitorService
+@inject IApplicationService ApplicationService
+@inject IDockItemService DockItemService
+@inject NavigationManager Navigation
+@implements IDisposable
 
-<PageTitle>Home</PageTitle>
+<PageTitle>MingYue - Home Server Portal</PageTitle>
 
-<FluentGrid Spacing="3" Justify="JustifyContent.Center">
-    <FluentGridItem xs="12">
-        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center">
-            <FluentLabel Typo="Typography.HeroTitle">@TimeNow</FluentLabel>
-            <FluentLabel Typo="Typography.HeroTitle">@DateNow</FluentLabel>
+<div class="home-page">
+    <!-- Background Effects -->
+    <div class="home-bg-effects">
+        <div class="bg-gradient-blob bg-gradient-blob-1"></div>
+        <div class="bg-gradient-blob bg-gradient-blob-2"></div>
+        <div class="bg-gradient-blob bg-gradient-blob-3"></div>
+        <div class="bg-grid-pattern"></div>
+    </div>
+
+    <!-- Main Content Container -->
+    <FluentStack Orientation="Orientation.Vertical" Class="home-content">
+        <!-- Header -->
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-header">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
+                <div class="home-logo">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.GridDots())" Color="Color.Accent" />
+                </div>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0">
+                    <FluentLabel Typo="Typography.Body" Class="home-title-main">My Portal</FluentLabel>
+                    <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
+                </FluentStack>
+            </FluentStack>
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="8">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Search())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
+                </FluentButton>
+                <div class="home-user-avatar"></div>
+            </FluentStack>
         </FluentStack>
-    </FluentGridItem>
-    <FluentGridItem HiddenWhen="GridItemHidden.XsAndDown" md="1"></FluentGridItem>
-    <FluentGridItem xs="12" md="3">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>CPU</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>RAM</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Max="100" />
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>
-    <FluentGridItem xs="12" md="3">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>CPU</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>RAM</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Max="100" />
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>
-    <FluentGridItem xs="12" md="3">
-        <FluentCard>
-            <FluentStack Orientation="Orientation.Vertical">
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DeveloperBoard())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>CPU</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Cpu.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Cpu.UsagePercent)" Max="100" />
-                <FluentStack Orientation="Orientation.Horizontal">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Server())" Style="font-size: 1.5rem;" />
-                    <FluentLabel>RAM</FluentLabel>
-                    <FluentSpacer></FluentSpacer>
-                    <FluentLabel>@systemInfo.Memory.UsagePercent.ToString("F1")%</FluentLabel>
-                </FluentStack>
-                <FluentProgress Width="100%" Value="@((int)systemInfo.Memory.UsagePercent)" Min="0" Max="100"/>
-            </FluentStack>
-        </FluentCard>
-    </FluentGridItem>   
-    <FluentGridItem HiddenWhen="GridItemHidden.XsAndDown" md="1"></FluentGridItem>
-    <FluentGridItem xs="12" Justify="JustifyContent.FlexStart">
-        <FluentLabel>应用</FluentLabel>
-    </FluentGridItem>
-</FluentGrid>
 
+        <!-- Clock Section -->
+        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="home-clock-section">
+            <div class="home-clock">@TimeNow</div>
+            <FluentLabel Typo="Typography.Body" Class="home-date">@DateNow</FluentLabel>
+        </FluentStack>
+
+        <!-- Info Cards -->
+        <FluentStack Orientation="Orientation.Horizontal" Wrap="true" HorizontalGap="24" Class="home-info-cards">
+            <!-- Weather Card -->
+            <FluentCard Class="info-card info-card-weather">
+                <div class="info-card-glow weather-glow"></div>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">天气</FluentLabel>
+                        <div class="info-card-icon weather-icon">
+                            <FluentIcon Value="@(new Icons.Regular.Size24.WeatherSunny())" Color="Color.Custom" CustomColor="#facc15" />
+                        </div>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <div class="weather-temp">18°</div>
+                        <FluentLabel Typo="Typography.Body" Class="weather-condition">晴朗</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="weather-range">最高 22° / 最低 14°</FluentLabel>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+
+            <!-- System Monitor Card -->
+            <FluentCard Class="info-card info-card-system">
+                <div class="info-card-glow system-glow"></div>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">系统监控</FluentLabel>
+                        <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                                <FluentLabel Typo="Typography.Body" Class="stat-label">CPU</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="stat-value-cyan">@systemInfo.Cpu.UsagePercent.ToString("F0")%</FluentLabel>
+                            </FluentStack>
+                            <FluentProgress Min="0" Max="100" Value="@((int)systemInfo.Cpu.UsagePercent)" Class="progress-bar-cyan" />
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                                <FluentLabel Typo="Typography.Body" Class="stat-label">RAM</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="stat-value-purple">@systemInfo.Memory.UsedGB</FluentLabel>
+                            </FluentStack>
+                            <FluentProgress Min="0" Max="100" Value="@((int)systemInfo.Memory.UsagePercent)" Class="progress-bar-purple" />
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+
+            <!-- Network Status Card -->
+            <FluentCard Class="info-card info-card-network">
+                <div class="info-card-glow network-glow"></div>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">网络状态</FluentLabel>
+                        <div class="network-indicator"></div>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="4" Class="network-stat-item">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.ArrowDownload())" Color="Color.Custom" CustomColor="#22c55e" />
+                            <FluentLabel Typo="Typography.Body">@downloadSpeed</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">MB/S</FluentLabel>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="4" Class="network-stat-item">
+                            <FluentIcon Value="@(new Icons.Regular.Size20.ArrowUpload())" Color="Color.Custom" CustomColor="#60a5fa" />
+                            <FluentLabel Typo="Typography.Body">@uploadSpeed</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">MB/S</FluentLabel>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentStack>
+            </FluentCard>
+        </FluentStack>
+
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" Class="home-applications">
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-section-header">
+                <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
+                <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
+            </FluentStack>
+            <div class="app-grid">
+                @foreach (var app in visibleApplications)
+                {
+                    <FluentCard Class="app-card" @onclick="@(() => Navigation.NavigateTo(app.Url, true))">
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
+                            <div class="app-icon" style="background: @GetAppGradient(app.IconColor)">
+                                @if (!string.IsNullOrEmpty(app.Icon))
+                                {
+                                    <FluentIcon Value="@GetIcon(app.Icon)" />
+                                }
+                                else
+                                {
+                                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+                                }
+                            </div>
+                            <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="2" Class="app-info">
+                                <FluentLabel Typo="Typography.Body" Class="app-title">@app.Title</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="app-category">@app.Category</FluentLabel>
+                            </FluentStack>
+                        </FluentStack>
+                    </FluentCard>
+                }
+                <FluentCard Class="app-card app-card-add" @onclick="@(() => Navigation.NavigateTo("/app-management"))">
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="12">
+                        <div class="app-icon app-icon-add">
+                            <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
+                        </div>
+                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
+                            <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
+                        </FluentStack>
+                    </FluentStack>
+                </FluentCard>
+            </div>
+        </FluentStack>
+    </FluentStack>
+
+    <!-- Bottom Dock -->
+    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Center" HorizontalGap="8" Class="home-dock">
+        @foreach (var item in dockItems.Take(4))
+        {
+            <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" Class="dock-item" 
+                          @onclick="@(() => Navigation.NavigateTo(item.Url))" 
+                          title="@item.Title">
+                @if (!string.IsNullOrEmpty(item.Icon))
+                {
+                    <FluentIcon Value="@GetIcon(item.Icon)" />
+                }
+                else
+                {
+                    <FluentIcon Value="@(new Icons.Regular.Size24.Apps())" />
+                }
+                <FluentTooltip Anchor="@item.ItemId" Position="TooltipPosition.Top">@item.Title</FluentTooltip>
+            </FluentButton>
+        }
+    </FluentStack>
+</div>
 
 @code {
-    public string TimeNow => DateTime.Now.ToString("HH:mm");
-    public string DateNow => DateTime.Now.ToString("yyyy年MM月dd日 星期") + GetDayOfWeek();
-    public SystemResourceInfo systemInfo = new();
+    private string TimeNow => DateTime.Now.ToString("HH:mm");
+    private string DateNow => DateTime.Now.ToString("yyyy年MM月dd日, 星期") + GetDayOfWeek();
+    private SystemResourceInfo systemInfo = new();
+    private List<Application> visibleApplications = new();
+    private List<DockItem> dockItems = new();
+    private System.Threading.Timer? updateTimer;
+    private int downloadSpeed = 24;
+    private int uploadSpeed = 12;
+    private static readonly Random _random = new Random();
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+        await LoadDataAsync();
+        
+        // Update time and system info every 3 seconds
+        updateTimer = new System.Threading.Timer(async _ =>
         {
-            await LoadDataAsync();
-        }
-        await base.OnAfterRenderAsync(firstRender);
+            await InvokeAsync(async () =>
+            {
+                await LoadSystemInfoAsync();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
     }
 
-    public string GetDayOfWeek()
+    private async Task LoadDataAsync()
     {
-        return "一";
-        // return DateTime.Now.DayOfWeek switch
-        // {
-        //     DayOfWeek.Monday => LocalizationService.GetString("Monday"),
-        //     DayOfWeek.Tuesday => LocalizationService.GetString("Tuesday"),
-        //     DayOfWeek.Wednesday => LocalizationService.GetString("Wednesday"),
-        //     DayOfWeek.Thursday => LocalizationService.GetString("Thursday"),
-        //     DayOfWeek.Friday => LocalizationService.GetString("Friday"),
-        //     DayOfWeek.Saturday => LocalizationService.GetString("Saturday"),
-        //     DayOfWeek.Sunday => LocalizationService.GetString("Sunday"),
-        //     _ => ""
-        // };
+        await Task.WhenAll(
+            LoadSystemInfoAsync(),
+            LoadApplicationsAsync(),
+            LoadDockItemsAsync()
+        );
     }
 
-    public async Task LoadDataAsync()
+    private async Task LoadSystemInfoAsync()
     {
         try
         {
             systemInfo = await SystemMonitorService.GetSystemResourceInfoAsync();
+            
+            // TODO: Implement proper network speed calculation with delta between time intervals
+            // This is placeholder logic for demonstration purposes
+            if (systemInfo.Networks.Any())
+            {
+                var mainNetwork = systemInfo.Networks.First();
+                downloadSpeed = (int)(mainNetwork.BytesReceived / 1024.0 / 1024.0 % 100);
+                uploadSpeed = (int)(mainNetwork.BytesSent / 1024.0 / 1024.0 % 100);
+            }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Handle exceptions
+            // Handle exception
         }
+    }
+
+    private async Task LoadApplicationsAsync()
+    {
+        try
+        {
+            var allApps = await ApplicationService.GetAllApplicationsAsync();
+            visibleApplications = allApps.Where(a => a.IsVisible).Take(8).ToList();
+        }
+        catch (Exception)
+        {
+            // Handle exception
+        }
+    }
+
+    private async Task LoadDockItemsAsync()
+    {
+        try
+        {
+            dockItems = await DockItemService.GetAllDockItemsAsync();
+        }
+        catch (Exception)
+        {
+            // Handle exception
+        }
+    }
+
+    private string GetDayOfWeek()
+    {
+        return DateTime.Now.DayOfWeek switch
+        {
+            DayOfWeek.Monday => "一",
+            DayOfWeek.Tuesday => "二",
+            DayOfWeek.Wednesday => "三",
+            DayOfWeek.Thursday => "四",
+            DayOfWeek.Friday => "五",
+            DayOfWeek.Saturday => "六",
+            DayOfWeek.Sunday => "日",
+            _ => ""
+        };
+    }
+
+    private string GetAppGradient(string? iconColor)
+    {
+        if (string.IsNullOrEmpty(iconColor))
+        {
+            // Default gradients for variety
+            var gradients = new[]
+            {
+                "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+                "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+                "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)"
+            };
+            return gradients[_random.Next(gradients.Length)];
+        }
+        return $"linear-gradient(135deg, {iconColor} 0%, {iconColor}dd 100%)";
+    }
+
+    private Icon GetIcon(string iconName)
+    {
+        // TODO: Implement icon mapping based on iconName parameter
+        // For now, return default icon - icon mapping can be added based on application requirements
+        return new Icons.Regular.Size24.Apps();
+    }
+
+    public void Dispose()
+    {
+        updateTimer?.Dispose();
     }
 }

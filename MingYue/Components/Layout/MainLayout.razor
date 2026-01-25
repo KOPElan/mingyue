@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @using MingYue.Components.Dialog
 @using MingYue.Models
@@ -6,34 +6,46 @@
 @inject IDialogService DialogService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
+@implements IDisposable
 
 <FluentDesignTheme @bind-Mode="@Settings.Mode" @bind-OfficeColor="@Settings.OfficeColor" StorageName="theme" />
-<FluentMainLayout>
-    <Header>
-        <FluentStack>
-            明月 Portal
-        </FluentStack>
-        <FluentSpacer />
-        <FluentStack HorizontalAlignment="HorizontalAlignment.Right" VerticalGap="10">
-            @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
-            {
-                <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>
-                @if (AuthStateService.IsAdmin)
+
+@if (IsHomePage)
+{
+    <!-- Home page with custom layout -->
+    @Body
+}
+else
+{
+    <!-- Standard layout for other pages -->
+    <FluentMainLayout>
+        <Header>
+            <FluentStack>
+                明月 Portal
+            </FluentStack>
+            <FluentSpacer />
+            <FluentStack HorizontalAlignment="HorizontalAlignment.Right" VerticalGap="10">
+                @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
                 {
-                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Admin</FluentBadge>
+                    <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>
+                    @if (AuthStateService.IsAdmin)
+                    {
+                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">Admin</FluentBadge>
+                    }
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="Logout">
+                        <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
+                    </FluentButton>
                 }
-                <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="Logout">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
-                </FluentButton>
-            }
-            <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="@Color.Fill"></FluentIcon>
-            <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="@Color.Fill" Title="设置" @onclick="OpenSetting" />
-        </FluentStack>
-    </Header>
-    <Body>
-        @Body
-    </Body>
-</FluentMainLayout>
+                <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" Color="@Color.Fill"></FluentIcon>
+                <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" Color="@Color.Fill" Title="设置" @onclick="OpenSetting" />
+            </FluentStack>
+        </Header>
+        <Body>
+            @Body
+        </Body>
+    </FluentMainLayout>
+}
+
 <FluentToastProvider />
 <FluentDialogProvider />
 <FluentTooltipProvider />
@@ -47,10 +59,25 @@
 
 @code {
     public SettingModel Settings { get; set; } = new();
+    private string _currentPath = "";
+    private bool IsHomePage => _currentPath == "" || _currentPath == "/";
 
     protected override void OnInitialized()
     {
         AuthStateService.OnAuthenticationStateChanged += StateHasChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+        UpdateCurrentPath();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateCurrentPath();
+        StateHasChanged();
+    }
+
+    private void UpdateCurrentPath()
+    {
+        _currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
     }
 
     public async Task OpenSetting()
@@ -75,5 +102,6 @@
     public void Dispose()
     {
         AuthStateService.OnAuthenticationStateChanged -= StateHasChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 }

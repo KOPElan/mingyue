@@ -14,7 +14,7 @@
 <FluentStack Orientation="Orientation.Vertical" Class="home-content">
     <!-- Clock Section -->
     <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="home-clock-section">
-        <div class="home-clock">@TimeNow</div>
+        <div class="home-clock">@TimeNow</div>        
         <FluentLabel Typo="Typography.Body" Class="home-date">@DateNow</FluentLabel>
     </FluentStack>
     <!-- Info Cards -->
@@ -97,7 +97,7 @@
             <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
             <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
         </FluentStack>
-        <FluentGrid class="app-grid">
+        <FluentGrid Spacing="10" class="app-grid" Style="width:100%;">
             @foreach (var app in visibleApplications)
             {
                 <FluentGridItem xs="6" sm="4" md="2">

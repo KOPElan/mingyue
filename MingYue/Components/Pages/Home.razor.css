@@ -28,7 +28,7 @@
 }
 
 .home-clock {
-    font-size: clamp(4rem, 15vw, 9rem);
+    font-size: clamp(3rem, 12vw, 7rem);
     font-weight: 200;
     letter-spacing: -0.02em;
     color: var(--neutral-foreground-rest, #ffffff);

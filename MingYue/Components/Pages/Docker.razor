@@ -1,0 +1,841 @@
+@page "/docker"
+@using MingYue.Models
+@using MingYue.Services
+@inject IDockerManagementService DockerService
+@inject IApplicationService AppService
+@inject ILogger<Docker> Logger
+@inject IToastService ToastService
+
+<PageTitle>Docker Management - MingYue</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">Docker Management</h2>
+        <FluentSpacer />
+        @if (!isDockerAvailable)
+        {
+            <FluentBadge Fill="error" BackgroundColor="red" Color="white">
+                Docker Not Available
+            </FluentBadge>
+        }
+        else
+        {
+            <FluentBadge Fill="success" BackgroundColor="green" Color="white">
+                Docker Available
+            </FluentBadge>
+        }
+        <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshData" Disabled="@isLoading">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
+            Refresh
+        </FluentButton>
+    </FluentStack>
+
+    @if (!isDockerAvailable)
+    {
+        <FluentMessageBar Intent="MessageIntent.Error">
+            Docker is not available. Please ensure Docker is installed and running.
+        </FluentMessageBar>
+        return;
+    }
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else
+    {
+        <FluentTabs>
+            <FluentTab Label="Containers">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 15px;">
+                    @if (containers.Count == 0)
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Info">
+                            No containers found.
+                        </FluentMessageBar>
+                    }
+                    else
+                    {
+                        <FluentDataGrid Items="@containers.AsQueryable()" GridTemplateColumns="0.8fr 1.2fr 1.5fr 0.8fr 1.2fr 1fr 1.5fr">
+                            <PropertyColumn Property="@(c => c.Id.Substring(0, Math.Min(12, c.Id.Length)))" Title="Container ID" Sortable="true" />
+                            <PropertyColumn Property="@(c => c.Name)" Title="Name" Sortable="true" />
+                            <PropertyColumn Property="@(c => c.Image)" Title="Image" Sortable="true" />
+                            <TemplateColumn Title="Status" Sortable="true">
+                                @{
+                                    var statusColor = GetStatusColor(context.State);
+                                    var statusFill = GetStatusFill(context.State);
+                                }
+                                <FluentBadge Fill="@statusFill" BackgroundColor="@statusColor" Color="white">
+                                    @context.Status
+                                </FluentBadge>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Ports">
+                                @if (context.Ports.Any())
+                                {
+                                    <span style="font-size: 12px;">@string.Join(", ", context.Ports.Take(2))</span>
+                                    @if (context.Ports.Count > 2)
+                                    {
+                                        <span style="font-size: 11px; color: gray;"> +@(context.Ports.Count - 2) more</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color: gray;">-</span>
+                                }
+                            </TemplateColumn>
+                            <TemplateColumn Title="Created">
+                                <span style="font-size: 12px;">@FormatDate(context.Created)</span>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Actions">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
+                                    @if (context.State.Equals("running", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <FluentButton Appearance="Appearance.Lightweight" 
+                                                    OnClick="@(() => StopContainer(context.Id))"
+                                                    Title="Stop">
+                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Stop())" Color="@Color.Warning" />
+                                        </FluentButton>
+                                        <FluentButton Appearance="Appearance.Lightweight" 
+                                                    OnClick="@(() => RestartContainer(context.Id))"
+                                                    Title="Restart">
+                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowClockwise())" />
+                                        </FluentButton>
+                                    }
+                                    else
+                                    {
+                                        <FluentButton Appearance="Appearance.Lightweight" 
+                                                    OnClick="@(() => StartContainer(context.Id))"
+                                                    Title="Start">
+                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Play())" Color="@Color.Success" />
+                                        </FluentButton>
+                                    }
+                                    <FluentButton Appearance="Appearance.Lightweight" 
+                                                OnClick="@(() => OpenLogsDialog(context))"
+                                                Title="View Logs">
+                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.DocumentText())" />
+                                    </FluentButton>
+                                    <FluentButton Appearance="Appearance.Lightweight" 
+                                                OnClick="@(() => OpenCreateShortcutDialog(context))"
+                                                Title="Create Shortcut">
+                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Apps())" />
+                                    </FluentButton>
+                                    <FluentButton Appearance="Appearance.Lightweight" 
+                                                OnClick="@(() => OpenDeleteContainerDialog(context))"
+                                                Title="Delete">
+                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                    </FluentButton>
+                                </FluentStack>
+                            </TemplateColumn>
+                        </FluentDataGrid>
+                    }
+                </FluentStack>
+            </FluentTab>
+
+            <FluentTab Label="Images">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 15px;">
+                    <FluentStack Orientation="Orientation.Horizontal">
+                        <FluentSpacer />
+                        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenPullImageDialog">
+                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
+                            Pull Image
+                        </FluentButton>
+                    </FluentStack>
+
+                    @if (images.Count == 0)
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Info">
+                            No images found.
+                        </FluentMessageBar>
+                    }
+                    else
+                    {
+                        <FluentDataGrid Items="@images.AsQueryable()" GridTemplateColumns="1fr 2fr 0.8fr 1fr 0.8fr">
+                            <PropertyColumn Property="@(i => i.Id.Substring(7, Math.Min(12, i.Id.Length - 7)))" Title="Image ID" Sortable="true" />
+                            <TemplateColumn Title="Repository:Tag" Sortable="true">
+                                @if (context.RepoTags.Any())
+                                {
+                                    foreach (var tag in context.RepoTags.Take(2))
+                                    {
+                                        <div style="font-size: 12px;">@tag</div>
+                                    }
+                                    @if (context.RepoTags.Count > 2)
+                                    {
+                                        <span style="font-size: 11px; color: gray;">+@(context.RepoTags.Count - 2) more</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color: gray;">&lt;none&gt;</span>
+                                }
+                            </TemplateColumn>
+                            <TemplateColumn Title="Size" Sortable="true">
+                                <span style="font-size: 12px;">@FormatSize(context.Size)</span>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Created">
+                                <span style="font-size: 12px;">@FormatDate(context.Created)</span>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Actions">
+                                <FluentButton Appearance="Appearance.Lightweight" 
+                                            OnClick="@(() => OpenDeleteImageDialog(context))"
+                                            Title="Delete">
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                </FluentButton>
+                            </TemplateColumn>
+                        </FluentDataGrid>
+                    }
+                </FluentStack>
+            </FluentTab>
+        </FluentTabs>
+    }
+</FluentStack>
+
+<!-- Logs Dialog -->
+<FluentDialog @ref="logsDialog" @bind-Hidden="@isLogsDialogHidden" TrapFocus="true" Modal="true" Style="width: 80%; max-width: 1000px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Container Logs: @selectedContainer?.Name
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        @if (isLoadingLogs)
+        {
+            <FluentProgressRing />
+        }
+        else
+        {
+            <div style="background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; white-space: pre-wrap; word-wrap: break-word;">@containerLogs</div>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseLogsDialog">
+            Close
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Pull Image Dialog -->
+<FluentDialog @ref="pullImageDialog" @bind-Hidden="@isPullImageDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.ArrowDownload())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Pull Docker Image
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentTextField 
+                @bind-Value="imageToPull"
+                Label="Image Name (e.g., nginx:latest, mysql:8.0)"
+                Required="true"
+                Style="width: 100%;"
+                Placeholder="repository:tag" />
+            
+            @if (isPullingImage)
+            {
+                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+                    <FluentProgressRing Style="width: 20px; height: 20px;" />
+                    <span>Pulling image... This may take a while.</span>
+                </FluentStack>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@PullImage" Disabled="@(string.IsNullOrWhiteSpace(imageToPull) || isPullingImage)">
+            Pull
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@ClosePullImageDialog" Disabled="@isPullingImage">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Delete Container Confirmation Dialog -->
+<FluentDialog @ref="deleteContainerDialog" @bind-Hidden="@isDeleteContainerDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Delete())" Color="@Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Confirm Delete Container
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <p>Are you sure you want to delete container <strong>@containerToDelete?.Name</strong>?</p>
+        <p style="color: red;">This action cannot be undone.</p>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@DeleteContainer">
+            Delete
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDeleteContainerDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Delete Image Confirmation Dialog -->
+<FluentDialog @ref="deleteImageDialog" @bind-Hidden="@isDeleteImageDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Delete())" Color="@Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Confirm Delete Image
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <p>Are you sure you want to delete this image?</p>
+        @if (imageToDelete?.RepoTags.Any() == true)
+        {
+            <p><strong>Tags:</strong> @string.Join(", ", imageToDelete.RepoTags)</p>
+        }
+        <p style="color: red;">This action cannot be undone.</p>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@DeleteImage">
+            Delete
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDeleteImageDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Create Shortcut Dialog -->
+<FluentDialog @ref="createShortcutDialog" @bind-Hidden="@isCreateShortcutDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Apps())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Create Application Shortcut
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentTextField 
+                @bind-Value="shortcutApp.Title"
+                Label="Application Name"
+                Required="true"
+                Style="width: 100%;" />
+            
+            <FluentTextField 
+                @bind-Value="shortcutApp.Url"
+                Label="URL"
+                Required="true"
+                Placeholder="http://localhost:8080"
+                Style="width: 100%;" />
+            
+            <FluentTextField 
+                @bind-Value="shortcutApp.Icon"
+                Label="Icon (FluentUI icon name)"
+                Style="width: 100%;" />
+            
+            <FluentTextField 
+                @bind-Value="shortcutApp.Description"
+                Label="Description (optional)"
+                Style="width: 100%;" />
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@CreateShortcut">
+            Create
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseCreateShortcutDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<DockerContainerInfo> containers = new();
+    private List<DockerImageInfo> images = new();
+    private bool isLoading = true;
+    private bool isDockerAvailable = false;
+
+    // Logs dialog
+    private FluentDialog? logsDialog;
+    private bool isLogsDialogHidden = true;
+    private bool isLoadingLogs = false;
+    private DockerContainerInfo? selectedContainer;
+    private string containerLogs = string.Empty;
+
+    // Pull image dialog
+    private FluentDialog? pullImageDialog;
+    private bool isPullImageDialogHidden = true;
+    private bool isPullingImage = false;
+    private string imageToPull = string.Empty;
+
+    // Delete container dialog
+    private FluentDialog? deleteContainerDialog;
+    private bool isDeleteContainerDialogHidden = true;
+    private DockerContainerInfo? containerToDelete;
+
+    // Delete image dialog
+    private FluentDialog? deleteImageDialog;
+    private bool isDeleteImageDialogHidden = true;
+    private DockerImageInfo? imageToDelete;
+
+    // Create shortcut dialog
+    private FluentDialog? createShortcutDialog;
+    private bool isCreateShortcutDialogHidden = true;
+    private Application shortcutApp = new();
+    private DockerContainerInfo? containerForShortcut;
+
+    /// <summary>
+    /// Initialize the page by checking Docker availability and loading data
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckDockerAvailability();
+        if (isDockerAvailable)
+        {
+            await LoadData();
+        }
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// Check if Docker is available
+    /// </summary>
+    private async Task CheckDockerAvailability()
+    {
+        try
+        {
+            isDockerAvailable = await DockerService.IsDockerAvailableAsync();
+            if (!isDockerAvailable)
+            {
+                Logger.LogWarning("Docker is not available");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking Docker availability");
+            isDockerAvailable = false;
+        }
+    }
+
+    /// <summary>
+    /// Load all Docker data (containers and images)
+    /// </summary>
+    private async Task LoadData()
+    {
+        try
+        {
+            var containersTask = DockerService.GetContainersAsync(true);
+            var imagesTask = DockerService.GetImagesAsync();
+
+            await Task.WhenAll(containersTask, imagesTask);
+
+            containers = await containersTask;
+            images = await imagesTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading Docker data");
+            ToastService.ShowError("Failed to load Docker data");
+        }
+    }
+
+    /// <summary>
+    /// Refresh all data
+    /// </summary>
+    private async Task RefreshData()
+    {
+        isLoading = true;
+        await CheckDockerAvailability();
+        if (isDockerAvailable)
+        {
+            await LoadData();
+        }
+        isLoading = false;
+        ToastService.ShowSuccess("Data refreshed");
+    }
+
+    #region Container Actions
+
+    /// <summary>
+    /// Start a container
+    /// </summary>
+    private async Task StartContainer(string containerId)
+    {
+        try
+        {
+            await DockerService.StartContainerAsync(containerId);
+            ToastService.ShowSuccess("Container started successfully");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error starting container {ContainerId}", containerId);
+            ToastService.ShowError($"Failed to start container: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Stop a container
+    /// </summary>
+    private async Task StopContainer(string containerId)
+    {
+        try
+        {
+            await DockerService.StopContainerAsync(containerId);
+            ToastService.ShowSuccess("Container stopped successfully");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error stopping container {ContainerId}", containerId);
+            ToastService.ShowError($"Failed to stop container: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Restart a container
+    /// </summary>
+    private async Task RestartContainer(string containerId)
+    {
+        try
+        {
+            await DockerService.RestartContainerAsync(containerId);
+            ToastService.ShowSuccess("Container restarted successfully");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error restarting container {ContainerId}", containerId);
+            ToastService.ShowError($"Failed to restart container: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Open delete container confirmation dialog
+    /// </summary>
+    private void OpenDeleteContainerDialog(DockerContainerInfo container)
+    {
+        containerToDelete = container;
+        isDeleteContainerDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Delete a container
+    /// </summary>
+    private async Task DeleteContainer()
+    {
+        if (containerToDelete == null) return;
+
+        try
+        {
+            await DockerService.RemoveContainerAsync(containerToDelete.Id);
+            ToastService.ShowSuccess("Container deleted successfully");
+            await LoadData();
+            CloseDeleteContainerDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting container {ContainerId}", containerToDelete.Id);
+            ToastService.ShowError($"Failed to delete container: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Close delete container dialog
+    /// </summary>
+    private void CloseDeleteContainerDialog()
+    {
+        isDeleteContainerDialogHidden = true;
+        containerToDelete = null;
+    }
+
+    #endregion
+
+    #region Container Logs
+
+    /// <summary>
+    /// Open logs dialog for a container
+    /// </summary>
+    private async Task OpenLogsDialog(DockerContainerInfo container)
+    {
+        selectedContainer = container;
+        isLogsDialogHidden = false;
+        isLoadingLogs = true;
+        containerLogs = string.Empty;
+
+        try
+        {
+            containerLogs = await DockerService.GetContainerLogsAsync(container.Id, 1000);
+            if (string.IsNullOrWhiteSpace(containerLogs))
+            {
+                containerLogs = "No logs available.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading container logs for {ContainerId}", container.Id);
+            containerLogs = $"Error loading logs: {ex.Message}";
+        }
+        finally
+        {
+            isLoadingLogs = false;
+        }
+    }
+
+    /// <summary>
+    /// Close logs dialog
+    /// </summary>
+    private void CloseLogsDialog()
+    {
+        isLogsDialogHidden = true;
+        selectedContainer = null;
+        containerLogs = string.Empty;
+    }
+
+    #endregion
+
+    #region Image Actions
+
+    /// <summary>
+    /// Open pull image dialog
+    /// </summary>
+    private void OpenPullImageDialog()
+    {
+        imageToPull = string.Empty;
+        isPullImageDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Pull a Docker image
+    /// </summary>
+    private async Task PullImage()
+    {
+        if (string.IsNullOrWhiteSpace(imageToPull)) return;
+
+        isPullingImage = true;
+        try
+        {
+            await DockerService.PullImageAsync(imageToPull);
+            ToastService.ShowSuccess($"Image '{imageToPull}' pulled successfully");
+            await LoadData();
+            ClosePullImageDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error pulling image {ImageName}", imageToPull);
+            ToastService.ShowError($"Failed to pull image: {ex.Message}");
+        }
+        finally
+        {
+            isPullingImage = false;
+        }
+    }
+
+    /// <summary>
+    /// Close pull image dialog
+    /// </summary>
+    private void ClosePullImageDialog()
+    {
+        isPullImageDialogHidden = true;
+        imageToPull = string.Empty;
+    }
+
+    /// <summary>
+    /// Open delete image confirmation dialog
+    /// </summary>
+    private void OpenDeleteImageDialog(DockerImageInfo image)
+    {
+        imageToDelete = image;
+        isDeleteImageDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Delete an image
+    /// </summary>
+    private async Task DeleteImage()
+    {
+        if (imageToDelete == null) return;
+
+        try
+        {
+            await DockerService.RemoveImageAsync(imageToDelete.Id);
+            ToastService.ShowSuccess("Image deleted successfully");
+            await LoadData();
+            CloseDeleteImageDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting image {ImageId}", imageToDelete.Id);
+            ToastService.ShowError($"Failed to delete image: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Close delete image dialog
+    /// </summary>
+    private void CloseDeleteImageDialog()
+    {
+        isDeleteImageDialogHidden = true;
+        imageToDelete = null;
+    }
+
+    #endregion
+
+    #region Create Shortcut
+
+    /// <summary>
+    /// Open create shortcut dialog
+    /// </summary>
+    private void OpenCreateShortcutDialog(DockerContainerInfo container)
+    {
+        containerForShortcut = container;
+        
+        // Pre-fill shortcut with container info
+        shortcutApp = new Application
+        {
+            Title = container.Name.TrimStart('/'),
+            Description = $"Container: {container.Image}",
+            Icon = "Box",
+            Category = "Docker",
+            IsVisible = true
+        };
+
+        // Try to extract URL from ports
+        if (container.Ports.Any())
+        {
+            var firstPort = container.Ports.First();
+            // Extract port number from format like "0.0.0.0:8080->80/tcp"
+            var portMatch = System.Text.RegularExpressions.Regex.Match(firstPort, @"(\d+\.\d+\.\d+\.\d+):(\d+)");
+            if (portMatch.Success)
+            {
+                var port = portMatch.Groups[2].Value;
+                shortcutApp.Url = $"http://localhost:{port}";
+            }
+        }
+
+        isCreateShortcutDialogHidden = false;
+    }
+
+    /// <summary>
+    /// Create application shortcut from container
+    /// </summary>
+    private async Task CreateShortcut()
+    {
+        if (string.IsNullOrWhiteSpace(shortcutApp.Title) || string.IsNullOrWhiteSpace(shortcutApp.Url))
+        {
+            ToastService.ShowWarning("Please fill in required fields");
+            return;
+        }
+
+        try
+        {
+            await AppService.CreateApplicationAsync(shortcutApp);
+            ToastService.ShowSuccess("Application shortcut created successfully");
+            CloseCreateShortcutDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating application shortcut");
+            ToastService.ShowError($"Failed to create shortcut: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Close create shortcut dialog
+    /// </summary>
+    private void CloseCreateShortcutDialog()
+    {
+        isCreateShortcutDialogHidden = true;
+        containerForShortcut = null;
+        shortcutApp = new();
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Get status badge color based on container state
+    /// </summary>
+    private string GetStatusColor(string state)
+    {
+        return state.ToLower() switch
+        {
+            "running" => "green",
+            "exited" => "gray",
+            "paused" => "orange",
+            "restarting" => "blue",
+            "dead" => "red",
+            _ => "gray"
+        };
+    }
+
+    /// <summary>
+    /// Get status badge fill type based on container state
+    /// </summary>
+    private string GetStatusFill(string state)
+    {
+        return state.ToLower() switch
+        {
+            "running" => "success",
+            "exited" => "neutral",
+            "paused" => "warning",
+            "restarting" => "info",
+            "dead" => "error",
+            _ => "neutral"
+        };
+    }
+
+    /// <summary>
+    /// Format size in bytes to human-readable format
+    /// </summary>
+    private string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    /// <summary>
+    /// Format date to relative time
+    /// </summary>
+    private string FormatDate(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        
+        if (timeSpan.TotalDays > 365)
+            return $"{(int)(timeSpan.TotalDays / 365)} years ago";
+        if (timeSpan.TotalDays > 30)
+            return $"{(int)(timeSpan.TotalDays / 30)} months ago";
+        if (timeSpan.TotalDays >= 1)
+            return $"{(int)timeSpan.TotalDays} days ago";
+        if (timeSpan.TotalHours >= 1)
+            return $"{(int)timeSpan.TotalHours} hours ago";
+        if (timeSpan.TotalMinutes >= 1)
+            return $"{(int)timeSpan.TotalMinutes} minutes ago";
+        
+        return "just now";
+    }
+
+    #endregion
+}

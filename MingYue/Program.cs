@@ -31,6 +31,7 @@ builder.Services.AddScoped<IFileIndexService, FileIndexService>();
 builder.Services.AddScoped<IDiskManagementService, DiskManagementService>();
 builder.Services.AddScoped<IShareManagementService, ShareManagementService>();
 builder.Services.AddScoped<IDockerManagementService, DockerManagementService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<AuthenticationStateService>();
 var app = builder.Build();
 

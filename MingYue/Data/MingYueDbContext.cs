@@ -17,9 +17,11 @@ namespace MingYue.Data
         public DbSet<FavoriteFolder> FavoriteFolders { get; set; } = null!;
         public DbSet<FileIndex> FileIndexes { get; set; } = null!;
         public DbSet<Thumbnail> Thumbnails { get; set; } = null!;
-        //public DbSet<ScheduledTask> ScheduledTasks { get; set; } = null!;
-        //public DbSet<AnydropMessage> AnydropMessages { get; set; } = null!;
-        //public DbSet<AnydropAttachment> AnydropAttachments { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<ScheduledTask> ScheduledTasks { get; set; } = null!;
+        public DbSet<ScheduledTaskExecutionHistory> ScheduledTaskExecutionHistories { get; set; } = null!;
+        public DbSet<AnydropMessage> AnydropMessages { get; set; } = null!;
+        public DbSet<AnydropAttachment> AnydropAttachments { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -106,42 +108,68 @@ namespace MingYue.Data
                 entity.Property(e => e.ThumbnailData).IsRequired();
             });
 
-            //// Configure ScheduledTask
-            //modelBuilder.Entity<ScheduledTask>(entity =>
-            //{
-            //    entity.HasKey(e => e.Id);
-            //    entity.HasIndex(e => e.TaskType);
-            //    entity.HasIndex(e => e.NextRunTime);
-            //    entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-            //    entity.Property(e => e.Description).HasMaxLength(1000);
-            //    entity.Property(e => e.TaskType).IsRequired().HasMaxLength(100);
-            //    entity.Property(e => e.Configuration).HasMaxLength(4000);
-            //    entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
-            //});
+            // Configure Notification
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.IsRead);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Message).IsRequired();
+                entity.Property(e => e.Type).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.ActionUrl).HasMaxLength(500);
+                entity.Property(e => e.Icon).HasMaxLength(100);
+            });
 
-            //// Configure AnydropMessage
-            //modelBuilder.Entity<AnydropMessage>(entity =>
-            //{
-            //    entity.HasKey(e => e.Id);
-            //    entity.HasIndex(e => e.CreatedAt);
-            //    entity.Property(e => e.MessageType).IsRequired().HasMaxLength(50);
-            //});
+            // Configure ScheduledTask
+            modelBuilder.Entity<ScheduledTask>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.TaskType);
+                entity.HasIndex(e => e.NextRunAt);
+                entity.HasIndex(e => e.IsEnabled);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.TaskType).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.TaskData).IsRequired();
+                entity.Property(e => e.CronExpression).IsRequired().HasMaxLength(100);
+            });
 
-            //// Configure AnydropAttachment
-            //modelBuilder.Entity<AnydropAttachment>(entity =>
-            //{
-            //    entity.HasKey(e => e.Id);
-            //    entity.HasIndex(e => e.MessageId);
-            //    entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
-            //    entity.Property(e => e.FilePath).IsRequired().HasMaxLength(2000);
-            //    entity.Property(e => e.ContentType).IsRequired().HasMaxLength(200);
-            //    entity.Property(e => e.AttachmentType).IsRequired().HasMaxLength(50);
+            // Configure ScheduledTaskExecutionHistory
+            modelBuilder.Entity<ScheduledTaskExecutionHistory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.TaskId);
+                entity.HasIndex(e => e.StartedAt);
+                entity.Property(e => e.Output).HasMaxLength(4000);
+                entity.Property(e => e.ErrorMessage).HasMaxLength(4000);
+            });
 
-            //    entity.HasOne(e => e.Message)
-            //        .WithMany(m => m.Attachments)
-            //        .HasForeignKey(e => e.MessageId)
-            //        .OnDelete(DeleteBehavior.Cascade);
-            //});
+            // Configure AnydropMessage
+            modelBuilder.Entity<AnydropMessage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.IsRead);
+                entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.SenderDeviceId).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.SenderDeviceName).HasMaxLength(200);
+            });
+
+            // Configure AnydropAttachment
+            modelBuilder.Entity<AnydropAttachment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.MessageId);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.FilePath).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.ContentType).HasMaxLength(200);
+
+                entity.HasOne(e => e.Message)
+                    .WithMany(m => m.Attachments)
+                    .HasForeignKey(e => e.MessageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

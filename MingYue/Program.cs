@@ -15,22 +15,6 @@ builder.Services.AddHttpClient();
 // Add SQLite database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Data Source=mingyue.db";
-
-// Ensure database directory exists for absolute paths
-if (connectionString.Contains("Data Source=") && connectionString.Contains("/"))
-{
-    var match = System.Text.RegularExpressions.Regex.Match(connectionString, @"Data Source=([^;]+)");
-    if (match.Success)
-    {
-        var dbPath = match.Groups[1].Value;
-        var dbDirectory = Path.GetDirectoryName(dbPath);
-        if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
-        {
-            Directory.CreateDirectory(dbDirectory);
-        }
-    }
-}
-
 // Register DbContextFactory for services that need multiple contexts or custom lifetime management (e.g., FileManagerService)
 builder.Services.AddDbContextFactory<MingYueDbContext>(options =>
     options.UseSqlite(connectionString));

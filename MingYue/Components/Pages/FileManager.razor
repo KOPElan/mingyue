@@ -13,202 +13,254 @@
 
 <PageTitle>File Manager - MingYue</PageTitle>
 
-<FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="height: 100%;">
-    <!-- Toolbar -->
-    <FluentToolbar Style="width: 100%;">
-        <FluentButton Appearance="Appearance.Lightweight" OnClick="@NavigateUp" Disabled="@IsRootPath">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUp())" />
-        </FluentButton>
-        <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshFiles">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
-        </FluentButton>
-        <FluentDivider Orientation="Orientation.Vertical" Style="height: 24px;" />
-        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenCreateFolderDialog">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.FolderAdd())" />
-            New Folder
-        </FluentButton>
-        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenUploadDialog">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())" />
-            Upload
-        </FluentButton>
-        <FluentDivider Orientation="Orientation.Vertical" Style="height: 24px;" />
-        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => ToggleViewMode())" Title="@(viewMode == ViewMode.List ? "Grid View" : "List View")">
-            <FluentIcon Value="@GetViewModeIcon()" />
-        </FluentButton>
-        <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenFavoritesDialog" Title="Favorites">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Star())" />
-        </FluentButton>
-        <FluentSpacer />
-        <FluentSearch @bind-Value="@searchQuery" 
-                      @bind-Value:after="@OnSearchChanged"
-                      Placeholder="Search files..."
-                      Style="width: 300px;" 
-                      Immediate="false"
-                      ImmediateDelay="500" />
-    </FluentToolbar>
+<div class="file-manager-container">
+    <!-- Left Sidebar -->
+    <div class="file-manager-sidebar">
+        <!-- Create Button -->
+        <FluentMenu>
+            <button class="sidebar-create-button" @onclick="@OpenCreateMenu">
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
+                Create
+            </button>
+            <FluentMenuItem OnClick="@OpenCreateFolderDialog">
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.FolderAdd())" Slot="start" />
+                New Folder
+            </FluentMenuItem>
+            <FluentMenuItem OnClick="@OpenUploadDialog">
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowUpload())" Slot="start" />
+                Upload Files
+            </FluentMenuItem>
+        </FluentMenu>
 
-    <!-- Breadcrumb Navigation -->
-    <FluentBreadcrumb>
-        <FluentBreadcrumbItem OnClick="@(() => NavigateToPath("/"))">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Home())" />
-        </FluentBreadcrumbItem>
-        @foreach (var segment in GetPathSegments())
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-item @(currentView == "files" ? "active" : "")" @onclick='@(() => SetCurrentView("files"))'>
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder())" />
+                Files
+            </div>
+            <div class="sidebar-nav-item @(currentView == "recent" ? "active" : "")" @onclick='@(() => SetCurrentView("recent"))'>
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Clock())" />
+                Recent
+            </div>
+            <div class="sidebar-nav-item @(currentView == "sharings" ? "active" : "")" @onclick='@(() => SetCurrentView("sharings"))'>
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ShareAndroid())" />
+                Sharings
+            </div>
+            <div class="sidebar-nav-item @(currentView == "trash" ? "active" : "")" @onclick='@(() => SetCurrentView("trash"))'>
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Delete())" />
+                Trash
+            </div>
+
+            @if (favoriteFolders.Any())
+            {
+                <div class="sidebar-section-title">Favorites</div>
+                @foreach (var favorite in favoriteFolders)
+                {
+                    <div class="sidebar-nav-item" @onclick="@(() => NavigateToPath(favorite.Path))">
+                        <FluentIcon Value="@(GetFavoriteIcon(favorite.Icon))" />
+                        @favorite.Name
+                    </div>
+                }
+            }
+        </nav>
+
+        <!-- Storage Info -->
+        @if (storageInfo.total > 0)
         {
-            var capturedPath = segment.Path;
-            <FluentBreadcrumbItem OnClick="@(() => NavigateToPath(capturedPath))">
-                @segment.Name
-            </FluentBreadcrumbItem>
+            <div class="sidebar-storage">
+                <div class="storage-info">
+                    @FileUtilities.FormatSize(storageInfo.total - storageInfo.available) / @FileUtilities.FormatSize(storageInfo.total)
+                </div>
+                <div class="storage-bar">
+                    <div class="storage-bar-fill" style="width: @((100.0 * (storageInfo.total - storageInfo.available) / storageInfo.total).ToString("F1"))%"></div>
+                </div>
+                <div class="storage-info">
+                    @((100.0 * (storageInfo.total - storageInfo.available) / storageInfo.total).ToString("F1"))% used
+                </div>
+            </div>
         }
-    </FluentBreadcrumb>
+    </div>
 
     <!-- Main Content Area -->
-    <FluentStack Orientation="Orientation.Horizontal" Style="flex: 1; overflow: hidden;">
-        <!-- Favorites Sidebar -->
-        @if (showFavorites && favoriteFolders.Any())
-        {
-            <FluentCard Style="width: 250px; overflow-y: auto;">
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
-                    <FluentLabel Typo="Typography.Subject" Style="font-weight: bold;">Favorites</FluentLabel>
-                    @foreach (var favorite in favoriteFolders)
-                    {
-                        <FluentButton Appearance="Appearance.Lightweight" 
-                                    OnClick="@(() => NavigateToPath(favorite.Path))"
-                                    Style="justify-content: flex-start; width: 100%;">
-                            <FluentIcon Value="@(GetFavoriteIcon(favorite.Icon))" />
-                            @favorite.Name
-                        </FluentButton>
-                    }
-                </FluentStack>
-            </FluentCard>
-        }
+    <div class="file-manager-main">
+        <!-- Header -->
+        <div class="file-manager-header">
+            <div class="header-top">
+                <!-- Search -->
+                <FluentSearch @bind-Value="@searchQuery" 
+                              @bind-Value:after="@OnSearchChanged"
+                              Placeholder="Search files..."
+                              Style="width: 400px;" 
+                              Immediate="false"
+                              ImmediateDelay="500" />
 
-        <!-- File List Area -->
-        <FluentCard Style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
-            @if (isLoading)
-            {
-                <FluentStack HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center" Style="flex: 1;">
-                    <FluentProgressRing />
-                </FluentStack>
-            }
-            else if (!string.IsNullOrEmpty(errorMessage))
-            {
+                <!-- Actions -->
+                <div class="header-actions">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshFiles" Title="Refresh">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => ToggleViewMode())" Title="@(viewMode == ViewMode.List ? "Grid View" : "List View")">
+                        <FluentIcon Value="@GetViewModeIcon()" />
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenFavoritesDialog" Title="Manage Favorites">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Star())" />
+                    </FluentButton>
+                </div>
+            </div>
+
+            <!-- Breadcrumb -->
+            <div class="breadcrumb-nav">
+                <div class="breadcrumb-item" @onclick="@(() => NavigateToPath("/"))">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Folder())" />
+                </div>
+                @foreach (var segment in GetPathSegments())
+                {
+                    var capturedPath = segment.Path;
+                    <span class="breadcrumb-separator">›</span>
+                    <div class="breadcrumb-item" @onclick="@(() => NavigateToPath(capturedPath))">
+                        @segment.Name
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        @if (isLoading)
+        {
+            <div class="empty-state">
+                <FluentProgressRing />
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="empty-state">
                 <FluentMessageBar Intent="MessageIntent.Error">
                     @errorMessage
                 </FluentMessageBar>
-            }
-            else if (DisplayedFiles.Count == 0)
+            </div>
+        }
+        else if (DisplayedFiles.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Folder())" />
+                </div>
+                <div class="empty-state-title">
+                    @(string.IsNullOrEmpty(searchQuery) ? "This folder is empty" : "No files found")
+                </div>
+                <div class="empty-state-text">
+                    @(string.IsNullOrEmpty(searchQuery) ? "Upload files or create a new folder to get started" : "Try adjusting your search query")
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (viewMode == ViewMode.Grid)
             {
-                <FluentMessageBar Intent="MessageIntent.Info">
-                    @(string.IsNullOrEmpty(searchQuery) ? "This folder is empty." : "No files found matching your search.")
-                </FluentMessageBar>
+                <div class="file-grid-container">
+                    <div class="file-grid">
+                        @foreach (var item in DisplayedFiles)
+                        {
+                            <div class="file-card" @ondblclick="@(() => OnItemClick(item))">
+                                <div class="file-card-thumbnail">
+                                    @if (item.IsDirectory)
+                                    {
+                                        <div class="file-card-icon">
+                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Folder())" Color="@Color.Accent" />
+                                        </div>
+                                    }
+                                    else if (IsImageFile(item))
+                                    {
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailData))
+                                        {
+                                            <img src="@item.ThumbnailData" alt="@item.Name" />
+                                        }
+                                        else
+                                        {
+                                            <div class="file-card-icon">
+                                                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Image())" />
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="file-card-icon">
+                                            <FluentIcon Value="@GetFileIcon(item)" />
+                                        </div>
+                                    }
+                                </div>
+                                <div class="file-card-name" title="@item.Name">@item.Name</div>
+                                <div class="file-card-meta">@item.SizeDisplay</div>
+                            </div>
+                        }
+                    </div>
+                </div>
             }
             else
             {
-                @if (viewMode == ViewMode.List)
-                {
-                    <div style="overflow: auto; flex: 1;">
-                        <FluentDataGrid Items="@DisplayedFiles.AsQueryable()" 
-                                      GridTemplateColumns="3fr 1fr 1.5fr 1fr"
-                                      Style="width: 100%;">
-                            <TemplateColumn Title="Name" Sortable="true">
-                                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                                    <FluentIcon Value="@GetFileIcon(context)" Style="font-size: 1.2rem;" />
+                <div class="file-list-container">
+                    <div class="file-list-header">
+                        <div>Name</div>
+                        <div>Size</div>
+                        <div>Modified</div>
+                        <div>Actions</div>
+                    </div>
+                    @foreach (var item in DisplayedFiles)
+                    {
+                        <div class="file-list-row">
+                            <div class="file-list-name">
+                                <FluentIcon Value="@GetFileIcon(item)" />
+                                <span class="file-list-name-text" @onclick="@(() => OnItemClick(item))">
+                                    @item.Name
+                                </span>
+                            </div>
+                            <div>@item.SizeDisplay</div>
+                            <div>@item.LastModified.ToString("yyyy-MM-dd HH:mm")</div>
+                            <div class="file-list-actions">
+                                @if (!item.IsDirectory)
+                                {
                                     <FluentButton Appearance="Appearance.Lightweight" 
-                                                OnClick="@(() => OnItemClick(context))"
-                                                Style="padding: 0; text-decoration: underline;">
-                                        @context.Name
+                                                OnClick="@(() => DownloadFile(item))"
+                                                Title="Download">
+                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" />
                                     </FluentButton>
-                                </FluentStack>
-                            </TemplateColumn>
-                            <PropertyColumn Property="@(f => f.SizeDisplay)" Title="Size" Sortable="true" />
-                            <TemplateColumn Title="Modified" Sortable="true">
-                                @context.LastModified.ToString("yyyy-MM-dd HH:mm")
-                            </TemplateColumn>
-                            <TemplateColumn Title="Actions">
-                                <FluentStack Orientation="Orientation.Horizontal">
-                                    @if (!context.IsDirectory)
+                                    @if (IsImageFile(item))
                                     {
                                         <FluentButton Appearance="Appearance.Lightweight" 
-                                                    OnClick="@(() => DownloadFile(context))"
-                                                    Title="Download">
-                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" />
+                                                    OnClick="@(() => PreviewImage(item))"
+                                                    Title="Preview">
+                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Eye())" />
                                         </FluentButton>
-                                        @if (IsImageFile(context))
-                                        {
-                                            <FluentButton Appearance="Appearance.Lightweight" 
-                                                        OnClick="@(() => PreviewImage(context))"
-                                                        Title="Preview">
-                                                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Eye())" />
-                                            </FluentButton>
-                                        }
                                     }
-                                    <FluentButton Appearance="Appearance.Lightweight" 
-                                                OnClick="@(() => OpenRenameDialog(context))"
-                                                Title="Rename">
-                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Rename())" />
-                                    </FluentButton>
-                                    <FluentButton Appearance="Appearance.Lightweight" 
-                                                OnClick="@(() => OpenCopyMoveDialog(context, false))"
-                                                Title="Copy">
-                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Copy())" />
-                                    </FluentButton>
-                                    <FluentButton Appearance="Appearance.Lightweight" 
-                                                OnClick="@(() => OpenCopyMoveDialog(context, true))"
-                                                Title="Move">
-                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowRight())" />
-                                    </FluentButton>
-                                    <FluentButton Appearance="Appearance.Lightweight" 
-                                                OnClick="@(() => DeleteItem(context))"
-                                                Title="Delete">
-                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="Color.Error" />
-                                    </FluentButton>
-                                </FluentStack>
-                            </TemplateColumn>
-                        </FluentDataGrid>
-                    </div>
-                }
-                else
-                {
-                    <div style="overflow: auto; flex: 1; padding: 10px;">
-                        <FluentGrid Spacing="3">
-                            @foreach (var item in DisplayedFiles)
-                            {
-                                <FluentGridItem xs="6" sm="4" md="3" lg="2">
-                                    <FluentCard Style="cursor: pointer; text-align: center; height: 150px; display: flex; flex-direction: column; justify-content: center;"
-                                              @ondblclick="@(() => OnItemClick(item))">
-                                        <FluentIcon Value="@GetFileIcon(item)" Style="font-size: 3rem; margin-bottom: 10px;" />
-                                        <FluentLabel Style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
-                                                   Title="@item.Name">
-                                            @item.Name
-                                        </FluentLabel>
-                                        <FluentLabel Typo="Typography.Body">
-                                            @item.SizeDisplay
-                                        </FluentLabel>
-                                    </FluentCard>
-                                </FluentGridItem>
-                            }
-                        </FluentGrid>
-                    </div>
-                }
+                                }
+                                <FluentButton Appearance="Appearance.Lightweight" 
+                                            OnClick="@(() => OpenRenameDialog(item))"
+                                            Title="Rename">
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Rename())" />
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Lightweight" 
+                                            OnClick="@(() => OpenCopyMoveDialog(item, false))"
+                                            Title="Copy">
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Copy())" />
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Lightweight" 
+                                            OnClick="@(() => OpenCopyMoveDialog(item, true))"
+                                            Title="Move">
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowRight())" />
+                                </FluentButton>
+                                <FluentButton Appearance="Appearance.Lightweight" 
+                                            OnClick="@(() => DeleteItem(item))"
+                                            Title="Delete">
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="Color.Error" />
+                                </FluentButton>
+                            </div>
+                        </div>
+                    }
+                </div>
             }
-        </FluentCard>
-    </FluentStack>
-
-    <!-- Storage Info -->
-    @if (storageInfo.total > 0)
-    {
-        <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-            <FluentLabel Typo="Typography.Body">
-                Storage: @FileUtilities.FormatSize(storageInfo.total - storageInfo.available) / @FileUtilities.FormatSize(storageInfo.total) 
-                (@((100.0 * (storageInfo.total - storageInfo.available) / storageInfo.total).ToString("F1"))% used)
-            </FluentLabel>
-            <FluentSpacer />
-            <FluentLabel Typo="Typography.Body">
-                @DisplayedFiles.Count items
-            </FluentLabel>
-        </FluentStack>
-    }
-</FluentStack>
+        }
+    </div>
+</div>
 
 <!-- Create Folder Dialog -->
 <FluentDialog @ref="createFolderDialog" @bind-Hidden="@isCreateFolderDialogHidden" TrapFocus="true" Modal="true">
@@ -411,14 +463,14 @@
 
     private enum ViewMode { List, Grid }
 
-    private ViewMode viewMode = ViewMode.List;
+    private ViewMode viewMode = ViewMode.Grid;
+    private string currentView = "files";
     private string currentPath = "/";
     private List<FileItemInfo> fileItems = new();
     private List<FileItemInfo> DisplayedFiles => string.IsNullOrEmpty(searchQuery) ? fileItems : searchResults;
     private List<FileItemInfo> searchResults = new();
     private List<FavoriteFolder> favoriteFolders = new();
     private bool isLoading = true;
-    private readonly bool showFavorites = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
     private (long total, long available) storageInfo;
@@ -465,6 +517,58 @@
         }
         await LoadFavorites();
         await LoadFiles();
+        await LoadThumbnails();
+    }
+
+    private void SetCurrentView(string view)
+    {
+        currentView = view;
+        // For now, only "files" view is fully functional
+        // "recent", "sharings", and "trash" views would need additional implementation
+        if (view != "files")
+        {
+            ToastService.ShowInfo($"{view} view is not yet implemented");
+        }
+    }
+
+    private void OpenCreateMenu()
+    {
+        // This is just for visual feedback; actual menu is shown by FluentMenu
+    }
+
+    private async Task LoadThumbnails()
+    {
+        // Load thumbnails for image files in grid view
+        if (viewMode != ViewMode.Grid) return;
+
+        try
+        {
+            foreach (var item in fileItems.Where(f => !f.IsDirectory && IsImageFile(f)))
+            {
+                try
+                {
+                    var thumbnailData = await ThumbnailService.GetThumbnailAsync(item.Path);
+                    if (thumbnailData != null)
+                    {
+                        item.ThumbnailData = $"data:image/jpeg;base64,{Convert.ToBase64String(thumbnailData)}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to load thumbnail for {Path}", item.Path);
+                }
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading thumbnails");
+        }
+    }
+
+    private void ShowContextMenu(FileItemInfo item, MouseEventArgs e)
+    {
+        // Context menu can be implemented in the future
     }
 
     /// <summary>
@@ -506,6 +610,9 @@
         {
             isLoading = false;
         }
+
+        // Load thumbnails after files are loaded
+        await LoadThumbnails();
     }
 
     private async Task LoadFavorites()

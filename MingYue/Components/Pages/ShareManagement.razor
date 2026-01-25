@@ -58,38 +58,69 @@
                     }
                     else
                     {
-                        <FluentDataGrid Items="@sambaShares.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1fr 1fr">
-                            <PropertyColumn Property="@(s => s.Name)" Title="Share Name" Sortable="true" />
-                            <PropertyColumn Property="@(s => s.Path)" Title="Path" Sortable="true" />
-                            <TemplateColumn Title="Read-Only" Sortable="true">
-                                @if (context.ReadOnly)
-                                {
-                                    <FluentBadge Fill="neutral">Yes</FluentBadge>
-                                }
-                                else
-                                {
-                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">No</FluentBadge>
-                                }
-                            </TemplateColumn>
-                            <TemplateColumn Title="Guest Access" Sortable="true">
-                                @if (context.GuestOk)
-                                {
-                                    <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Enabled</FluentBadge>
-                                }
-                                else
-                                {
-                                    <FluentBadge Fill="neutral">Disabled</FluentBadge>
-                                }
-                            </TemplateColumn>
-                            <TemplateColumn Title="Actions">
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
-                                </FluentButton>
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                </FluentButton>
-                            </TemplateColumn>
-                        </FluentDataGrid>
+                        <FluentGrid Spacing="16" Style="width: 100%;">
+                            @foreach (var share in sambaShares)
+                            {
+                                <FluentGridItem xs="12" sm="6" md="4">
+                                    <FluentCard Style="height: 100%;">
+                                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                            <!-- Header with Name and Actions -->
+                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                                    <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
+                                                    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
+                                                </FluentStack>
+                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="4">
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                                    </FluentButton>
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                                    </FluentButton>
+                                                </FluentStack>
+                                            </FluentStack>
+
+                                            <!-- Path -->
+                                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
+                                                <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                                            </FluentStack>
+
+                                            <!-- Badges -->
+                                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" Wrap="true">
+                                                @if (share.ReadOnly)
+                                                {
+                                                    <FluentBadge Fill="neutral">Read-Only</FluentBadge>
+                                                }
+                                                else
+                                                {
+                                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
+                                                }
+                                                
+                                                @if (share.GuestOk)
+                                                {
+                                                    <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Guest Access</FluentBadge>
+                                                }
+                                                
+                                                @if (share.Browseable)
+                                                {
+                                                    <FluentBadge Fill="info" BackgroundColor="blue" Color="white">Browseable</FluentBadge>
+                                                }
+                                            </FluentStack>
+
+                                            <!-- Description -->
+                                            @if (!string.IsNullOrEmpty(share.Comment))
+                                            {
+                                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
+                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
+                                                </FluentStack>
+                                            }
+                                        </FluentStack>
+                                    </FluentCard>
+                                </FluentGridItem>
+                            }
+                        </FluentGrid>
                     }
                 </FluentStack>
             </FluentTab>
@@ -117,29 +148,65 @@
                     }
                     else
                     {
-                        <FluentDataGrid Items="@nfsShares.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1.5fr 1fr">
-                            <PropertyColumn Property="@(s => s.Name)" Title="Export Name" Sortable="true" />
-                            <PropertyColumn Property="@(s => s.Path)" Title="Path" Sortable="true" />
-                            <TemplateColumn Title="Read-Only" Sortable="true">
-                                @if (context.ReadOnly)
-                                {
-                                    <FluentBadge Fill="neutral">Yes</FluentBadge>
-                                }
-                                else
-                                {
-                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">No</FluentBadge>
-                                }
-                            </TemplateColumn>
-                            <PropertyColumn Property="@(s => s.AllowedHosts)" Title="Allowed Hosts" Sortable="true" />
-                            <TemplateColumn Title="Actions">
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
-                                </FluentButton>
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                </FluentButton>
-                            </TemplateColumn>
-                        </FluentDataGrid>
+                        <FluentGrid Spacing="16" Style="width: 100%;">
+                            @foreach (var share in nfsShares)
+                            {
+                                <FluentGridItem xs="12" sm="6" md="4">
+                                    <FluentCard Style="height: 100%;">
+                                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                            <!-- Header with Name and Actions -->
+                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                                    <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
+                                                    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
+                                                </FluentStack>
+                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="4">
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                                    </FluentButton>
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                                    </FluentButton>
+                                                </FluentStack>
+                                            </FluentStack>
+
+                                            <!-- Path -->
+                                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
+                                                <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                                            </FluentStack>
+
+                                            <!-- Allowed Hosts -->
+                                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Allowed Hosts</FluentLabel>
+                                                <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.AllowedHosts</FluentLabel>
+                                            </FluentStack>
+
+                                            <!-- Badges -->
+                                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" Wrap="true">
+                                                @if (share.ReadOnly)
+                                                {
+                                                    <FluentBadge Fill="neutral">Read-Only</FluentBadge>
+                                                }
+                                                else
+                                                {
+                                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
+                                                }
+                                            </FluentStack>
+
+                                            <!-- Description -->
+                                            @if (!string.IsNullOrEmpty(share.Comment))
+                                            {
+                                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
+                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
+                                                </FluentStack>
+                                            }
+                                        </FluentStack>
+                                    </FluentCard>
+                                </FluentGridItem>
+                            }
+                        </FluentGrid>
                     }
                 </FluentStack>
             </FluentTab>

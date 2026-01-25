@@ -66,11 +66,11 @@
                                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                                             <!-- Header with Name and Actions -->
                                             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
                                                     <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
                                                     <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
                                                 </FluentStack>
-                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="4">
+                                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                                                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
                                                         <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
                                                     </FluentButton>
@@ -87,7 +87,7 @@
                                             </FluentStack>
 
                                             <!-- Badges -->
-                                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" Wrap="true">
+                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
                                                 @if (share.ReadOnly)
                                                 {
                                                     <FluentBadge Fill="neutral">Read-Only</FluentBadge>
@@ -156,11 +156,11 @@
                                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                                             <!-- Header with Name and Actions -->
                                             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
                                                     <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
                                                     <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
                                                 </FluentStack>
-                                                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="4">
+                                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
                                                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
                                                         <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
                                                     </FluentButton>
@@ -183,7 +183,7 @@
                                             </FluentStack>
 
                                             <!-- Badges -->
-                                            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8" Wrap="true">
+                                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
                                                 @if (share.ReadOnly)
                                                 {
                                                     <FluentBadge Fill="neutral">Read-Only</FluentBadge>

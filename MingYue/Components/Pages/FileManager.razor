@@ -17,11 +17,9 @@
     <!-- Left Sidebar -->
     <div class="file-manager-sidebar">
         <!-- Create Button -->
-        <FluentMenu>
-            <button class="sidebar-create-button" @onclick="@OpenCreateMenu">
-                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
-                Create
-            </button>
+        <FluentMenuButton class="sidebar-create-button" Text="Create" 
+                         Appearance="Appearance.Accent"
+                         Style="width: 100%;">
             <FluentMenuItem OnClick="@OpenCreateFolderDialog">
                 <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.FolderAdd())" Slot="start" />
                 New Folder
@@ -30,7 +28,7 @@
                 <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowUpload())" Slot="start" />
                 Upload Files
             </FluentMenuItem>
-        </FluentMenu>
+        </FluentMenuButton>
 
         <!-- Navigation -->
         <nav class="sidebar-nav">
@@ -529,11 +527,6 @@
         {
             ToastService.ShowInfo($"{view} view is not yet implemented");
         }
-    }
-
-    private void OpenCreateMenu()
-    {
-        // This is just for visual feedback; actual menu is shown by FluentMenu
     }
 
     private async Task LoadThumbnails()

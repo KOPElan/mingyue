@@ -32,23 +32,7 @@
 
         <!-- Navigation -->
         <nav class="sidebar-nav">
-            <div class="sidebar-nav-item @(currentView == "files" ? "active" : "")" @onclick='@(() => SetCurrentView("files"))'>
-                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder())" />
-                Files
-            </div>
-            <div class="sidebar-nav-item @(currentView == "recent" ? "active" : "")" @onclick='@(() => SetCurrentView("recent"))'>
-                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Clock())" />
-                Recent
-            </div>
-            <div class="sidebar-nav-item @(currentView == "sharings" ? "active" : "")" @onclick='@(() => SetCurrentView("sharings"))'>
-                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ShareAndroid())" />
-                Sharings
-            </div>
-            <div class="sidebar-nav-item @(currentView == "trash" ? "active" : "")" @onclick='@(() => SetCurrentView("trash"))'>
-                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Delete())" />
-                Trash
-            </div>
-
+            <!-- Favorites Section -->
             @if (favoriteFolders.Any())
             {
                 <div class="sidebar-section-title">Favorites</div>
@@ -57,6 +41,24 @@
                     <div class="sidebar-nav-item" @onclick="@(() => NavigateToPath(favorite.Path))">
                         <FluentIcon Value="@(GetFavoriteIcon(favorite.Icon))" />
                         @favorite.Name
+                    </div>
+                }
+            }
+
+            <!-- Disks/Storage Section -->
+            @if (availableDrives.Any())
+            {
+                <div class="sidebar-section-title">Disks</div>
+                @foreach (var drive in availableDrives)
+                {
+                    <div class="sidebar-nav-item" @onclick="@(() => NavigateToPath(drive.Path))">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.HardDrive())" />
+                        <div style="flex: 1;">
+                            <div>@drive.Name</div>
+                            <div style="font-size: 11px; color: var(--neutral-foreground-hint, #707070);">
+                                @drive.UsedSizeDisplay / @drive.TotalSizeDisplay
+                            </div>
+                        </div>
                     </div>
                 }
             }
@@ -159,7 +161,16 @@
                     <div class="file-grid">
                         @foreach (var item in DisplayedFiles)
                         {
-                            <div class="file-card" @ondblclick="@(() => OnItemClick(item))">
+                            var isSelected = selectedItems.Contains(item);
+                            <div class="file-card @(isSelected ? "selected" : "")" 
+                                 @onclick="@((e) => OnCardClick(item, e))"
+                                 @ondblclick="@(() => OnItemClick(item))">
+                                @if (isSelected)
+                                {
+                                    <div class="file-card-checkbox">
+                                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Filled.Size20.CheckmarkCircle())" Color="@Color.Accent" />
+                                    </div>
+                                }
                                 <div class="file-card-thumbnail">
                                     @if (item.IsDirectory)
                                     {
@@ -462,12 +473,13 @@
     private enum ViewMode { List, Grid }
 
     private ViewMode viewMode = ViewMode.Grid;
-    private string currentView = "files";
     private string currentPath = "/";
     private List<FileItemInfo> fileItems = new();
     private List<FileItemInfo> DisplayedFiles => string.IsNullOrEmpty(searchQuery) ? fileItems : searchResults;
     private List<FileItemInfo> searchResults = new();
     private List<FavoriteFolder> favoriteFolders = new();
+    private List<DriveItemInfo> availableDrives = new();
+    private HashSet<FileItemInfo> selectedItems = new();
     private bool isLoading = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
@@ -514,17 +526,59 @@
             currentPath = InitialPath;
         }
         await LoadFavorites();
+        await LoadDrives();
         await LoadFiles();
     }
 
-    private void SetCurrentView(string view)
+    private async Task LoadDrives()
     {
-        currentView = view;
-        // For now, only "files" view is fully functional
-        // "recent", "sharings", and "trash" views would need additional implementation
-        if (view != "files")
+        try
         {
-            ToastService.ShowInfo($"{view} view is not yet implemented");
+            availableDrives = await FileService.GetDrivesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading drives");
+        }
+    }
+
+    private void OnCardClick(FileItemInfo item, Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        // Ctrl/Cmd key for multi-select
+        if (e.CtrlKey || e.MetaKey)
+        {
+            if (selectedItems.Contains(item))
+            {
+                selectedItems.Remove(item);
+            }
+            else
+            {
+                selectedItems.Add(item);
+            }
+        }
+        // Shift key for range select (simple implementation)
+        else if (e.ShiftKey && selectedItems.Any())
+        {
+            var lastSelected = selectedItems.Last();
+            var startIndex = DisplayedFiles.IndexOf(lastSelected);
+            var endIndex = DisplayedFiles.IndexOf(item);
+            
+            if (startIndex >= 0 && endIndex >= 0)
+            {
+                var start = Math.Min(startIndex, endIndex);
+                var end = Math.Max(startIndex, endIndex);
+                
+                for (int i = start; i <= end; i++)
+                {
+                    selectedItems.Add(DisplayedFiles[i]);
+                }
+            }
+        }
+        // Single click without modifiers - select only this item
+        else
+        {
+            selectedItems.Clear();
+            selectedItems.Add(item);
         }
     }
 
@@ -647,6 +701,7 @@
         currentPath = path;
         searchQuery = string.Empty;
         searchResults.Clear();
+        selectedItems.Clear(); // Clear selection when navigating
         await LoadFiles();
     }
 

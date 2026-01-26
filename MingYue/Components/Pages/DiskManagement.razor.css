@@ -175,6 +175,10 @@
     min-width: 600px;
 }
 
+::deep > fluent-dialog.dialog-wide::part(control) {
+    --dialog-width: 100vh;        
+}
+
 .dialog-wide {
     min-width: 800px;
     max-width: 100vh;

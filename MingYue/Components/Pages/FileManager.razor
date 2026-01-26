@@ -553,7 +553,7 @@
     private List<FileItemInfo> searchResults = new();
     private List<FavoriteFolder> favoriteFolders = new();
     private List<DriveItemInfo> availableDrives = new();
-    private HashSet<FileItemInfo> selectedItems = new();
+    private readonly HashSet<FileItemInfo> selectedItems = new();
     private bool isLoading = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
@@ -590,7 +590,7 @@
     private List<IBrowserFile> selectedFiles = new();
     private bool isUploading = false;
     private string uploadProgress = string.Empty;
-    private Dictionary<string, int> uploadingFiles = new();
+    private readonly Dictionary<string, int> uploadingFiles = new();
     private string uploadStatusMessage = string.Empty;
     private MessageIntent uploadMessageIntent = MessageIntent.Info;
     private DotNetObjectReference<FileManager>? dotNetHelper;
@@ -1169,26 +1169,39 @@
     }
 
     [JSInvokable]
-    public Task OnUploadProgress(string filename, int progress, long bytesSent, long totalBytes)
+    public Task OnUploadProgress(string fileId, string filename, int progress, long bytesSent, long totalBytes)
     {
-        uploadingFiles[filename] = progress;
+        // Use fileId (UUID) as key to avoid collisions with same filename
+        if (!string.IsNullOrWhiteSpace(fileId))
+        {
+            uploadingFiles[fileId] = progress;
+        }
         StateHasChanged();
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task OnFileUploaded(string filename)
+    public Task OnFileUploaded(string fileId, string filename)
     {
-        uploadingFiles.Remove(filename);
+        if (!string.IsNullOrWhiteSpace(fileId))
+        {
+            uploadingFiles.Remove(fileId);
+        }
         StateHasChanged();
         return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task OnUploadError(string filename, string error)
+    public Task OnUploadError(string fileId, string filename, string error)
     {
-        uploadingFiles.Remove(filename);
-        uploadStatusMessage = $"Error uploading {filename}: {error}";
+        if (!string.IsNullOrWhiteSpace(fileId))
+        {
+            uploadingFiles.Remove(fileId);
+        }
+        
+        // Validate filename to prevent log injection
+        var safeFilename = string.IsNullOrWhiteSpace(filename) ? "unknown" : Path.GetFileName(filename);
+        uploadStatusMessage = $"Error uploading {safeFilename}: {error}";
         uploadMessageIntent = MessageIntent.Error;
         StateHasChanged();
         return Task.CompletedTask;

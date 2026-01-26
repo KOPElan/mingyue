@@ -78,7 +78,7 @@ window.initializeChunkedDropzone = function (elementId, uploadUrl, currentPath, 
         method: 'post',
         chunking: true,
         forceChunking: true,
-        chunkSize: chunkSize, // 1MB chunks by default
+        chunkSize: chunkSize, // uses chunkSize parameter (default 1MB)
         parallelChunkUploads: false,
         retryChunks: true,
         retryChunksLimit: 3,
@@ -109,31 +109,51 @@ window.initializeChunkedDropzone = function (elementId, uploadUrl, currentPath, 
             
             dz.on("uploadprogress", async function(file, progress, bytesSent) {
                 if (dotNetHelper) {
-                    await dotNetHelper.invokeMethodAsync('OnUploadProgress', 
-                        file.name, 
-                        Math.round(progress), 
-                        bytesSent, 
-                        file.size);
+                    try {
+                        await dotNetHelper.invokeMethodAsync('OnUploadProgress', 
+                            file.upload.uuid || file.name, // Use UUID as unique identifier
+                            file.name, 
+                            Math.round(progress), 
+                            bytesSent, 
+                            file.size);
+                    } catch (error) {
+                        console.error('Error invoking OnUploadProgress:', error, 'File:', file && file.name);
+                    }
                 }
             });
             
             dz.on("success", async function(file, response) {
                 if (dotNetHelper) {
-                    await dotNetHelper.invokeMethodAsync('OnFileUploaded', file.name);
+                    try {
+                        await dotNetHelper.invokeMethodAsync('OnFileUploaded', 
+                            file.upload.uuid || file.name,
+                            file.name);
+                    } catch (error) {
+                        console.error('Error invoking OnFileUploaded:', error, 'File:', file && file.name);
+                    }
                 }
             });
             
             dz.on("error", async function(file, errorMessage) {
                 if (dotNetHelper) {
-                    await dotNetHelper.invokeMethodAsync('OnUploadError', 
-                        file.name, 
-                        typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+                    try {
+                        await dotNetHelper.invokeMethodAsync('OnUploadError', 
+                            file.upload.uuid || file.name,
+                            file.name, 
+                            typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+                    } catch (error) {
+                        console.error('Error invoking OnUploadError:', error, 'File:', file && file.name);
+                    }
                 }
             });
             
             dz.on("queuecomplete", async function() {
                 if (dotNetHelper) {
-                    await dotNetHelper.invokeMethodAsync('OnAllUploadsComplete');
+                    try {
+                        await dotNetHelper.invokeMethodAsync('OnAllUploadsComplete');
+                    } catch (error) {
+                        console.error('Error invoking OnAllUploadsComplete:', error);
+                    }
                 }
             });
         }
@@ -143,28 +163,43 @@ window.initializeChunkedDropzone = function (elementId, uploadUrl, currentPath, 
 };
 
 window.processDropzoneQueue = function(elementId) {
-    const element = document.getElementById(elementId);
-    if (element && element.dropzone) {
-        element.dropzone.processQueue();
-        return true;
+    try {
+        const element = document.getElementById(elementId);
+        if (element && element.dropzone) {
+            element.dropzone.processQueue();
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error processing dropzone queue:', error);
+        return false;
     }
-    return false;
 };
 
 window.clearDropzone = function(elementId) {
-    const element = document.getElementById(elementId);
-    if (element && element.dropzone) {
-        element.dropzone.removeAllFiles(true);
-        return true;
+    try {
+        const element = document.getElementById(elementId);
+        if (element && element.dropzone) {
+            element.dropzone.removeAllFiles(true);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error clearing dropzone:', error);
+        return false;
     }
-    return false;
 };
 
 window.destroyDropzone = function(elementId) {
-    const element = document.getElementById(elementId);
-    if (element && element.dropzone) {
-        element.dropzone.destroy();
-        return true;
+    try {
+        const element = document.getElementById(elementId);
+        if (element && element.dropzone) {
+            element.dropzone.destroy();
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error destroying dropzone:', error);
+        return false;
     }
-    return false;
 };

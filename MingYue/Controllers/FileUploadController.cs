@@ -284,4 +284,95 @@ public class FileUploadController : ControllerBase
             _logger.LogError(ex, "Error during abandoned uploads cleanup");
         }
     }
+    
+    [HttpGet("download-zip")]
+    public async Task<IActionResult> DownloadZip([FromQuery] string paths, [FromQuery] string filename)
+    {
+        try
+        {
+            // Deserialize paths
+            var pathList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(paths);
+            if (pathList == null || !pathList.Any())
+            {
+                return BadRequest("No files specified for download");
+            }
+
+            // Validate all paths
+            foreach (var path in pathList)
+            {
+                if (!IsPathAllowed(path))
+                {
+                    _logger.LogWarning("Download attempt for unauthorized path: {Path}", path);
+                    return BadRequest("Invalid or unauthorized path");
+                }
+            }
+
+            // Create ZIP in memory stream
+            var memoryStream = new MemoryStream();
+            
+            using (var zipArchive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var path in pathList)
+                {
+                    var itemName = Path.GetFileName(path);
+                    
+                    if (Directory.Exists(path))
+                    {
+                        // Add directory recursively
+                        await AddDirectoryToZipAsync(zipArchive, path, itemName);
+                    }
+                    else if (System.IO.File.Exists(path))
+                    {
+                        // Add file
+                        var fileBytes = await System.IO.File.ReadAllBytesAsync(path);
+                        var entry = zipArchive.CreateEntry(itemName);
+                        using var entryStream = entry.Open();
+                        await entryStream.WriteAsync(fileBytes);
+                    }
+                }
+            }
+
+            // Reset stream position
+            memoryStream.Position = 0;
+
+            // Return as file download
+            return File(memoryStream, "application/zip", filename);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating ZIP download");
+            return StatusCode(500, "Failed to create ZIP archive");
+        }
+    }
+
+    private async Task AddDirectoryToZipAsync(System.IO.Compression.ZipArchive zipArchive, string sourcePath, string entryName)
+    {
+        var files = await _fileService.GetFilesAsync(sourcePath);
+        
+        foreach (var file in files)
+        {
+            if (file.Name == "..") continue; // Skip parent directory marker
+            
+            var relativePath = Path.Combine(entryName, file.Name);
+            
+            if (file.IsDirectory)
+            {
+                await AddDirectoryToZipAsync(zipArchive, file.Path, relativePath);
+            }
+            else
+            {
+                try
+                {
+                    var fileBytes = await System.IO.File.ReadAllBytesAsync(file.Path);
+                    var entry = zipArchive.CreateEntry(relativePath);
+                    using var entryStream = entry.Open();
+                    await entryStream.WriteAsync(fileBytes);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to add file to ZIP: {Path}", file.Path);
+                }
+            }
+        }
+    }
 }

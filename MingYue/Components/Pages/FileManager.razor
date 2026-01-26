@@ -1490,96 +1490,33 @@
 
     private async Task DownloadAsZip()
     {
-        string? tempZipPath = null;
-        
         try
         {
-            ToastService.ShowInfo("Preparing ZIP archive...");
+            ToastService.ShowInfo("Preparing ZIP download...");
             
-            // Create a temporary zip file
-            tempZipPath = Path.Combine(Path.GetTempPath(), $"download_{Guid.NewGuid()}.zip");
-            
-            using (var zipArchive = System.IO.Compression.ZipFile.Open(tempZipPath, System.IO.Compression.ZipArchiveMode.Create))
-            {
-                foreach (var item in selectedItems)
-                {
-                    if (item.IsDirectory)
-                    {
-                        // Add directory recursively
-                        await AddDirectoryToZip(zipArchive, item.Path, item.Name);
-                    }
-                    else
-                    {
-                        // Add file
-                        var fileData = await FileService.DownloadFileAsync(item.Path);
-                        var entry = zipArchive.CreateEntry(item.Name);
-                        using var entryStream = entry.Open();
-                        await entryStream.WriteAsync(fileData);
-                    }
-                }
-            }
-
-            // Download the zip file
-            var zipData = await File.ReadAllBytesAsync(tempZipPath);
+            // Create ZIP download request with selected paths
+            var paths = selectedItems.Select(i => i.Path).ToList();
             var zipFileName = selectedItems.Count == 1 
                 ? $"{selectedItems.First().Name}.zip" 
                 : $"download_{DateTime.Now:yyyyMMdd_HHmmss}.zip";
-                
-            await JSRuntime.InvokeVoidAsync("downloadFile", zipFileName, Convert.ToBase64String(zipData));
             
-            ToastService.ShowSuccess($"Downloaded {selectedItems.Count} item(s) as ZIP");
+            // Use direct download link instead of JavaScript interop to avoid memory issues
+            var pathsJson = System.Text.Json.JsonSerializer.Serialize(paths);
+            var encodedPaths = Uri.EscapeDataString(pathsJson);
+            var encodedFileName = Uri.EscapeDataString(zipFileName);
+            
+            var downloadUrl = $"/api/files/download-zip?paths={encodedPaths}&filename={encodedFileName}";
+            
+            // Navigate to download URL - browser will handle the file download
+            await JSRuntime.InvokeVoidAsync("open", downloadUrl, "_self");
+            
+            ToastService.ShowSuccess($"Downloading {selectedItems.Count} item(s) as ZIP");
             selectedItems.Clear();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error creating ZIP archive");
-            ToastService.ShowError($"Failed to create ZIP: {ex.Message}");
-        }
-        finally
-        {
-            // Clean up temp file
-            if (tempZipPath != null && File.Exists(tempZipPath))
-            {
-                try
-                {
-                    File.Delete(tempZipPath);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogWarning(ex, "Failed to delete temporary ZIP file: {Path}", tempZipPath);
-                }
-            }
-        }
-    }
-
-    private async Task AddDirectoryToZip(System.IO.Compression.ZipArchive zipArchive, string sourcePath, string entryName)
-    {
-        var files = await FileService.GetFilesAsync(sourcePath);
-        
-        foreach (var file in files)
-        {
-            if (file.Name == ParentDirectoryMarker) continue;
-            
-            var relativePath = Path.Combine(entryName, file.Name);
-            
-            if (file.IsDirectory)
-            {
-                await AddDirectoryToZip(zipArchive, file.Path, relativePath);
-            }
-            else
-            {
-                try
-                {
-                    var fileData = await FileService.DownloadFileAsync(file.Path);
-                    var entry = zipArchive.CreateEntry(relativePath);
-                    using var entryStream = entry.Open();
-                    await entryStream.WriteAsync(fileData);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogWarning(ex, "Failed to add file to ZIP: {Path}", file.Path);
-                }
-            }
+            Logger.LogError(ex, "Error initiating ZIP download");
+            ToastService.ShowError($"Failed to start download: {ex.Message}");
         }
     }
 

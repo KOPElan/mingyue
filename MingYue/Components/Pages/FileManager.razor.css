@@ -196,8 +196,7 @@
 }
 
 .file-card.selected {
-    border-color: var(--accent-fill-rest, #0078d4);
-    background: var(--accent-fill-subtle, #f0f6ff);
+    border-color: var(--accent-fill-rest, #0078d4);    
     box-shadow: 0 0 0 2px var(--accent-fill-rest, #0078d4);
 }
 
@@ -381,11 +380,7 @@
 
 /* Bottom Action Bar */
 .bottom-action-bar {
-    position: fixed;
-    bottom: 0;
-    left: 240px; /* Account for sidebar width */
-    right: 0;
-    background: white;
+    padding:1rem;
     border-top: 2px solid var(--accent-fill-rest, #0078d4);
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
     z-index: 100;

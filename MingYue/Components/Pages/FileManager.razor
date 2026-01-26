@@ -51,7 +51,8 @@
                 <div class="sidebar-section-title">Disks</div>
                 @foreach (var drive in availableDrives)
                 {
-                    <div class="sidebar-nav-item" @onclick="@(() => NavigateToPath(drive.Path))">
+                    var isActiveDisk = IsPathOnDisk(currentPath, drive.Path);
+                    <div class="sidebar-nav-item @(isActiveDisk ? "active" : "")" @onclick="@(() => NavigateToPath(drive.Path))">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.HardDrive())" />
                         <div style="flex: 1;">
                             <div>@drive.Name</div>
@@ -721,6 +722,17 @@
         {
             await DownloadFile(item);
         }
+    }
+
+    private bool IsPathOnDisk(string path, string diskPath)
+    {
+        // Normalize paths for comparison
+        var normalizedPath = path.TrimEnd('/');
+        var normalizedDiskPath = diskPath.TrimEnd('/');
+        
+        // Check if the current path starts with the disk path
+        return normalizedPath.StartsWith(normalizedDiskPath, StringComparison.OrdinalIgnoreCase) ||
+               normalizedPath == normalizedDiskPath;
     }
 
     private List<(string Name, string Path)> GetPathSegments()

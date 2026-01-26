@@ -643,13 +643,15 @@
                 .ThenBy(f => f.Name)
                 .ToList();
 
-            // Get storage info
+            // Get storage info for the drive containing current path
             try
             {
                 storageInfo = await FileService.GetStorageInfoAsync(currentPath);
+                StateHasChanged(); // Ensure UI updates with new storage info
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogWarning(ex, "Failed to get storage info for path: {Path}", currentPath);
                 // Storage info is optional
                 storageInfo = (0, 0);
             }
@@ -731,10 +733,7 @@
         
         foreach (var part in parts)
         {
-            if (pathBuilder.Length > 0)
-            {
-                pathBuilder.Append('/');
-            }
+            pathBuilder.Append('/');
             pathBuilder.Append(part);
             segments.Add((part, pathBuilder.ToString()));
         }

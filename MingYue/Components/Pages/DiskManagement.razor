@@ -40,6 +40,7 @@
         padding: 24px;
         margin-bottom: 24px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        width: 100%;
     }
 
     .section-header {
@@ -191,11 +192,7 @@
             <FluentButton Appearance="Appearance.Neutral" OnClick="@RefreshDisks">
                 <FluentIcon Value="@(new Icons.Regular.Size20.ArrowSync())" Slot="start" />
                 刷新
-            </FluentButton>
-            <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Add())" Slot="start" />
-                挂载网络磁盘
-            </FluentButton>
+            </FluentButton>            
         </div>
     </div>
 
@@ -403,6 +400,10 @@
                 <FluentIcon Value="@(new Icons.Regular.Size20.Globe())" Color="@Color.Accent" />
                 <h2 class="section-title">网络磁盘</h2>
                 <FluentBadge Appearance="Appearance.Neutral">@networkDisks.Count disk@(networkDisks.Count != 1 ? "s" : "")</FluentBadge>
+                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Add())" Slot="start" />
+                挂载网络磁盘
+            </FluentButton>
             </div>
             
             @if (networkDisks.Count == 0)

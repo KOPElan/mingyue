@@ -257,35 +257,33 @@
         <!-- Bottom Action Bar (shown when items are selected) -->
         @if (selectedItems.Any())
         {
-            <div class="bottom-action-bar">
-                <FluentToolbar>
-                    <FluentStack Orientation="Orientation.Horizontal">
-                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.CheckmarkCircle())" Color="@Color.Accent" />
-                        <FluentLabel>@selectedItems.Count @(selectedItems.Count == 1 ? "item" : "items") selected</FluentLabel>
-                        <FluentSpacer></FluentSpacer>
-                        @if (selectedItems.Count == 1)
-                        {
-                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@RenameSelectedItem" Title="Rename" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Rename())">
-                                Rename
-                            </FluentButton>
-                        }
-                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@DownloadSelected" Title="Download" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
-                            Download
+            <FluentToolbar>
+                <FluentStack Orientation="Orientation.Horizontal">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.CheckmarkCircle())" Color="@Color.Accent" />
+                    <FluentLabel>@selectedItems.Count @(selectedItems.Count == 1 ? "item" : "items") selected</FluentLabel>
+                    <FluentSpacer></FluentSpacer>
+                    @if (selectedItems.Count == 1)
+                    {
+                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@RenameSelectedItem" Title="Rename" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Rename())">
+                            Rename
                         </FluentButton>
-                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenMoveDialog" Title="Move" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowMove())">
-                            Move
-                        </FluentButton>
-                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenCopyDialog" Title="Copy" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Copy())">
-                            Copy
-                        </FluentButton>
-                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@DeleteSelected" Title="Delete" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Delete().WithColor("red"))">
-                            Delete
-                        </FluentButton>
-                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => selectedItems.Clear())" Title="Clear Selection" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Dismiss())">
-                        </FluentButton>
-                    </FluentStack>
-                </FluentToolbar>
-            </div>
+                    }
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@DownloadSelected" Title="Download" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())">
+                        Download
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenMoveDialog" Title="Move" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowMove())">
+                        Move
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenCopyDialog" Title="Copy" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Copy())">
+                        Copy
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@DeleteSelected" Title="Delete" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Delete().WithColor("red"))">
+                        Delete
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => selectedItems.Clear())" Title="Clear Selection" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Dismiss())">
+                    </FluentButton>
+                </FluentStack>
+            </FluentToolbar>
         }
     </div>
 </div>

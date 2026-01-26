@@ -5,6 +5,7 @@ using MingYue.Services;
 namespace MingYue.Controllers;
 
 [Authorize]
+[IgnoreAntiforgeryToken]
 [ApiController]
 [Route("api/files")]
 public class FileUploadController : ControllerBase

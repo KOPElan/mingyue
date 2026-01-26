@@ -374,3 +374,73 @@
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 }
+
+/* Bottom Action Bar */
+.bottom-action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 240px; /* Account for sidebar width */
+    right: 0;
+    background: white;
+    border-top: 2px solid var(--accent-fill-rest, #0078d4);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.action-bar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.action-bar-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.action-bar-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-bar-buttons fluent-button {
+    min-width: auto;
+}
+
+/* Adjust for mobile */
+@media (max-width: 768px) {
+    .bottom-action-bar {
+        left: 0;
+    }
+    
+    .action-bar-content {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .action-bar-buttons {
+        width: 100%;
+        justify-content: space-around;
+    }
+}

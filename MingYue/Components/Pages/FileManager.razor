@@ -270,6 +270,40 @@
             }
         }
     </div>
+    
+    <!-- Bottom Action Bar (shown when items are selected) -->
+    @if (selectedItems.Any())
+    {
+        <div class="bottom-action-bar">
+            <div class="action-bar-content">
+                <div class="action-bar-info">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.CheckmarkCircle())" Color="@Color.Accent" />
+                    <span>@selectedItems.Count @(selectedItems.Count == 1 ? "item" : "items") selected</span>
+                </div>
+                <div class="action-bar-buttons">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@DownloadSelected" Title="Download">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
+                        Download
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenMoveDialog" Title="Move">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowMove())" />
+                        Move
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenCopyDialog" Title="Copy">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Copy())" />
+                        Copy
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@DeleteSelected" Title="Delete">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Delete())" Color="@Color.Error" />
+                        Delete
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => selectedItems.Clear())" Title="Clear Selection">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Dismiss())" />
+                    </FluentButton>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 <!-- Create Folder Dialog -->
@@ -1193,6 +1227,202 @@
         return isMoveOperation 
             ? new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.ArrowRight() 
             : new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Copy();
+    }
+
+    #endregion
+
+    #region Batch Operations
+
+    private async Task DownloadSelected()
+    {
+        if (!selectedItems.Any()) return;
+
+        try
+        {
+            if (selectedItems.Count == 1)
+            {
+                // Single file download
+                var item = selectedItems.First();
+                if (!item.IsDirectory)
+                {
+                    await DownloadFile(item);
+                }
+                else
+                {
+                    ToastService.ShowInfo("Folder download will be packaged as ZIP");
+                    await DownloadAsZip();
+                }
+            }
+            else
+            {
+                // Multiple items - create ZIP
+                await DownloadAsZip();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error downloading selected items");
+            ToastService.ShowError($"Download failed: {ex.Message}");
+        }
+    }
+
+    private async Task DownloadAsZip()
+    {
+        try
+        {
+            ToastService.ShowInfo("Preparing ZIP archive...");
+            
+            // Create a temporary zip file
+            var tempZipPath = Path.Combine(Path.GetTempPath(), $"download_{Guid.NewGuid()}.zip");
+            
+            using (var zipArchive = System.IO.Compression.ZipFile.Open(tempZipPath, System.IO.Compression.ZipArchiveMode.Create))
+            {
+                foreach (var item in selectedItems)
+                {
+                    if (item.IsDirectory)
+                    {
+                        // Add directory recursively
+                        await AddDirectoryToZip(zipArchive, item.Path, item.Name);
+                    }
+                    else
+                    {
+                        // Add file
+                        var fileData = await FileService.DownloadFileAsync(item.Path);
+                        var entry = zipArchive.CreateEntry(item.Name);
+                        using var entryStream = entry.Open();
+                        await entryStream.WriteAsync(fileData);
+                    }
+                }
+            }
+
+            // Download the zip file
+            var zipData = await File.ReadAllBytesAsync(tempZipPath);
+            var zipFileName = selectedItems.Count == 1 
+                ? $"{selectedItems.First().Name}.zip" 
+                : $"download_{DateTime.Now:yyyyMMdd_HHmmss}.zip";
+                
+            await JSRuntime.InvokeVoidAsync("downloadFile", zipFileName, Convert.ToBase64String(zipData));
+            
+            // Clean up temp file
+            File.Delete(tempZipPath);
+            
+            ToastService.ShowSuccess($"Downloaded {selectedItems.Count} item(s) as ZIP");
+            selectedItems.Clear();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating ZIP archive");
+            ToastService.ShowError($"Failed to create ZIP: {ex.Message}");
+        }
+    }
+
+    private async Task AddDirectoryToZip(System.IO.Compression.ZipArchive zipArchive, string sourcePath, string entryName)
+    {
+        var files = await FileService.GetFilesAsync(sourcePath);
+        
+        foreach (var file in files)
+        {
+            if (file.Name == "..") continue;
+            
+            var relativePath = Path.Combine(entryName, file.Name);
+            
+            if (file.IsDirectory)
+            {
+                await AddDirectoryToZip(zipArchive, file.Path, relativePath);
+            }
+            else
+            {
+                try
+                {
+                    var fileData = await FileService.DownloadFileAsync(file.Path);
+                    var entry = zipArchive.CreateEntry(relativePath);
+                    using var entryStream = entry.Open();
+                    await entryStream.WriteAsync(fileData);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to add file to ZIP: {Path}", file.Path);
+                }
+            }
+        }
+    }
+
+    private void OpenMoveDialog()
+    {
+        if (!selectedItems.Any()) return;
+        
+        isMoveOperation = true;
+        destinationPath = currentPath;
+        isCopyMoveDialogHidden = false;
+    }
+
+    private void OpenCopyDialog()
+    {
+        if (!selectedItems.Any()) return;
+        
+        isMoveOperation = false;
+        destinationPath = currentPath;
+        isCopyMoveDialogHidden = false;
+    }
+
+    private async Task DeleteSelected()
+    {
+        if (!selectedItems.Any()) return;
+
+        var itemNames = string.Join(", ", selectedItems.Take(3).Select(i => i.Name));
+        if (selectedItems.Count > 3)
+        {
+            itemNames += $" and {selectedItems.Count - 3} more";
+        }
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete {selectedItems.Count} item(s)?\n\n{itemNames}");
+
+        if (!confirmed) return;
+
+        try
+        {
+            var successCount = 0;
+            var failCount = 0;
+
+            foreach (var item in selectedItems.ToList())
+            {
+                try
+                {
+                    if (item.IsDirectory)
+                    {
+                        await FileService.DeleteDirectoryAsync(item.Path);
+                    }
+                    else
+                    {
+                        await FileService.DeleteFileAsync(item.Path);
+                    }
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error deleting item: {Path}", item.Path);
+                    failCount++;
+                }
+            }
+
+            if (successCount > 0)
+            {
+                ToastService.ShowSuccess($"Deleted {successCount} item(s) successfully");
+            }
+            if (failCount > 0)
+            {
+                ToastService.ShowError($"Failed to delete {failCount} item(s)");
+            }
+
+            selectedItems.Clear();
+            await LoadFiles();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in batch delete");
+            ToastService.ShowError($"Delete operation failed: {ex.Message}");
+        }
     }
 
     #endregion

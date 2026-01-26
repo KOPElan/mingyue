@@ -799,37 +799,49 @@
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Icons.Regular.Size24.Battery10())" />
             <FluentLabel Typo="Typography.PaneHeader">
-                Power Management - @selectedDisk?.Name
+                电源管理 - @selectedDisk?.Name
             </FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
 
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-            <FluentLabel Typo="Typography.Body">Configure power management settings for this disk:</FluentLabel>
+            <FluentLabel Typo="Typography.Body">为此磁盘配置电源管理设置：</FluentLabel>
             
             <FluentNumberField 
                 @bind-Value="spinDownTimeout"
-                Label="Spin Down Timeout (minutes)"
+                Label="待机超时时间（分钟）"
                 Min="0"
                 Max="240"
-                Placeholder="0 = Disabled"
+                Placeholder="0 = 禁用"
                 Style="width: 100%;">
-                <FluentLabel Slot="help-text">Time before disk spins down when idle (0 to disable)</FluentLabel>
+                <FluentLabel Slot="help-text">磁盘空闲后自动进入待机状态的时间（0 表示禁用）</FluentLabel>
+            </FluentNumberField>
+            
+            <FluentNumberField 
+                @bind-Value="apmLevel"
+                Label="APM 电源管理级别"
+                Min="1"
+                Max="255"
+                Placeholder="128 = 均衡"
+                Style="width: 100%;">
+                <FluentLabel Slot="help-text">
+                    高级电源管理级别：1-127 = 节能优先（更激进的节能），128 = 均衡，129-254 = 性能优先，255 = 禁用 APM
+                </FluentLabel>
             </FluentNumberField>
             
             <FluentMessageBar Intent="MessageIntent.Info">
-                Note: Power management settings may not be supported on all drives.
+                注意：某些硬盘可能不支持这些电源管理设置。APM 级别越低越节能，但可能影响性能和硬盘寿命。
             </FluentMessageBar>
         </FluentStack>
     </FluentDialogBody>
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@ApplyPowerSettings">
-            Apply
+            应用
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@ClosePowerDialog">
-            Cancel
+            取消
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -852,6 +864,7 @@
     
     private DiskInfo? selectedDisk;
     private int spinDownTimeout = 0;
+    private int apmLevel = 128; // Default APM level (128 = balanced)
     private SmartInfo? smartInfo;
 
     /// <summary>
@@ -1179,11 +1192,13 @@
         {
             var settings = await DiskService.GetDiskPowerSettingsAsync(disk.DevicePath);
             spinDownTimeout = settings.SpinDownTimeoutMinutes;
+            apmLevel = settings.ApmLevel ?? 128; // Default to 128 if not set
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading power settings for {DiskName}", disk.Name);
             spinDownTimeout = 0;
+            apmLevel = 128;
         }
         
         isPowerDialogHidden = false;
@@ -1198,22 +1213,34 @@
 
         try
         {
-            var result = await DiskService.SetDiskSpinDownAsync(selectedDisk.DevicePath, spinDownTimeout);
+            // Apply spin-down timeout
+            var spinDownResult = await DiskService.SetDiskSpinDownAsync(selectedDisk.DevicePath, spinDownTimeout);
+            
+            // Apply APM level
+            var apmResult = await DiskService.SetDiskApmLevelAsync(selectedDisk.DevicePath, apmLevel);
 
-            if (result.Success)
+            if (spinDownResult.Success && apmResult.Success)
             {
-                ToastService.ShowSuccess(result.Message);
+                ToastService.ShowSuccess("电源管理设置已成功应用");
                 ClosePowerDialog();
+            }
+            else if (!spinDownResult.Success && !apmResult.Success)
+            {
+                ToastService.ShowError($"设置失败: {spinDownResult.Message}; {apmResult.Message}");
+            }
+            else if (!spinDownResult.Success)
+            {
+                ToastService.ShowWarning($"APM 设置成功，但待机超时设置失败: {spinDownResult.Message}");
             }
             else
             {
-                ToastService.ShowError(result.Message);
+                ToastService.ShowWarning($"待机超时设置成功，但 APM 设置失败: {apmResult.Message}");
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error applying power settings");
-            ToastService.ShowError("Failed to apply power settings");
+            ToastService.ShowError("应用电源设置失败");
         }
     }
 

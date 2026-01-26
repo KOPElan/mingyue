@@ -341,6 +341,21 @@ namespace MingYue.Services
             if (!IsPathAllowed(sourcePath) || !IsPathAllowed(destinationPath))
                 throw new UnauthorizedAccessException("Access to this path is not allowed");
 
+            // Normalize paths for comparison
+            var normalizedSource = Path.GetFullPath(sourcePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var normalizedDest = Path.GetFullPath(destinationPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            // Check if source and destination are the same
+            if (string.Equals(normalizedSource, normalizedDest, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Source and destination cannot be the same");
+
+            // For directories, check if trying to copy into a subdirectory of itself
+            if (Directory.Exists(sourcePath))
+            {
+                if (normalizedDest.StartsWith(normalizedSource + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("Cannot copy a directory into its own subdirectory");
+            }
+
             if (File.Exists(sourcePath))
             {
                 // Copy file - if destination exists, generate a new name
@@ -381,17 +396,29 @@ namespace MingYue.Services
             if (!IsPathAllowed(sourcePath) || !IsPathAllowed(destinationPath))
                 throw new UnauthorizedAccessException("Access to this path is not allowed");
 
+            // Normalize paths for comparison
+            var normalizedSource = Path.GetFullPath(sourcePath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var normalizedDest = Path.GetFullPath(destinationPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            // Check if source and destination are the same
+            if (string.Equals(normalizedSource, normalizedDest, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("Source and destination cannot be the same");
+
             // Check if destination already exists
             if (File.Exists(destinationPath) || Directory.Exists(destinationPath))
                 throw new IOException($"Destination already exists: {Path.GetFileName(destinationPath)}");
 
-            if (File.Exists(sourcePath))
+            // For directories, check if trying to move into a subdirectory of itself
+            if (Directory.Exists(sourcePath))
+            {
+                if (normalizedDest.StartsWith(normalizedSource + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("Cannot move a directory into its own subdirectory");
+                
+                Directory.Move(sourcePath, destinationPath);
+            }
+            else if (File.Exists(sourcePath))
             {
                 File.Move(sourcePath, destinationPath);
-            }
-            else if (Directory.Exists(sourcePath))
-            {
-                Directory.Move(sourcePath, destinationPath);
             }
             else
             {

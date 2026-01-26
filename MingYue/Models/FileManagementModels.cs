@@ -10,6 +10,7 @@ namespace MingYue.Models
         public long Size { get; set; }
         public DateTime LastModified { get; set; }
         public string Extension { get; set; } = string.Empty;
+        public string? ThumbnailData { get; set; }
 
         public string SizeDisplay => IsDirectory ? "-" : FileUtilities.FormatSize(Size);
     }

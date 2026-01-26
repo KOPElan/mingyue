@@ -15,6 +15,9 @@ namespace MingYue.Services
 
         public event EventHandler? CultureChanged;
 
+        private bool _initialized = false;
+        private readonly SemaphoreSlim _initSemaphore = new(1, 1);
+
         public LocalizationService(
             IStringLocalizer<SharedResources> localizer,
             ISystemSettingService systemSettingService,
@@ -28,16 +31,34 @@ namespace MingYue.Services
         // Lazy initialization to load saved culture
         private async Task InitializeAsync()
         {
-            var savedCulture = await _systemSettingService.GetSettingValueAsync("Language");
-            if (!string.IsNullOrEmpty(savedCulture))
+            if (_initialized) return;
+
+            await _initSemaphore.WaitAsync();
+            try
             {
-                _currentCulture = savedCulture;
-                SetThreadCulture(_currentCulture);
+                if (_initialized) return; // Double-check after acquiring lock
+
+                var savedCulture = await _systemSettingService.GetSettingValueAsync("Language");
+                if (!string.IsNullOrEmpty(savedCulture))
+                {
+                    _currentCulture = savedCulture;
+                    SetThreadCulture(_currentCulture);
+                }
+                _initialized = true;
+            }
+            finally
+            {
+                _initSemaphore.Release();
             }
         }
 
         public string GetCurrentCulture()
         {
+            // Trigger initialization on first access if needed
+            if (!_initialized)
+            {
+                Task.Run(async () => await InitializeAsync()).Wait();
+            }
             return _currentCulture;
         }
 

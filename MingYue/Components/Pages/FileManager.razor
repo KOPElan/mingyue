@@ -334,8 +334,8 @@
     </FluentDialogFooter>
 </FluentDialog>
 
-<!-- Upload Dialog -->
-<FluentDialog @ref="uploadDialog" @bind-Hidden="@isUploadDialogHidden" TrapFocus="true" Modal="true">
+<!-- Upload Dialog with Dropzone -->
+<FluentDialog @ref="uploadDialog" @bind-Hidden="@isUploadDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 600px;">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.ArrowUpload())" />
@@ -343,35 +343,52 @@
         </FluentStack>
     </FluentDialogHeader>
     <FluentDialogBody>
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-            <InputFile OnChange="@HandleFileSelection" multiple style="width: 100%;" />
-            @if (selectedFiles.Any())
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <!-- Dropzone Area -->
+            <div id="dropzone-upload" class="dropzone-container"></div>
+            
+            <!-- Upload Progress -->
+            @if (uploadingFiles.Any())
             {
-                <FluentLabel>Selected files: @selectedFiles.Count</FluentLabel>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    @foreach (var file in selectedFiles)
+                <div class="upload-progress-container">
+                    <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 8px;">
+                        Uploading @uploadingFiles.Count file(s)...
+                    </FluentLabel>
+                    @foreach (var file in uploadingFiles.Take(5))
                     {
-                        <FluentLabel Typo="Typography.Body">@file.Name (@FileUtilities.FormatSize(file.Size))</FluentLabel>
+                        <div class="upload-file-progress">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 13px;">@file.Key</span>
+                                <span style="font-size: 13px; color: var(--accent-fill-rest);">@file.Value%</span>
+                            </div>
+                            <FluentProgress Min="0" Max="100" Value="@file.Value" />
+                        </div>
+                    }
+                    @if (uploadingFiles.Count > 5)
+                    {
+                        <FluentLabel Typo="Typography.Body">and @(uploadingFiles.Count - 5) more...</FluentLabel>
                     }
                 </div>
             }
-            @if (isUploading)
+            
+            @if (!string.IsNullOrEmpty(uploadStatusMessage))
             {
-                <FluentProgressRing />
-                <FluentLabel>Uploading... @uploadProgress</FluentLabel>
+                <FluentMessageBar Intent="@uploadMessageIntent">
+                    @uploadStatusMessage
+                </FluentMessageBar>
             }
         </FluentStack>
     </FluentDialogBody>
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" 
-                    OnClick="@UploadFiles" 
-                    Disabled="@(!selectedFiles.Any() || isUploading)">
-            Upload
+                    OnClick="@StartUpload" 
+                    Disabled="@isUploading">
+            Start Upload
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" 
-                    OnClick="@(() => isUploadDialogHidden = true)"
+                    OnClick="@CancelUpload"
                     Disabled="@isUploading">
-            Cancel
+            @(isUploading ? "Close" : "Cancel")
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -560,6 +577,10 @@
     private List<IBrowserFile> selectedFiles = new();
     private bool isUploading = false;
     private string uploadProgress = string.Empty;
+    private Dictionary<string, int> uploadingFiles = new();
+    private string uploadStatusMessage = string.Empty;
+    private MessageIntent uploadMessageIntent = MessageIntent.Info;
+    private DotNetObjectReference<FileManager>? dotNetHelper;
 
     private bool IsRootPath => string.IsNullOrEmpty(currentPath) || currentPath == "/" || currentPath == "\\";
 
@@ -1001,10 +1022,111 @@
 
     #region Upload
 
-    private void OpenUploadDialog()
+    private async Task OpenUploadDialog()
     {
-        selectedFiles.Clear();
+        uploadingFiles.Clear();
+        uploadStatusMessage = string.Empty;
+        isUploading = false;
         isUploadDialogHidden = false;
+        
+        // Initialize dropzone after dialog renders
+        await Task.Delay(100);
+        await InitializeDropzone();
+    }
+
+    private async Task InitializeDropzone()
+    {
+        try
+        {
+            dotNetHelper = DotNetObjectReference.Create(this);
+            var uploadUrl = "/api/files/upload-chunk"; // This will need to be implemented
+            await JSRuntime.InvokeVoidAsync("initializeChunkedDropzone", 
+                "dropzone-upload", 
+                uploadUrl, 
+                currentPath, 
+                dotNetHelper,
+                1048576); // 1MB chunks
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing dropzone");
+            ToastService.ShowError("Failed to initialize upload component");
+        }
+    }
+
+    private async Task StartUpload()
+    {
+        try
+        {
+            isUploading = true;
+            uploadStatusMessage = "Starting upload...";
+            uploadMessageIntent = MessageIntent.Info;
+            StateHasChanged();
+            
+            await JSRuntime.InvokeVoidAsync("processDropzoneQueue", "dropzone-upload");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error starting upload");
+            uploadStatusMessage = $"Failed to start upload: {ex.Message}";
+            uploadMessageIntent = MessageIntent.Error;
+            isUploading = false;
+        }
+    }
+
+    private async Task CancelUpload()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("clearDropzone", "dropzone-upload");
+            uploadingFiles.Clear();
+            uploadStatusMessage = string.Empty;
+            isUploadDialogHidden = true;
+            isUploading = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error canceling upload");
+        }
+    }
+
+    [JSInvokable]
+    public Task OnUploadProgress(string filename, int progress, long bytesSent, long totalBytes)
+    {
+        uploadingFiles[filename] = progress;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnFileUploaded(string filename)
+    {
+        uploadingFiles.Remove(filename);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnUploadError(string filename, string error)
+    {
+        uploadingFiles.Remove(filename);
+        uploadStatusMessage = $"Error uploading {filename}: {error}";
+        uploadMessageIntent = MessageIntent.Error;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public async Task OnAllUploadsComplete()
+    {
+        uploadStatusMessage = "All files uploaded successfully!";
+        uploadMessageIntent = MessageIntent.Success;
+        isUploading = false;
+        StateHasChanged();
+        
+        await Task.Delay(1500);
+        await LoadFiles();
+        isUploadDialogHidden = true;
     }
 
     private void HandleFileSelection(InputFileChangeEventArgs e)

@@ -53,3 +53,110 @@ window.initializeDropZone = function (elementId, dotNetHelper) {
         }
     });
 };
+
+// Initialize Dropzone for chunked file upload
+window.initializeChunkedDropzone = function (elementId, uploadUrl, currentPath, dotNetHelper, chunkSize = 1048576) {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        console.error('Dropzone element not found:', elementId);
+        return null;
+    }
+
+    // Destroy existing dropzone if any
+    if (element.dropzone) {
+        element.dropzone.destroy();
+    }
+
+    const dropzone = new Dropzone(element, {
+        url: uploadUrl,
+        method: 'post',
+        chunking: true,
+        forceChunking: true,
+        chunkSize: chunkSize, // 1MB chunks by default
+        parallelChunkUploads: false,
+        retryChunks: true,
+        retryChunksLimit: 3,
+        autoProcessQueue: false,
+        uploadMultiple: false,
+        parallelUploads: 1,
+        maxFilesize: 10240, // 10GB max
+        timeout: 300000, // 5 minutes
+        dictDefaultMessage: "Drop files here or click to upload",
+        dictFallbackMessage: "Your browser doesn't support drag and drop file uploads.",
+        dictFileTooBig: "File is too big ({{filesize}}MB). Max filesize: {{maxFilesize}}MB.",
+        dictInvalidFileType: "You can't upload files of this type.",
+        dictResponseError: "Server responded with {{statusCode}} code.",
+        dictCancelUpload: "Cancel upload",
+        dictUploadCanceled: "Upload canceled.",
+        dictCancelUploadConfirmation: "Are you sure you want to cancel this upload?",
+        dictRemoveFile: "Remove file",
+        dictMaxFilesExceeded: "You can not upload any more files.",
+        
+        init: function() {
+            const dz = this;
+            
+            dz.on("sending", function(file, xhr, formData) {
+                formData.append("path", currentPath);
+            });
+            
+            dz.on("uploadprogress", async function(file, progress, bytesSent) {
+                if (dotNetHelper) {
+                    await dotNetHelper.invokeMethodAsync('OnUploadProgress', 
+                        file.name, 
+                        Math.round(progress), 
+                        bytesSent, 
+                        file.size);
+                }
+            });
+            
+            dz.on("success", async function(file, response) {
+                if (dotNetHelper) {
+                    await dotNetHelper.invokeMethodAsync('OnFileUploaded', file.name);
+                }
+            });
+            
+            dz.on("error", async function(file, errorMessage) {
+                if (dotNetHelper) {
+                    await dotNetHelper.invokeMethodAsync('OnUploadError', 
+                        file.name, 
+                        typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+                }
+            });
+            
+            dz.on("queuecomplete", async function() {
+                if (dotNetHelper) {
+                    await dotNetHelper.invokeMethodAsync('OnAllUploadsComplete');
+                }
+            });
+        }
+    });
+
+    return dropzone;
+};
+
+window.processDropzoneQueue = function(elementId) {
+    const element = document.getElementById(elementId);
+    if (element && element.dropzone) {
+        element.dropzone.processQueue();
+        return true;
+    }
+    return false;
+};
+
+window.clearDropzone = function(elementId) {
+    const element = document.getElementById(elementId);
+    if (element && element.dropzone) {
+        element.dropzone.removeAllFiles(true);
+        return true;
+    }
+    return false;
+};
+
+window.destroyDropzone = function(elementId) {
+    const element = document.getElementById(elementId);
+    if (element && element.dropzone) {
+        element.dropzone.destroy();
+        return true;
+    }
+    return false;
+};

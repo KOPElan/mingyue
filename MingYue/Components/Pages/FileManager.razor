@@ -173,29 +173,14 @@
                                     </div>
                                 }
                                 <div class="file-card-thumbnail">
-                                    @if (item.IsDirectory)
+                                    @if (IsImageFile(item) && !string.IsNullOrEmpty(item.ThumbnailData))
                                     {
-                                        <div class="file-card-icon">
-                                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Folder())" Color="@Color.Accent" />
-                                        </div>
-                                    }
-                                    else if (IsImageFile(item))
-                                    {
-                                        @if (!string.IsNullOrEmpty(item.ThumbnailData))
-                                        {
-                                            <img src="@item.ThumbnailData" alt="@item.Name" />
-                                        }
-                                        else
-                                        {
-                                            <div class="file-card-icon">
-                                                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.Image())" />
-                                            </div>
-                                        }
+                                        <img src="@item.ThumbnailData" alt="@item.Name" class="file-card-thumbnail" />
                                     }
                                     else
                                     {
                                         <div class="file-card-icon">
-                                            <FluentIcon Value="@GetFileIcon(item)" />
+                                            <img src="@GetFileIcon(item)" alt="@item.Name" class="file-type-icon" />
                                         </div>
                                     }
                                 </div>
@@ -219,7 +204,7 @@
                     {
                         <div class="file-list-row">
                             <div class="file-list-name">
-                                <FluentIcon Value="@GetFileIcon(item)" />
+                                <img src="@GetFileIcon(item)" alt="@item.Name" class="file-type-icon-small" />
                                 <span class="file-list-name-text" @onclick="@(() => OnItemClick(item))">
                                     @item.Name
                                 </span>
@@ -1398,27 +1383,35 @@
 
     #region Icons
 
-    private Icon GetFileIcon(FileItemInfo item)
+    private string GetFileIcon(FileItemInfo item)
     {
         if (item.IsDirectory)
         {
-            return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Folder();
+            return "/images/filemanager/png/002-folder.png";
         }
 
         return item.Extension.ToLowerInvariant() switch
         {
-            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Image(),
-            ".pdf" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentPdf(),
-            ".doc" or ".docx" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText(),
-            ".xls" or ".xlsx" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentTable(),
-            ".ppt" or ".pptx" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText(),
-            ".txt" or ".log" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText(),
-            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.FolderZip(),
-            ".mp3" or ".wav" or ".flac" or ".m4a" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.MusicNote2(),
-            ".mp4" or ".avi" or ".mkv" or ".mov" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Video(),
-            ".cs" or ".js" or ".ts" or ".py" or ".java" or ".cpp" or ".c" or ".h" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Code(),
-            ".html" or ".css" or ".json" or ".xml" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Code(),
-            _ => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Document()
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" => "/images/filemanager/png/007-image.png",
+            ".svg" => "/images/filemanager/png/022-svg.png",
+            ".pdf" => "/images/filemanager/png/001-pdf.png",
+            ".doc" or ".docx" => "/images/filemanager/png/006-word.png",
+            ".xls" or ".xlsx" => "/images/filemanager/png/015-excel.png",
+            ".ppt" or ".pptx" => "/images/filemanager/png/014-powerpoint.png",
+            ".txt" or ".log" => "/images/filemanager/png/012-txt.png",
+            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" => "/images/filemanager/png/008-zip.png",
+            ".mp3" or ".wav" or ".flac" or ".m4a" => "/images/filemanager/png/010-music.png",
+            ".mp4" or ".avi" or ".mkv" or ".mov" => "/images/filemanager/png/009-video.png",
+            ".js" or ".ts" => "/images/filemanager/png/028-js-file.png",
+            ".css" => "/images/filemanager/png/011-css.png",
+            ".cs" or ".py" or ".java" or ".cpp" or ".c" or ".h" or ".html" or ".json" or ".xml" => "/images/filemanager/png/016-text.png",
+            ".iso" => "/images/filemanager/png/018-iso.png",
+            ".ttf" or ".otf" or ".woff" or ".woff2" => "/images/filemanager/png/024-font-file.png",
+            ".sql" => "/images/filemanager/png/025-sql.png",
+            ".apk" => "/images/filemanager/png/023-apk.png",
+            ".psd" => "/images/filemanager/png/030-psd.png",
+            ".ai" => "/images/filemanager/png/027-adobe-illustrator.png",
+            _ => "/images/filemanager/png/013-blank.png"
         };
     }
 

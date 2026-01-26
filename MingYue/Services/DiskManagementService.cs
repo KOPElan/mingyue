@@ -94,12 +94,28 @@ namespace MingYue.Services
 
             foreach (var disk in allDisks)
             {
-                // Only include physical disks and their partitions
-                // Type can be: disk, part (partition), rom, loop, lvm, raid, etc.
-                if (disk.Type.Equals("disk", StringComparison.OrdinalIgnoreCase) ||
-                    disk.Type.Equals("part", StringComparison.OrdinalIgnoreCase))
+                // Allow:
+                //   - physical disks and their partitions (Type == "disk" / "part")
+                //   - non-virtual devices that are mounted or ready (e.g., lvm/crypt/raid)
+                // Exclude clearly virtual devices such as loop/ram/rom, even if they appear.
+                var isDiskOrPart =
+                    disk.Type.Equals("disk", StringComparison.OrdinalIgnoreCase) ||
+                    disk.Type.Equals("part", StringComparison.OrdinalIgnoreCase);
+
+                // Known virtual / ephemeral block device types to exclude
+                var isVirtualType =
+                    disk.Type.Equals("loop", StringComparison.OrdinalIgnoreCase) ||
+                    disk.Type.Equals("ram", StringComparison.OrdinalIgnoreCase) ||
+                    disk.Type.Equals("zram", StringComparison.OrdinalIgnoreCase) ||
+                    disk.Type.Equals("rom", StringComparison.OrdinalIgnoreCase);
+
+                var hasMountOrReady =
+                    !string.IsNullOrWhiteSpace(disk.MountPoint) ||
+                    disk.IsReady;
+
+                if (isDiskOrPart || (!isVirtualType && hasMountOrReady))
                 {
-                    // Exclude loop devices (virtual block devices)
+                    // Exclude loop devices (virtual block devices) by name as a safeguard
                     if (disk.Name.StartsWith("loop", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
@@ -1920,29 +1936,9 @@ namespace MingYue.Services
 
             try
             {
-                // Check if smartctl is available
-                var checkProcess = new ProcessStartInfo
-                {
-                    FileName = "which",
-                    Arguments = "smartctl",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using var checkProc = Process.Start(checkProcess);
-                if (checkProc == null)
-                {
-                    return new SmartInfo
-                    {
-                        Success = false,
-                        ErrorMessage = "无法检查 smartctl 是否可用"
-                    };
-                }
-
-                await checkProc.WaitForExitAsync();
-                if (checkProc.ExitCode != 0)
+                // Check SMART availability using existing helper
+                var smartctlAvailable = await CheckCommandAvailabilityAsync("smartctl");
+                if (!smartctlAvailable)
                 {
                     return new SmartInfo
                     {
@@ -1972,9 +1968,50 @@ namespace MingYue.Services
                     };
                 }
 
-                await process.WaitForExitAsync();
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
+                // Start reading output before waiting to avoid deadlocks
+                var outputTask = process.StandardOutput.ReadToEndAsync();
+                var errorTask = process.StandardError.ReadToEndAsync();
+
+                // Wait for process to exit with timeout
+                var completed = await Task.WhenAny(
+                    process.WaitForExitAsync(),
+                    Task.Delay(TimeSpan.FromSeconds(30))
+                );
+
+                string output = "";
+                string error = "";
+                
+                if (completed == process.WaitForExitAsync())
+                {
+                    output = await outputTask;
+                    error = await errorTask;
+                }
+                else
+                {
+                    // Timeout occurred
+                    try
+                    {
+                        process.Kill();
+                    }
+                    catch { }
+                    
+                    return new SmartInfo
+                    {
+                        Success = false,
+                        ErrorMessage = "smartctl 命令超时"
+                    };
+                }
+
+                // Check exit code
+                if (process.ExitCode != 0)
+                {
+                    var errorMsg = !string.IsNullOrWhiteSpace(error) ? error : "smartctl 命令执行失败";
+                    return new SmartInfo
+                    {
+                        Success = false,
+                        ErrorMessage = $"smartctl 错误 (exit code {process.ExitCode}): {errorMsg}"
+                    };
+                }
 
                 // Parse the output
                 var smartInfo = ParseSmartOutput(output);
@@ -2010,8 +2047,27 @@ namespace MingYue.Services
                 // Check SMART support
                 if (trimmed.Contains("SMART support is:"))
                 {
-                    smartInfo.IsSupported = trimmed.Contains("Available");
-                    smartInfo.IsEnabled = trimmed.Contains("Enabled");
+                    // Some smartctl versions output two lines, e.g.:
+                    //   "SMART support is: Available - device has SMART capability."
+                    //   "SMART support is: Enabled"
+                    // Only update each flag when the corresponding keyword is present
+                    if (trimmed.Contains("Available"))
+                    {
+                        smartInfo.IsSupported = true;
+                    }
+                    else if (trimmed.Contains("Unavailable"))
+                    {
+                        smartInfo.IsSupported = false;
+                    }
+
+                    if (trimmed.Contains("Enabled"))
+                    {
+                        smartInfo.IsEnabled = true;
+                    }
+                    else if (trimmed.Contains("Disabled"))
+                    {
+                        smartInfo.IsEnabled = false;
+                    }
                 }
                 // Health status
                 else if (trimmed.StartsWith("SMART overall-health self-assessment test result:", StringComparison.OrdinalIgnoreCase) ||
@@ -2087,32 +2143,26 @@ namespace MingYue.Services
                             Value = int.TryParse(parts[3], out int val) ? val : 0,
                             Worst = int.TryParse(parts[4], out int worst) ? worst : 0,
                             Threshold = int.TryParse(parts[5], out int thresh) ? thresh : 0,
-                            RawValue = parts.Length > 9 ? parts[9] : ""
+                            RawValue = parts.Length > 9 ? string.Join(" ", parts, 9, parts.Length - 9) : ""
                         };
 
                         smartInfo.Attributes.Add(attribute);
 
                         // Extract special values
-                        if (attribute.Name.Contains("Temperature", StringComparison.OrdinalIgnoreCase))
+                        if (attribute.Name.Contains("Temperature", StringComparison.OrdinalIgnoreCase) &&
+                            int.TryParse(attribute.RawValue.Split(' ')[0], out int temp))
                         {
-                            if (int.TryParse(attribute.RawValue.Split(' ')[0], out int temp))
-                            {
-                                smartInfo.Temperature = temp;
-                            }
+                            smartInfo.Temperature = temp;
                         }
-                        else if (attribute.Name.Contains("Power_On_Hours", StringComparison.OrdinalIgnoreCase))
+                        else if (attribute.Name.Contains("Power_On_Hours", StringComparison.OrdinalIgnoreCase) &&
+                                 long.TryParse(attribute.RawValue, out long hours))
                         {
-                            if (long.TryParse(attribute.RawValue, out long hours))
-                            {
-                                smartInfo.PowerOnHours = hours;
-                            }
+                            smartInfo.PowerOnHours = hours;
                         }
-                        else if (attribute.Name.Contains("Power_Cycle_Count", StringComparison.OrdinalIgnoreCase))
+                        else if (attribute.Name.Contains("Power_Cycle_Count", StringComparison.OrdinalIgnoreCase) &&
+                                 long.TryParse(attribute.RawValue, out long cycles))
                         {
-                            if (long.TryParse(attribute.RawValue, out long cycles))
-                            {
-                                smartInfo.PowerCycleCount = cycles;
-                            }
+                            smartInfo.PowerCycleCount = cycles;
                         }
                     }
                 }

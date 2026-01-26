@@ -1,9 +1,5 @@
 /* Disk Management Page Styles */
 
-.disk-page {
-    padding: 24px;
-}
-
 .page-header {
     display: flex;
     align-items: center;

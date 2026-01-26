@@ -49,10 +49,10 @@
             @if (localDisks.Count == 0)
             {
                 <div class="empty-state">
-                    <div class="empty-state-icon">
+                    <div class="empty-icon">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.HardDrive())" />
                     </div>
-                    <p class="empty-state-text">No local disks found.</p>
+                    <p class="empty-text">未找到本地磁盘。</p>
                 </div>
             }
             else
@@ -234,7 +234,7 @@
             <div class="section-header">
                 <FluentIcon Value="@(new Icons.Regular.Size20.Globe())" Color="@Color.Accent" />
                 <h2 class="section-title">网络磁盘</h2>
-                <FluentBadge Appearance="Appearance.Neutral">@networkDisks.Count disk@(networkDisks.Count != 1 ? "s" : "")</FluentBadge>
+                <FluentBadge Appearance="Appearance.Neutral">@networkDisks.Count 个</FluentBadge>
                 <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
                 <FluentIcon Value="@(new Icons.Regular.Size20.Add())" Slot="start" />
                 挂载网络磁盘
@@ -284,7 +284,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="type-badge type-@(disk.DiskType.ToString().ToLower())">@disk.DiskType.ToString()</span>
+                                    <span class="type-badge type-disk">@disk.DiskType.ToString()</span>
                                 </td>
                                 <td>@(disk.IsReady ? disk.SizeDisplay : "-")</td>
                                 <td>@(disk.IsReady && !string.IsNullOrEmpty(disk.FileSystem) ? disk.FileSystem : "-")</td>
@@ -345,7 +345,7 @@
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Icons.Regular.Size24.HardDrive())" />
             <FluentLabel Typo="Typography.PaneHeader">
-                Add Network Disk - Step @wizardStep of 4
+                添加网络磁盘 - 步骤 @wizardStep / 4
             </FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
@@ -354,19 +354,19 @@
         @if (wizardStep == 1)
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-                <FluentLabel Typo="Typography.Body">Choose the type of network disk you want to add:</FluentLabel>
+                <FluentLabel Typo="Typography.Body">选择要添加的网络磁盘类型：</FluentLabel>
                 
                 <FluentRadioGroup @bind-Value="networkDiskConfig.DiskType" Orientation="Orientation.Vertical">
                     <FluentRadio Value="@NetworkDiskType.CIFS">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
                             <FluentLabel Weight="FontWeight.Bold">SMB/CIFS</FluentLabel>
-                            <FluentLabel>Windows file shares, Samba servers</FluentLabel>
+                            <FluentLabel>Windows 文件共享，Samba 服务器</FluentLabel>
                         </FluentStack>
                     </FluentRadio>
                     <FluentRadio Value="@NetworkDiskType.NFS">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
                             <FluentLabel Weight="FontWeight.Bold">NFS</FluentLabel>
-                            <FluentLabel>Unix/Linux network file system</FluentLabel>
+                            <FluentLabel>Unix/Linux 网络文件系统</FluentLabel>
                         </FluentStack>
                     </FluentRadio>
                 </FluentRadioGroup>
@@ -375,18 +375,18 @@
         else if (wizardStep == 2)
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-                <FluentLabel Typo="Typography.Body">Enter connection details:</FluentLabel>
+                <FluentLabel Typo="Typography.Body">输入连接详情：</FluentLabel>
                 
                 <FluentTextField 
                     @bind-Value="networkDiskConfig.Server"
-                    Label="Server (IP or hostname)"
+                    Label="服务器（IP 或主机名）"
                     Required="true"
-                    Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "192.168.1.10 or server.local" : "192.168.1.10")"
+                    Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "192.168.1.10 或 server.local" : "192.168.1.10")"
                     Class="form-field-full-width" />
                 
                 <FluentTextField 
                     @bind-Value="networkDiskConfig.SharePath"
-                    Label="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "Share Name" : "Export Path")"
+                    Label="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "共享名称" : "导出路径")"
                     Required="true"
                     Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "MyShare" : "/export/data")"
                     Class="form-field-full-width" />
@@ -395,20 +395,20 @@
                 {
                     <FluentTextField 
                         @bind-Value="networkDiskConfig.Username"
-                        Label="Username (optional)"
+                        Label="用户名（可选）"
                         Placeholder="username"
                         Class="form-field-full-width" />
                     
                     <FluentTextField 
                         @bind-Value="networkDiskConfig.Password"
-                        Label="Password (optional)"
+                        Label="密码（可选）"
                         TextFieldType="TextFieldType.Password"
                         Placeholder="password"
                         Class="form-field-full-width" />
                     
                     <FluentTextField 
                         @bind-Value="networkDiskConfig.Domain"
-                        Label="Domain (optional)"
+                        Label="域（可选）"
                         Placeholder="WORKGROUP"
                         Class="form-field-full-width" />
                 }
@@ -417,40 +417,40 @@
         else if (wizardStep == 3)
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-                <FluentLabel Typo="Typography.Body">Choose mount options:</FluentLabel>
+                <FluentLabel Typo="Typography.Body">选择挂载选项：</FluentLabel>
                 
                 <FluentTextField 
                     @bind-Value="networkDiskConfig.MountPoint"
-                    Label="Mount Point"
+                    Label="挂载点"
                     Required="true"
                     Placeholder="/mnt/network-share"
                     Class="form-field-full-width" />
                 
                 <FluentCheckbox 
                     @bind-Value="networkDiskConfig.ReadOnly"
-                    Label="Read-only" />
+                    Label="只读" />
                 
                 <FluentCheckbox 
                     @bind-Value="networkDiskConfig.AutoMount"
-                    Label="Auto-mount on boot (permanent)" />
+                    Label="开机自动挂载（永久）" />
             </FluentStack>
         }
         else if (wizardStep == 4)
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-                <FluentLabel Typo="Typography.Body">Confirm your settings:</FluentLabel>
+                <FluentLabel Typo="Typography.Body">确认您的设置：</FluentLabel>
                 
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Class="wizard-summary">
-                    <FluentLabel><strong>Type:</strong> @networkDiskConfig.DiskType</FluentLabel>
-                    <FluentLabel><strong>Server:</strong> @networkDiskConfig.Server</FluentLabel>
-                    <FluentLabel><strong>@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "Share" : "Path"):</strong> @networkDiskConfig.SharePath</FluentLabel>
-                    <FluentLabel><strong>Mount Point:</strong> @networkDiskConfig.MountPoint</FluentLabel>
+                    <FluentLabel><strong>类型：</strong> @networkDiskConfig.DiskType</FluentLabel>
+                    <FluentLabel><strong>服务器：</strong> @networkDiskConfig.Server</FluentLabel>
+                    <FluentLabel><strong>@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "共享" : "路径")：</strong> @networkDiskConfig.SharePath</FluentLabel>
+                    <FluentLabel><strong>挂载点：</strong> @networkDiskConfig.MountPoint</FluentLabel>
                     @if (!string.IsNullOrEmpty(networkDiskConfig.Username))
                     {
-                        <FluentLabel><strong>Username:</strong> @networkDiskConfig.Username</FluentLabel>
+                        <FluentLabel><strong>用户名：</strong> @networkDiskConfig.Username</FluentLabel>
                     }
-                    <FluentLabel><strong>Read-only:</strong> @(networkDiskConfig.ReadOnly ? "Yes" : "No")</FluentLabel>
-                    <FluentLabel><strong>Auto-mount:</strong> @(networkDiskConfig.AutoMount ? "Yes" : "No")</FluentLabel>
+                    <FluentLabel><strong>只读：</strong> @(networkDiskConfig.ReadOnly ? "是" : "否")</FluentLabel>
+                    <FluentLabel><strong>自动挂载：</strong> @(networkDiskConfig.AutoMount ? "是" : "否")</FluentLabel>
                 </FluentStack>
             </FluentStack>
         }
@@ -460,24 +460,24 @@
         @if (wizardStep > 1)
         {
             <FluentButton Appearance="Appearance.Neutral" OnClick="@PreviousWizardStep">
-                Previous
+                上一步
             </FluentButton>
         }
         @if (wizardStep < 4)
         {
             <FluentButton Appearance="Appearance.Accent" OnClick="@NextWizardStep" 
                          Disabled="@(!IsCurrentWizardStepValid())">
-                Next
+                下一步
             </FluentButton>
         }
         else
         {
             <FluentButton Appearance="Appearance.Accent" OnClick="@MountNetworkDisk">
-                Mount
+                挂载
             </FluentButton>
         }
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseWizard">
-            Cancel
+            取消
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -977,7 +977,7 @@
 
     #endregion
 
-    #region Power Management
+    #region SMART Information
 
     /// <summary>
     /// Open SMART information dialog

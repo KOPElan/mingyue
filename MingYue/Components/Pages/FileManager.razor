@@ -670,6 +670,9 @@
 
         // Load thumbnails after files are loaded
         await LoadThumbnails();
+        
+        // Force UI update to ensure storage info is displayed
+        StateHasChanged();
     }
 
     private async Task LoadFavorites()
@@ -730,7 +733,31 @@
         var normalizedPath = path.TrimEnd('/', '\\');
         var normalizedDiskPath = diskPath.TrimEnd('/', '\\');
         
-        // Check if the current path starts with the disk path
+        // Special handling for root path
+        if (normalizedDiskPath == "" || normalizedDiskPath == "/")
+        {
+            normalizedDiskPath = "/";
+            // Root disk is active only if path is exactly "/" or doesn't match any other disk
+            // This will be handled by checking other disks first
+            if (normalizedPath == "" || normalizedPath == "/")
+            {
+                return true;
+            }
+            // Check if path starts with any non-root disk path
+            // If it does, then root is NOT active
+            foreach (var drive in availableDrives)
+            {
+                var otherDiskPath = drive.Path.TrimEnd('/', '\\');
+                if (otherDiskPath != "" && otherDiskPath != "/" && normalizedPath.StartsWith(otherDiskPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+            // If no other disk matches, root is active
+            return true;
+        }
+        
+        // For non-root disks, check if path starts with disk path
         return normalizedPath.StartsWith(normalizedDiskPath, StringComparison.OrdinalIgnoreCase);
     }
 

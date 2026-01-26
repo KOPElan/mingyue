@@ -1039,7 +1039,7 @@
         try
         {
             dotNetHelper = DotNetObjectReference.Create(this);
-            var uploadUrl = "/api/files/upload-chunk"; // This will need to be implemented
+            var uploadUrl = "/api/files/upload-chunk";
             await JSRuntime.InvokeVoidAsync("initializeChunkedDropzone", 
                 "dropzone-upload", 
                 uploadUrl, 

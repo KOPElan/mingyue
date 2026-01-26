@@ -61,8 +61,15 @@ public class FileUploadController : ControllerBase
             // If chunked upload
             if (!string.IsNullOrEmpty(chunkIndex) && !string.IsNullOrEmpty(totalChunks))
             {
-                var chunkIdx = int.Parse(chunkIndex);
-                var totalCh = int.Parse(totalChunks);
+                if (!int.TryParse(chunkIndex, out var chunkIdx) || !int.TryParse(totalChunks, out var totalCh))
+                {
+                    return BadRequest("Invalid chunk information");
+                }
+                
+                if (chunkIdx < 0 || chunkIdx >= totalCh || totalCh <= 0)
+                {
+                    return BadRequest("Invalid chunk index or total chunks");
+                }
                 
                 // Create temp directory for chunks
                 var tempDir = Path.Combine(Path.GetTempPath(), "mingyue-chunks", Path.GetRandomFileName());
@@ -83,16 +90,23 @@ public class FileUploadController : ControllerBase
                     {
                         using (var finalStream = new MemoryStream())
                         {
+                            // Verify all chunks exist before combining
+                            for (int i = 0; i < totalCh; i++)
+                            {
+                                var partPath = Path.Combine(tempDir, $"{fileName}.part{i}");
+                                if (!System.IO.File.Exists(partPath))
+                                {
+                                    throw new InvalidOperationException($"Missing chunk {i} of {totalCh}");
+                                }
+                            }
+                            
                             // Combine all chunks in order
                             for (int i = 0; i < totalCh; i++)
                             {
                                 var partPath = Path.Combine(tempDir, $"{fileName}.part{i}");
-                                if (System.IO.File.Exists(partPath))
+                                using (var partStream = System.IO.File.OpenRead(partPath))
                                 {
-                                    using (var partStream = System.IO.File.OpenRead(partPath))
-                                    {
-                                        await partStream.CopyToAsync(finalStream);
-                                    }
+                                    await partStream.CopyToAsync(finalStream);
                                 }
                             }
                             

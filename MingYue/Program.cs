@@ -11,6 +11,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddFluentUIComponents();
 builder.Services.AddHttpClient();
+builder.Services.AddControllers();
 
 // Add SQLite database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -55,6 +56,7 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

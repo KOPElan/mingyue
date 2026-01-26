@@ -74,7 +74,7 @@ namespace MingYue.Services
         {
             using var sha256 = SHA256.Create();
             var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(fileName));
-            return Convert.ToHexString(hashBytes).ToLowerInvariant().Substring(0, 16);
+            return Convert.ToHexString(hashBytes).ToLowerInvariant()[..16];
         }
 
         public async Task<byte[]?> GenerateThumbnailAsync(string filePath, int width = 200, int height = 200)
@@ -154,10 +154,9 @@ namespace MingYue.Services
         {
             try
             {
-                // For now, return null for videos
-                // Video thumbnail generation would require FFmpeg integration
-                // This can be implemented in Phase 4
-                _logger.LogInformation("Video thumbnail generation not yet implemented for {FilePath}", filePath);
+                // Video thumbnail generation requires FFmpeg integration
+                // See issue for video thumbnail support
+                _logger.LogDebug("Video thumbnail generation not yet implemented for {FilePath}", filePath);
                 return null;
             }
             catch (Exception ex)

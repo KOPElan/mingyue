@@ -202,8 +202,9 @@ namespace MingYue.Services
         private bool IsSpecialFile(string filePath)
         {
             var fileName = Path.GetFileName(filePath);
+            var thumbnailDirPath = Path.Combine(Path.DirectorySeparatorChar.ToString(), ".thumbnail", Path.DirectorySeparatorChar.ToString());
             return fileName == IndexFileName || 
-                   filePath.Contains(Path.DirectorySeparatorChar + ".thumbnail" + Path.DirectorySeparatorChar);
+                   filePath.Contains(thumbnailDirPath);
         }
 
         private bool IsSpecialDirectory(string directoryPath)

@@ -577,6 +577,8 @@
     private enum ViewMode { List, Grid }
 
     private const string ParentDirectoryMarker = "..";
+    // Cron expression for one-time execution: Jan 1, 2099 (effectively never repeats)
+    private const string OneTimeTaskCronExpression = "0 0 0 1 1 ? 2099";
 
     private ViewMode viewMode = ViewMode.Grid;
     private string currentPath = "/";
@@ -1493,7 +1495,7 @@
             var tasksCreated = 0;
 
             // Use a default cron expression if none provided (run immediately, don't repeat)
-            var cronExpr = string.IsNullOrWhiteSpace(taskCronExpression) ? "0 0 0 1 1 ? 2099" : taskCronExpression;
+            var cronExpr = string.IsNullOrWhiteSpace(taskCronExpression) ? OneTimeTaskCronExpression : taskCronExpression;
 
             // Create thumbnail generation task
             if (createThumbnailTask)

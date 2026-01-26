@@ -207,4 +207,121 @@
             new() { Success = false, Message = message, Status = StatusValues.Unknown };
     }
 
+    /// <summary>
+    /// SMART (Self-Monitoring, Analysis and Reporting Technology) information for a disk
+    /// </summary>
+    public class SmartInfo
+    {
+        /// <summary>
+        /// Whether SMART is supported on this device
+        /// </summary>
+        public bool IsSupported { get; set; }
+
+        /// <summary>
+        /// Whether SMART is enabled on this device
+        /// </summary>
+        public bool IsEnabled { get; set; }
+
+        /// <summary>
+        /// Overall health status (PASSED, FAILED, etc.)
+        /// </summary>
+        public string HealthStatus { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Device model
+        /// </summary>
+        public string Model { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Serial number
+        /// </summary>
+        public string SerialNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Firmware version
+        /// </summary>
+        public string FirmwareVersion { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Device capacity
+        /// </summary>
+        public string Capacity { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Temperature in Celsius (if available)
+        /// </summary>
+        public int? Temperature { get; set; }
+
+        /// <summary>
+        /// Power-on hours
+        /// </summary>
+        public long? PowerOnHours { get; set; }
+
+        /// <summary>
+        /// Power cycle count
+        /// </summary>
+        public long? PowerCycleCount { get; set; }
+
+        /// <summary>
+        /// List of SMART attributes
+        /// </summary>
+        public List<SmartAttribute> Attributes { get; set; } = new();
+
+        /// <summary>
+        /// Raw output from smartctl
+        /// </summary>
+        public string RawOutput { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Whether the query was successful
+        /// </summary>
+        public bool Success { get; set; }
+
+        /// <summary>
+        /// Error message if query failed
+        /// </summary>
+        public string? ErrorMessage { get; set; }
+    }
+
+    /// <summary>
+    /// Individual SMART attribute
+    /// </summary>
+    public class SmartAttribute
+    {
+        /// <summary>
+        /// Attribute ID
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Attribute name
+        /// </summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Current value
+        /// </summary>
+        public int Value { get; set; }
+
+        /// <summary>
+        /// Worst value recorded
+        /// </summary>
+        public int Worst { get; set; }
+
+        /// <summary>
+        /// Threshold value
+        /// </summary>
+        public int Threshold { get; set; }
+
+        /// <summary>
+        /// Raw value
+        /// </summary>
+        public string RawValue { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Whether this attribute has failed
+        /// </summary>
+        public bool Failed => Value <= Threshold && Threshold > 0;
+    }
+
 }

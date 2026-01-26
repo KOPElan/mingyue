@@ -447,11 +447,15 @@
 
 /* Dropzone Upload Styles */
 .dropzone-container {
-    min-height: 200px;
+    min-height: 250px;
     border: 2px dashed var(--neutral-stroke-rest, #d1d1d1);
     border-radius: 8px;
     background: var(--neutral-fill-secondary-rest, #fafafa);
     transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .dropzone-container:hover {
@@ -460,10 +464,10 @@
 }
 
 .dropzone-container .dz-message {
-    margin: 2em 0;
     text-align: center;
     color: var(--neutral-foreground-hint, #707070);
     font-size: 14px;
+    width: 100%;
 }
 
 .dropzone-container.dz-drag-hover {

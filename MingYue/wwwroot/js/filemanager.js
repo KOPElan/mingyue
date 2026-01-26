@@ -87,6 +87,8 @@ window.initializeChunkedDropzone = function (elementId, uploadUrl, currentPath, 
         parallelUploads: 1,
         maxFilesize: 10240, // 10GB max
         timeout: 300000, // 5 minutes
+        clickable: true,
+        previewsContainer: element,
         dictDefaultMessage: "Drop files here or click to upload",
         dictFallbackMessage: "Your browser doesn't support drag and drop file uploads.",
         dictFileTooBig: "File is too big ({{filesize}}MB). Max filesize: {{maxFilesize}}MB.",

@@ -345,7 +345,20 @@
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <!-- Dropzone Area -->
-            <div id="dropzone-upload" class="dropzone-container"></div>
+            <div id="dropzone-upload" class="dropzone-container">
+                <div class="dz-message" data-dz-message>
+                    <div style="padding: 40px 20px;">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.CloudArrowUp())" 
+                                   Style="font-size: 48px; color: var(--accent-fill-rest); margin-bottom: 16px;" />
+                        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+                            Drag files here or click to browse
+                        </div>
+                        <div style="font-size: 13px; color: var(--neutral-foreground-hint);">
+                            Support for chunked upload of large files (up to 10GB)
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Upload Progress -->
             @if (uploadingFiles.Any())

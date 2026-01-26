@@ -98,6 +98,8 @@ namespace MingYue.Services
                         return await ExecuteHttpTaskAsync(task);
                     case "fileindex":
                         return await ExecuteFileIndexTaskAsync(task);
+                    case "thumbnailgeneration":
+                        return await ExecuteThumbnailGenerationTaskAsync(task);
                     case "anydropmigration":
                         return await ExecuteAnydropMigrationTaskAsync(task);
                     default:
@@ -496,6 +498,69 @@ namespace MingYue.Services
                 len = len / 1024;
             }
             return $"{len:0.##} {sizes[order]}";
+        }
+
+        private async Task<(bool Success, string Output, string ErrorMessage)> ExecuteThumbnailGenerationTaskAsync(ScheduledTask task)
+        {
+            try
+            {
+                var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
+                if (taskData == null || !taskData.TryGetValue("path", out var path) || string.IsNullOrWhiteSpace(path))
+                {
+                    return (false, "", "Invalid task data: missing 'path' field");
+                }
+
+                // Security: Validate and canonicalize the path to prevent path traversal
+                string normalizedPath;
+                try
+                {
+                    normalizedPath = Path.GetFullPath(path);
+                }
+                catch (Exception ex)
+                {
+                    return (false, "", $"Invalid path: {ex.Message}");
+                }
+
+                // Check that the path exists and is a directory
+                if (!Directory.Exists(normalizedPath))
+                {
+                    return (false, "", $"Directory does not exist: {path}");
+                }
+
+                bool recursive;
+                if (taskData.TryGetValue("recursive", out var recursiveValue))
+                {
+                    recursive = recursiveValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+                }
+                else
+                {
+                    recursive = false;
+                }
+
+                // Get ThumbnailService from service provider
+                using var scope = _serviceProvider.CreateScope();
+                var thumbnailService = scope.ServiceProvider.GetService<IThumbnailService>();
+                
+                if (thumbnailService == null)
+                {
+                    return (false, "", "ThumbnailService not available");
+                }
+
+                // Generate thumbnails
+                var startTime = DateTime.UtcNow;
+                await thumbnailService.GenerateDirectoryThumbnailsAsync(normalizedPath, recursive);
+                var duration = (DateTime.UtcNow - startTime).TotalSeconds;
+
+                var output = $"Thumbnail generation completed for path: {normalizedPath}\n";
+                output += $"Recursive: {recursive}\n";
+                output += $"Duration: {duration:F2} seconds";
+
+                return (true, output, "");
+            }
+            catch (Exception ex)
+            {
+                return (false, "", ex.Message);
+            }
         }
 
         private DateTime? CalculateNextRunTime(string cronExpression)

@@ -7,6 +7,8 @@ namespace MingYue.Services
         Task IndexFileAsync(string filePath);
         Task IndexDirectoryAsync(string directoryPath, bool recursive = false);
         Task<List<FileIndex>> SearchFilesAsync(string searchPattern);
+        Task<List<FileIndex>> SearchFilesInDirectoryAsync(string? directoryPath, string searchPattern);
+        Task<bool> HasIndexAsync(string directoryPath);
         Task RemoveFromIndexAsync(string filePath);
         Task ClearIndexAsync();
     }

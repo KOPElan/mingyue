@@ -425,3 +425,7 @@ FodyWeavers.xsd
 *.db
 *.db-shm
 *.db-wal
+
+# File manager thumbnails and indexes
+.thumbnail/
+.fileindex.json

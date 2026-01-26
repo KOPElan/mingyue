@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["MingYue.styles.css"]" />
     <link href="_content/Microsoft.FluentUI.AspNetCore.Components/css/reboot.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/6.0.0-beta.2/dropzone.min.css" />
+    <link rel="stylesheet" href="~/lib/dropzone/dropzone.min.css" />
     <ImportMap />
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
@@ -17,7 +17,7 @@
 <body>
     <Routes @rendermode="InteractiveServer" />
     <ReconnectModal />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/6.0.0-beta.2/dropzone.min.js"></script>
+    <script src="~/lib/dropzone/dropzone.min.js"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["js/filemanager.js"]"></script>
 </body>

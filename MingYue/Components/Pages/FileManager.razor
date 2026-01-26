@@ -983,9 +983,62 @@
 
     private async Task PerformCopyMove()
     {
-        if (selectedItem == null || string.IsNullOrWhiteSpace(destinationPath))
+        if (string.IsNullOrWhiteSpace(destinationPath))
         {
             ToastService.ShowWarning("Please enter a destination path");
+            return;
+        }
+
+        // Handle batch operations from action bar
+        if (selectedItems.Any())
+        {
+            var successCount = 0;
+            var failCount = 0;
+            var operation = isMoveOperation ? "move" : "copy";
+
+            foreach (var item in selectedItems.ToList())
+            {
+                try
+                {
+                    var destPath = Path.Combine(destinationPath, item.Name);
+                    
+                    if (isMoveOperation)
+                    {
+                        await FileService.MoveAsync(item.Path, destPath);
+                    }
+                    else
+                    {
+                        await FileService.CopyAsync(item.Path, destPath);
+                    }
+                    
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error {Operation} item: {Path}", operation, item.Path);
+                    failCount++;
+                }
+            }
+
+            if (successCount > 0)
+            {
+                ToastService.ShowSuccess($"Successfully {operation}d {successCount} item(s)");
+            }
+            if (failCount > 0)
+            {
+                ToastService.ShowError($"Failed to {operation} {failCount} item(s)");
+            }
+
+            selectedItems.Clear();
+            isCopyMoveDialogHidden = true;
+            await LoadFiles();
+            return;
+        }
+
+        // Handle single item from context menu
+        if (selectedItem == null)
+        {
+            ToastService.ShowWarning("Please select an item");
             return;
         }
 

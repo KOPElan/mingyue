@@ -10,171 +10,6 @@
 
 <PageTitle>Disk Management - MingYue</PageTitle>
 
-<style>
-    .disk-page {
-        padding: 24px;
-    }
-
-    .page-header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .page-title {
-        font-size: 24px;
-        font-weight: 600;
-        margin: 0;
-        flex: 1;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 12px;
-    }
-
-    .disk-section {
-        background: var(--neutral-layer-1);
-        border-radius: 8px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        width: 100%;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 20px;
-    }
-
-    .section-title {
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
-        flex: 1;
-    }
-
-    .disk-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .disk-table thead {
-        background: var(--neutral-layer-2);
-    }
-
-    .disk-table th {
-        text-align: left;
-        padding: 12px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--neutral-foreground-rest);
-        border-bottom: 1px solid var(--neutral-stroke-divider-rest);
-    }
-
-    .disk-table td {
-        padding: 14px 16px;
-        font-size: 14px;
-        color: var(--neutral-foreground-rest);
-        border-bottom: 1px solid var(--neutral-stroke-divider-rest);
-    }
-
-    .disk-table tbody tr:hover {
-        background: var(--neutral-layer-2);
-    }
-
-    .disk-row-parent {
-        font-weight: 500;
-    }
-
-    .disk-row-child {
-        background: var(--neutral-layer-1);
-    }
-
-    .disk-row-child td:first-child {
-        padding-left: 48px;
-    }
-
-    .device-cell {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .type-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .type-disk {
-        background: #e3f2fd;
-        color: #1976d2;
-    }
-
-    .type-part {
-        background: #f3e5f5;
-        color: #7b1fa2;
-    }
-
-    .type-rom {
-        background: #fff3e0;
-        color: #f57c00;
-    }
-
-    .usage-container {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .usage-bar-wrapper {
-        flex: 1;
-        height: 6px;
-        background: var(--neutral-layer-3);
-        border-radius: 3px;
-        overflow: hidden;
-    }
-
-    .usage-bar-fill {
-        height: 100%;
-        background: var(--accent-fill-rest);
-        transition: width 0.3s ease;
-    }
-
-    .usage-text {
-        font-size: 12px;
-        color: var(--neutral-foreground-hint);
-        min-width: 45px;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: var(--neutral-foreground-hint);
-    }
-
-    .empty-icon {
-        margin-bottom: 16px;
-        opacity: 0.4;
-    }
-
-    .empty-text {
-        font-size: 14px;
-        margin: 4px 0;
-    }
-</style>
-
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
@@ -198,7 +33,7 @@
 
     @if (isLoading)
     {
-        <div style="display: flex; justify-content: center; padding: 48px;">
+        <div class="loading-container">
             <FluentProgressRing />
         </div>
     }
@@ -505,7 +340,7 @@
 </FluentStack>
 
 <!-- Network Disk Wizard Dialog -->
-<FluentDialog @ref="wizardDialog" @bind-Hidden="@isWizardHidden" TrapFocus="true" Modal="true" Style="min-width: 600px;">
+<FluentDialog @ref="wizardDialog" @bind-Hidden="@isWizardHidden" TrapFocus="true" Modal="true" Class="dialog-min-width">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Icons.Regular.Size24.HardDrive())" />
@@ -547,14 +382,14 @@
                     Label="Server (IP or hostname)"
                     Required="true"
                     Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "192.168.1.10 or server.local" : "192.168.1.10")"
-                    Style="width: 100%;" />
+                    Class="form-field-full-width" />
                 
                 <FluentTextField 
                     @bind-Value="networkDiskConfig.SharePath"
                     Label="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "Share Name" : "Export Path")"
                     Required="true"
                     Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "MyShare" : "/export/data")"
-                    Style="width: 100%;" />
+                    Class="form-field-full-width" />
                 
                 @if (networkDiskConfig.DiskType == NetworkDiskType.CIFS)
                 {
@@ -562,20 +397,20 @@
                         @bind-Value="networkDiskConfig.Username"
                         Label="Username (optional)"
                         Placeholder="username"
-                        Style="width: 100%;" />
+                        Class="form-field-full-width" />
                     
                     <FluentTextField 
                         @bind-Value="networkDiskConfig.Password"
                         Label="Password (optional)"
                         TextFieldType="TextFieldType.Password"
                         Placeholder="password"
-                        Style="width: 100%;" />
+                        Class="form-field-full-width" />
                     
                     <FluentTextField 
                         @bind-Value="networkDiskConfig.Domain"
                         Label="Domain (optional)"
                         Placeholder="WORKGROUP"
-                        Style="width: 100%;" />
+                        Class="form-field-full-width" />
                 }
             </FluentStack>
         }
@@ -589,7 +424,7 @@
                     Label="Mount Point"
                     Required="true"
                     Placeholder="/mnt/network-share"
-                    Style="width: 100%;" />
+                    Class="form-field-full-width" />
                 
                 <FluentCheckbox 
                     @bind-Value="networkDiskConfig.ReadOnly"
@@ -605,7 +440,7 @@
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentLabel Typo="Typography.Body">Confirm your settings:</FluentLabel>
                 
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Style="background: var(--neutral-layer-2); padding: 15px; border-radius: 4px;">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Class="wizard-summary">
                     <FluentLabel><strong>Type:</strong> @networkDiskConfig.DiskType</FluentLabel>
                     <FluentLabel><strong>Server:</strong> @networkDiskConfig.Server</FluentLabel>
                     <FluentLabel><strong>@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "Share" : "Path"):</strong> @networkDiskConfig.SharePath</FluentLabel>
@@ -648,7 +483,7 @@
 </FluentDialog>
 
 <!-- SMART Information Dialog -->
-<FluentDialog @ref="smartDialog" @bind-Hidden="@isSmartDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 800px; max-width: 1000px;">
+<FluentDialog @ref="smartDialog" @bind-Hidden="@isSmartDialogHidden" TrapFocus="true" Modal="true" Class="dialog-wide">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Icons.Regular.Size24.Info())" />
@@ -676,21 +511,21 @@
                 <!-- Basic Information -->
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                     <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">基本信息</FluentLabel>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Class="smart-info-grid">
                         <div>
-                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">型号</FluentLabel>
+                            <FluentLabel Class="smart-field-label">型号</FluentLabel>
                             <FluentLabel>@(string.IsNullOrEmpty(smartInfo.Model) ? "-" : smartInfo.Model)</FluentLabel>
                         </div>
                         <div>
-                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">序列号</FluentLabel>
+                            <FluentLabel Class="smart-field-label">序列号</FluentLabel>
                             <FluentLabel>@(string.IsNullOrEmpty(smartInfo.SerialNumber) ? "-" : smartInfo.SerialNumber)</FluentLabel>
                         </div>
                         <div>
-                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">固件版本</FluentLabel>
+                            <FluentLabel Class="smart-field-label">固件版本</FluentLabel>
                             <FluentLabel>@(string.IsNullOrEmpty(smartInfo.FirmwareVersion) ? "-" : smartInfo.FirmwareVersion)</FluentLabel>
                         </div>
                         <div>
-                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">容量</FluentLabel>
+                            <FluentLabel Class="smart-field-label">容量</FluentLabel>
                             <FluentLabel>@(string.IsNullOrEmpty(smartInfo.Capacity) ? "-" : smartInfo.Capacity)</FluentLabel>
                         </div>
                     </FluentStack>
@@ -699,9 +534,9 @@
                 <!-- Health Status -->
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                     <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">健康状态</FluentLabel>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Class="smart-info-grid">
                         <div>
-                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">整体健康状态</FluentLabel>
+                            <FluentLabel Class="smart-field-label">整体健康状态</FluentLabel>
                             @if (smartInfo.HealthStatus.Contains("PASSED", StringComparison.OrdinalIgnoreCase) || 
                                  smartInfo.HealthStatus.Contains("OK", StringComparison.OrdinalIgnoreCase))
                             {
@@ -717,27 +552,27 @@
                             }
                         </div>
                         <div>
-                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">SMART 支持</FluentLabel>
+                            <FluentLabel Class="smart-field-label">SMART 支持</FluentLabel>
                             <FluentLabel>@(smartInfo.IsSupported ? "是" : "否") @(smartInfo.IsEnabled ? "(已启用)" : "(未启用)")</FluentLabel>
                         </div>
                         @if (smartInfo.Temperature.HasValue)
                         {
                             <div>
-                                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">温度</FluentLabel>
+                                <FluentLabel Class="smart-field-label">温度</FluentLabel>
                                 <FluentLabel>@smartInfo.Temperature.Value °C</FluentLabel>
                             </div>
                         }
                         @if (smartInfo.PowerOnHours.HasValue)
                         {
                             <div>
-                                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">通电时间</FluentLabel>
+                                <FluentLabel Class="smart-field-label">通电时间</FluentLabel>
                                 <FluentLabel>@smartInfo.PowerOnHours.Value 小时 (@(smartInfo.PowerOnHours.Value / 24) 天)</FluentLabel>
                             </div>
                         }
                         @if (smartInfo.PowerCycleCount.HasValue)
                         {
                             <div>
-                                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">电源循环次数</FluentLabel>
+                                <FluentLabel Class="smart-field-label">电源循环次数</FluentLabel>
                                 <FluentLabel>@smartInfo.PowerCycleCount.Value 次</FluentLabel>
                             </div>
                         }
@@ -749,7 +584,7 @@
                 {
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                         <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">SMART 属性</FluentLabel>
-                        <div style="max-height: 400px; overflow-y: auto;">
+                        <div class="smart-attributes-container">
                             <FluentDataGrid Items="@smartInfo.Attributes.AsQueryable()" GridTemplateColumns="0.5fr 2fr 0.8fr 0.8fr 0.8fr 1.5fr">
                                 <PropertyColumn Property="@(a => a.Id)" Title="ID" Sortable="true" />
                                 <PropertyColumn Property="@(a => a.Name)" Title="属性名称" Sortable="true" />
@@ -757,7 +592,7 @@
                                 <PropertyColumn Property="@(a => a.Worst)" Title="最差值" Sortable="true" />
                                 <PropertyColumn Property="@(a => a.Threshold)" Title="阈值" Sortable="true" />
                                 <TemplateColumn Title="原始值" Sortable="true">
-                                    <span style="@(context.Failed ? "color: var(--error-color, red); font-weight: bold;" : "")">
+                                    <span class="@(context.Failed ? "smart-attribute-failed" : "")">
                                         @context.RawValue
                                         @if (context.Failed)
                                         {
@@ -779,7 +614,7 @@
                 <!-- Raw Output -->
                 <FluentAccordion>
                     <FluentAccordionItem Heading="原始输出">
-                        <pre style="max-height: 300px; overflow-y: auto; background: var(--neutral-layer-2); padding: 12px; border-radius: 4px; font-size: 12px;">@smartInfo.RawOutput</pre>
+                        <pre class="smart-raw-output">@smartInfo.RawOutput</pre>
                     </FluentAccordionItem>
                 </FluentAccordion>
             </FluentStack>
@@ -814,7 +649,7 @@
                 Min="0"
                 Max="240"
                 Placeholder="0 = 禁用"
-                Style="width: 100%;">
+                Class="form-field-full-width">
                 <FluentLabel Slot="help-text">磁盘空闲后自动进入待机状态的时间（0 表示禁用）</FluentLabel>
             </FluentNumberField>
             
@@ -824,7 +659,7 @@
                 Min="1"
                 Max="255"
                 Placeholder="128 = 均衡"
-                Style="width: 100%;">
+                Class="form-field-full-width">
                 <FluentLabel Slot="help-text">
                     高级电源管理级别：1-127 = 节能优先（更激进的节能），128 = 均衡，129-254 = 性能优先，255 = 禁用 APM
                 </FluentLabel>

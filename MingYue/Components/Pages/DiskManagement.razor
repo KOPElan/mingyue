@@ -140,16 +140,16 @@
                                             </FluentButton>
                                         }
                                         <FluentButton Appearance="Appearance.Accent"
+                                                      IconEnd="@(new Icons.Regular.Size16.Info())"
                                                       OnClick="@(() => OpenSmartInfoDialog(disk))"
                                                       Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
-                                                      Title="SMART 信息">
-                                            <FluentIcon Value="@(new Icons.Regular.Size16.Info())" />
+                                                      Title="SMART 信息">                                            
                                         </FluentButton>
                                         <FluentButton Appearance="Appearance.Accent"
+                                                      IconEnd="@(new Icons.Regular.Size16.Battery10())"
                                                       OnClick="@(() => OpenPowerManagementDialog(disk))"
                                                       Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
-                                                      Title="电源管理">
-                                            <FluentIcon Value="@(new Icons.Regular.Size16.Battery10())" />
+                                                      Title="电源管理">                                            
                                         </FluentButton>
                                     </div>
                                 </td>

@@ -27,7 +27,7 @@
             <FluentButton Appearance="Appearance.Neutral" OnClick="@RefreshDisks">
                 <FluentIcon Value="@(new Icons.Regular.Size20.ArrowSync())" Slot="start" />
                 刷新
-            </FluentButton>            
+            </FluentButton>
         </div>
     </div>
 
@@ -45,7 +45,7 @@
                 <FluentIcon Value="@(new Icons.Regular.Size20.HardDrive())" Color="@Color.Accent" />
                 <h2 class="section-title">所有磁盘设备</h2>
             </div>
-            
+
             @if (localDisks.Count == 0)
             {
                 <div class="empty-state">
@@ -123,32 +123,32 @@
                                     <div class="action-buttons">
                                         @if (disk.IsReady)
                                         {
-                                            <FluentButton Appearance="Appearance.Outline" 
-                                                        OnClick="@(() => ToggleDiskMount(disk))"
-                                                        Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
-                                                        Title="卸载">
+                                            <FluentButton Appearance="Appearance.Outline"
+                                                          OnClick="@(() => ToggleDiskMount(disk))"
+                                                          Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                                          Title="卸载">
                                                 卸载
                                             </FluentButton>
                                         }
                                         else
                                         {
-                                            <FluentButton Appearance="Appearance.Accent" 
-                                                        OnClick="@(() => ToggleDiskMount(disk))"
-                                                        Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
-                                                        Title="挂载">
+                                            <FluentButton Appearance="Appearance.Accent"
+                                                          OnClick="@(() => ToggleDiskMount(disk))"
+                                                          Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                                          Title="挂载">
                                                 挂载
                                             </FluentButton>
                                         }
-                                        <FluentButton Appearance="Appearance.Lightweight" 
-                                                    OnClick="@(() => OpenSmartInfoDialog(disk))"
-                                                    Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
-                                                    Title="SMART 信息">
+                                        <FluentButton Appearance="Appearance.Accent"
+                                                      OnClick="@(() => OpenSmartInfoDialog(disk))"
+                                                      Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                                      Title="SMART 信息">
                                             <FluentIcon Value="@(new Icons.Regular.Size16.Info())" />
                                         </FluentButton>
-                                        <FluentButton Appearance="Appearance.Lightweight" 
-                                                    OnClick="@(() => OpenPowerManagementDialog(disk))"
-                                                    Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
-                                                    Title="电源管理">
+                                        <FluentButton Appearance="Appearance.Accent"
+                                                      OnClick="@(() => OpenPowerManagementDialog(disk))"
+                                                      Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                                      Title="电源管理">
                                             <FluentIcon Value="@(new Icons.Regular.Size16.Battery10())" />
                                         </FluentButton>
                                     </div>
@@ -202,19 +202,19 @@
                                             <div class="action-buttons">
                                                 @if (partition.IsReady)
                                                 {
-                                                    <FluentButton Appearance="Appearance.Outline" 
-                                                                OnClick="@(() => ToggleDiskMount(partition))"
-                                                                Disabled="@(string.IsNullOrEmpty(partition.DevicePath))"
-                                                                Title="卸载">
+                                                    <FluentButton Appearance="Appearance.Outline"
+                                                                  OnClick="@(() => ToggleDiskMount(partition))"
+                                                                  Disabled="@(string.IsNullOrEmpty(partition.DevicePath))"
+                                                                  Title="卸载">
                                                         卸载
                                                     </FluentButton>
                                                 }
                                                 else
                                                 {
-                                                    <FluentButton Appearance="Appearance.Accent" 
-                                                                OnClick="@(() => ToggleDiskMount(partition))"
-                                                                Disabled="@(string.IsNullOrEmpty(partition.DevicePath))"
-                                                                Title="挂载">
+                                                    <FluentButton Appearance="Appearance.Accent"
+                                                                  OnClick="@(() => ToggleDiskMount(partition))"
+                                                                  Disabled="@(string.IsNullOrEmpty(partition.DevicePath))"
+                                                                  Title="挂载">
                                                         挂载
                                                     </FluentButton>
                                                 }
@@ -235,12 +235,11 @@
                 <FluentIcon Value="@(new Icons.Regular.Size20.Globe())" Color="@Color.Accent" />
                 <h2 class="section-title">网络磁盘</h2>
                 <FluentBadge Appearance="Appearance.Neutral">@networkDisks.Count 个</FluentBadge>
-                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard">
-                <FluentIcon Value="@(new Icons.Regular.Size20.Add())" Slot="start" />
-                挂载网络磁盘
-            </FluentButton>
+                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenNetworkDiskWizard" IconStart="@(new Icons.Regular.Size20.Add())">
+                    挂载网络磁盘
+                </FluentButton>
             </div>
-            
+
             @if (networkDisks.Count == 0)
             {
                 <div class="empty-state">
@@ -286,7 +285,7 @@
                                 <td>
                                     <span class="type-badge type-disk">@disk.DiskType.ToString()</span>
                                 </td>
-                                <td>@(disk.IsReady ? disk.SizeDisplay : "-")</td>
+                                <td>@(disk.IsReady? disk.SizeDisplay: "-")</td>
                                 <td>@(disk.IsReady && !string.IsNullOrEmpty(disk.FileSystem) ? disk.FileSystem : "-")</td>
                                 <td>@(string.IsNullOrEmpty(disk.MountPoint) ? "-" : disk.MountPoint)</td>
                                 <td>
@@ -309,23 +308,23 @@
                                     <div class="action-buttons">
                                         @if (disk.IsReady)
                                         {
-                                            <FluentButton Appearance="Appearance.Outline" 
-                                                        OnClick="@(() => ToggleNetworkDiskMount(disk))"
-                                                        Title="卸载">
+                                            <FluentButton Appearance="Appearance.Outline"
+                                                          OnClick="@(() => ToggleNetworkDiskMount(disk))"
+                                                          Title="卸载">
                                                 卸载
                                             </FluentButton>
                                         }
                                         else
                                         {
-                                            <FluentButton Appearance="Appearance.Accent" 
-                                                        OnClick="@(() => ToggleNetworkDiskMount(disk))"
-                                                        Title="挂载">
+                                            <FluentButton Appearance="Appearance.Accent"
+                                                          OnClick="@(() => ToggleNetworkDiskMount(disk))"
+                                                          Title="挂载">
                                                 挂载
                                             </FluentButton>
                                         }
-                                        <FluentButton Appearance="Appearance.Outline" 
-                                                    OnClick="@(() => DeleteNetworkDisk(disk))"
-                                                    Title="删除">
+                                        <FluentButton Appearance="Appearance.Outline"
+                                                      OnClick="@(() => DeleteNetworkDisk(disk))"
+                                                      Title="删除">
                                             删除
                                         </FluentButton>
                                     </div>
@@ -355,7 +354,7 @@
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentLabel Typo="Typography.Body">选择要添加的网络磁盘类型：</FluentLabel>
-                
+
                 <FluentRadioGroup @bind-Value="networkDiskConfig.DiskType" Orientation="Orientation.Vertical">
                     <FluentRadio Value="@NetworkDiskType.CIFS">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
@@ -376,41 +375,36 @@
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentLabel Typo="Typography.Body">输入连接详情：</FluentLabel>
-                
-                <FluentTextField 
-                    @bind-Value="networkDiskConfig.Server"
-                    Label="服务器（IP 或主机名）"
-                    Required="true"
-                    Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "192.168.1.10 或 server.local" : "192.168.1.10")"
-                    Class="form-field-full-width" />
-                
-                <FluentTextField 
-                    @bind-Value="networkDiskConfig.SharePath"
-                    Label="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "共享名称" : "导出路径")"
-                    Required="true"
-                    Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "MyShare" : "/export/data")"
-                    Class="form-field-full-width" />
-                
+
+                <FluentTextField @bind-Value="networkDiskConfig.Server"
+                                 Label="服务器（IP 或主机名）"
+                                 Required="true"
+                                 Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "192.168.1.10 或 server.local" : "192.168.1.10")"
+                                 Class="form-field-full-width" />
+
+                <FluentTextField @bind-Value="networkDiskConfig.SharePath"
+                                 Label="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "共享名称" : "导出路径")"
+                                 Required="true"
+                                 Placeholder="@(networkDiskConfig.DiskType == NetworkDiskType.CIFS ? "MyShare" : "/export/data")"
+                                 Class="form-field-full-width" />
+
                 @if (networkDiskConfig.DiskType == NetworkDiskType.CIFS)
                 {
-                    <FluentTextField 
-                        @bind-Value="networkDiskConfig.Username"
-                        Label="用户名（可选）"
-                        Placeholder="username"
-                        Class="form-field-full-width" />
-                    
-                    <FluentTextField 
-                        @bind-Value="networkDiskConfig.Password"
-                        Label="密码（可选）"
-                        TextFieldType="TextFieldType.Password"
-                        Placeholder="password"
-                        Class="form-field-full-width" />
-                    
-                    <FluentTextField 
-                        @bind-Value="networkDiskConfig.Domain"
-                        Label="域（可选）"
-                        Placeholder="WORKGROUP"
-                        Class="form-field-full-width" />
+                    <FluentTextField @bind-Value="networkDiskConfig.Username"
+                                     Label="用户名（可选）"
+                                     Placeholder="username"
+                                     Class="form-field-full-width" />
+
+                    <FluentTextField @bind-Value="networkDiskConfig.Password"
+                                     Label="密码（可选）"
+                                     TextFieldType="TextFieldType.Password"
+                                     Placeholder="password"
+                                     Class="form-field-full-width" />
+
+                    <FluentTextField @bind-Value="networkDiskConfig.Domain"
+                                     Label="域（可选）"
+                                     Placeholder="WORKGROUP"
+                                     Class="form-field-full-width" />
                 }
             </FluentStack>
         }
@@ -418,28 +412,25 @@
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentLabel Typo="Typography.Body">选择挂载选项：</FluentLabel>
-                
-                <FluentTextField 
-                    @bind-Value="networkDiskConfig.MountPoint"
-                    Label="挂载点"
-                    Required="true"
-                    Placeholder="/mnt/network-share"
-                    Class="form-field-full-width" />
-                
-                <FluentCheckbox 
-                    @bind-Value="networkDiskConfig.ReadOnly"
-                    Label="只读" />
-                
-                <FluentCheckbox 
-                    @bind-Value="networkDiskConfig.AutoMount"
-                    Label="开机自动挂载（永久）" />
+
+                <FluentTextField @bind-Value="networkDiskConfig.MountPoint"
+                                 Label="挂载点"
+                                 Required="true"
+                                 Placeholder="/mnt/network-share"
+                                 Class="form-field-full-width" />
+
+                <FluentCheckbox @bind-Value="networkDiskConfig.ReadOnly"
+                                Label="只读" />
+
+                <FluentCheckbox @bind-Value="networkDiskConfig.AutoMount"
+                                Label="开机自动挂载（永久）" />
             </FluentStack>
         }
         else if (wizardStep == 4)
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentLabel Typo="Typography.Body">确认您的设置：</FluentLabel>
-                
+
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="10" Class="wizard-summary">
                     <FluentLabel><strong>类型：</strong> @networkDiskConfig.DiskType</FluentLabel>
                     <FluentLabel><strong>服务器：</strong> @networkDiskConfig.Server</FluentLabel>
@@ -465,8 +456,8 @@
         }
         @if (wizardStep < 4)
         {
-            <FluentButton Appearance="Appearance.Accent" OnClick="@NextWizardStep" 
-                         Disabled="@(!IsCurrentWizardStepValid())">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@NextWizardStep"
+                          Disabled="@(!IsCurrentWizardStepValid())">
                 下一步
             </FluentButton>
         }
@@ -537,8 +528,8 @@
                     <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Class="smart-info-grid">
                         <div>
                             <FluentLabel Class="smart-field-label">整体健康状态</FluentLabel>
-                            @if (smartInfo.HealthStatus.Contains("PASSED", StringComparison.OrdinalIgnoreCase) || 
-                                 smartInfo.HealthStatus.Contains("OK", StringComparison.OrdinalIgnoreCase))
+                            @if (smartInfo.HealthStatus.Contains("PASSED", StringComparison.OrdinalIgnoreCase) ||
+                                                    smartInfo.HealthStatus.Contains("OK", StringComparison.OrdinalIgnoreCase))
                             {
                                 <FluentBadge Fill="success" BackgroundColor="var(--success-color, green)" Color="white">@smartInfo.HealthStatus</FluentBadge>
                             }
@@ -642,29 +633,27 @@
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <FluentLabel Typo="Typography.Body">为此磁盘配置电源管理设置：</FluentLabel>
-            
-            <FluentNumberField 
-                @bind-Value="spinDownTimeout"
-                Label="待机超时时间（分钟）"
-                Min="0"
-                Max="240"
-                Placeholder="0 = 禁用"
-                Class="form-field-full-width">
+
+            <FluentNumberField @bind-Value="spinDownTimeout"
+                               Label="待机超时时间（分钟）"
+                               Min="0"
+                               Max="240"
+                               Placeholder="0 = 禁用"
+                               Class="form-field-full-width">
                 <FluentLabel Slot="help-text">磁盘空闲后自动进入待机状态的时间（0 表示禁用）</FluentLabel>
             </FluentNumberField>
-            
-            <FluentNumberField 
-                @bind-Value="apmLevel"
-                Label="APM 电源管理级别"
-                Min="1"
-                Max="255"
-                Placeholder="128 = 均衡"
-                Class="form-field-full-width">
+
+            <FluentNumberField @bind-Value="apmLevel"
+                               Label="APM 电源管理级别"
+                               Min="1"
+                               Max="255"
+                               Placeholder="128 = 均衡"
+                               Class="form-field-full-width">
                 <FluentLabel Slot="help-text">
                     高级电源管理级别：1-127 = 节能优先（更激进的节能），128 = 均衡，129-254 = 性能优先，255 = 禁用 APM
                 </FluentLabel>
             </FluentNumberField>
-            
+
             <FluentMessageBar Intent="MessageIntent.Info">
                 注意：某些硬盘可能不支持这些电源管理设置。APM 级别越低越节能，但可能影响性能和硬盘寿命。
             </FluentMessageBar>
@@ -684,7 +673,7 @@
 @code {
     private List<DiskInfo> localDisks = new();
     private List<NetworkDiskInfo> networkDisks = new();
-    
+
     private FluentDialog? wizardDialog;
     private FluentDialog? powerDialog;
     private FluentDialog? smartDialog;
@@ -693,10 +682,10 @@
     private bool isWizardHidden = true;
     private bool isPowerDialogHidden = true;
     private bool isSmartDialogHidden = true;
-    
+
     private int wizardStep = 1;
     private NetworkDiskConfiguration networkDiskConfig = new();
-    
+
     private DiskInfo? selectedDisk;
     private int spinDownTimeout = 0;
     private int apmLevel = 128; // Default APM level (128 = balanced)
@@ -712,7 +701,7 @@
         if (!AuthStateService.IsAdmin)
         {
             isAuthorized = false;
-            Logger.LogWarning("Non-admin user {Username} attempted to access disk management", 
+            Logger.LogWarning("Non-admin user {Username} attempted to access disk management",
                 AuthStateService.CurrentUser?.Username);
             return;
         }
@@ -765,7 +754,7 @@
         try
         {
             DiskOperationResult result;
-            
+
             if (disk.IsReady)
             {
                 // Unmount
@@ -813,9 +802,9 @@
             var result = disk.IsReady
                 ? await DiskService.UnmountDiskAsync(disk.MountPoint)
                 : await DiskService.MountNetworkDiskAsync(
-                    disk.Server, 
-                    disk.SharePath, 
-                    disk.MountPoint, 
+                    disk.Server,
+                    disk.SharePath,
+                    disk.MountPoint,
                     disk.DiskType
                 );
 
@@ -909,7 +898,7 @@
         return wizardStep switch
         {
             1 => true, // Type selection always valid
-            2 => !string.IsNullOrWhiteSpace(networkDiskConfig.Server) && 
+            2 => !string.IsNullOrWhiteSpace(networkDiskConfig.Server) &&
                  !string.IsNullOrWhiteSpace(networkDiskConfig.SharePath),
             3 => !string.IsNullOrWhiteSpace(networkDiskConfig.MountPoint),
             4 => true, // Confirmation always valid
@@ -925,7 +914,7 @@
         try
         {
             var options = networkDiskConfig.ReadOnly ? "ro" : null;
-            
+
             var result = networkDiskConfig.AutoMount
                 ? await DiskService.MountNetworkDiskPermanentAsync(
                     networkDiskConfig.Server,
@@ -987,7 +976,7 @@
         selectedDisk = disk;
         smartInfo = null; // Reset to show loading state
         isSmartDialogHidden = false;
-        
+
         try
         {
             smartInfo = await DiskService.GetDiskSmartInfoAsync(disk.DevicePath);
@@ -1022,7 +1011,7 @@
     private async Task OpenPowerManagementDialog(DiskInfo disk)
     {
         selectedDisk = disk;
-        
+
         try
         {
             var settings = await DiskService.GetDiskPowerSettingsAsync(disk.DevicePath);
@@ -1035,7 +1024,7 @@
             spinDownTimeout = 0;
             apmLevel = 128;
         }
-        
+
         isPowerDialogHidden = false;
     }
 
@@ -1050,7 +1039,7 @@
         {
             // Apply spin-down timeout
             var spinDownResult = await DiskService.SetDiskSpinDownAsync(selectedDisk.DevicePath, spinDownTimeout);
-            
+
             // Apply APM level
             var apmResult = await DiskService.SetDiskApmLevelAsync(selectedDisk.DevicePath, apmLevel);
 

@@ -506,6 +506,8 @@
     public string? InitialPath { get; set; }
 
     private enum ViewMode { List, Grid }
+    
+    private const string ParentDirectoryMarker = "..";
 
     private ViewMode viewMode = ViewMode.Grid;
     private string currentPath = "/";
@@ -1268,12 +1270,14 @@
 
     private async Task DownloadAsZip()
     {
+        string? tempZipPath = null;
+        
         try
         {
             ToastService.ShowInfo("Preparing ZIP archive...");
             
             // Create a temporary zip file
-            var tempZipPath = Path.Combine(Path.GetTempPath(), $"download_{Guid.NewGuid()}.zip");
+            tempZipPath = Path.Combine(Path.GetTempPath(), $"download_{Guid.NewGuid()}.zip");
             
             using (var zipArchive = System.IO.Compression.ZipFile.Open(tempZipPath, System.IO.Compression.ZipArchiveMode.Create))
             {
@@ -1303,9 +1307,6 @@
                 
             await JSRuntime.InvokeVoidAsync("downloadFile", zipFileName, Convert.ToBase64String(zipData));
             
-            // Clean up temp file
-            File.Delete(tempZipPath);
-            
             ToastService.ShowSuccess($"Downloaded {selectedItems.Count} item(s) as ZIP");
             selectedItems.Clear();
         }
@@ -1313,6 +1314,21 @@
         {
             Logger.LogError(ex, "Error creating ZIP archive");
             ToastService.ShowError($"Failed to create ZIP: {ex.Message}");
+        }
+        finally
+        {
+            // Clean up temp file
+            if (tempZipPath != null && File.Exists(tempZipPath))
+            {
+                try
+                {
+                    File.Delete(tempZipPath);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to delete temporary ZIP file: {Path}", tempZipPath);
+                }
+            }
         }
     }
 
@@ -1322,7 +1338,7 @@
         
         foreach (var file in files)
         {
-            if (file.Name == "..") continue;
+            if (file.Name == ParentDirectoryMarker) continue;
             
             var relativePath = Path.Combine(entryName, file.Name);
             

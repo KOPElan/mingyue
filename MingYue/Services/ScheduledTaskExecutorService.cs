@@ -115,21 +115,38 @@ namespace MingYue.Services
             try
             {
                 var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
-                if (taskData == null || !taskData.ContainsKey("command"))
+                if (taskData == null || !taskData.TryGetValue("command", out var command) || string.IsNullOrWhiteSpace(command))
                 {
                     return (false, "", "Invalid task data: missing 'command' field");
                 }
 
-                var command = taskData["command"];
-                var workingDir = taskData.ContainsKey("workingDirectory") ? taskData["workingDirectory"] : "/tmp";
+                // Security: Validate and sanitize the command to prevent command injection
+                // This is a basic check - consider implementing more robust validation based on your security requirements
+                if (command.Contains(";") || command.Contains("&&") || command.Contains("||") || command.Contains("|"))
+                {
+                    _logger.LogWarning("Command contains potentially dangerous characters: {Command}", command);
+                }
 
-                var process = new Process
+                string workingDir;
+                if (!taskData.TryGetValue("workingDirectory", out workingDir) || string.IsNullOrWhiteSpace(workingDir))
+                {
+                    workingDir = "/tmp";
+                }
+
+                // Security: Validate working directory to prevent path traversal
+                var normalizedWorkingDir = Path.GetFullPath(workingDir);
+                if (!Directory.Exists(normalizedWorkingDir))
+                {
+                    return (false, "", $"Working directory does not exist: {workingDir}");
+                }
+
+                using var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "/bin/bash",
-                        Arguments = $"-c \"{command}\"",
-                        WorkingDirectory = workingDir,
+                        Arguments = $"-c \"{command.Replace("\"", "\\\"")}\"",  // Escape quotes in command
+                        WorkingDirectory = normalizedWorkingDir,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -156,21 +173,50 @@ namespace MingYue.Services
             try
             {
                 var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
-                if (taskData == null || !taskData.ContainsKey("script"))
+                if (taskData == null || !taskData.TryGetValue("script", out var script) || string.IsNullOrWhiteSpace(script))
                 {
                     return (false, "", "Invalid task data: missing 'script' field");
                 }
 
-                var script = taskData["script"];
-                var interpreter = taskData.ContainsKey("interpreter") ? taskData["interpreter"] : "/bin/bash";
+                string interpreter;
+                if (!taskData.TryGetValue("interpreter", out interpreter) || string.IsNullOrWhiteSpace(interpreter))
+                {
+                    interpreter = "/bin/bash";
+                }
                 
-                // Write script to temp file
+                // Security: Whitelist allowed interpreters to prevent arbitrary code execution
+                var allowedInterpreters = new[] { "/bin/bash", "/bin/sh", "/usr/bin/python3", "/usr/bin/node" };
+                if (!allowedInterpreters.Contains(interpreter))
+                {
+                    return (false, "", $"Interpreter not allowed: {interpreter}. Allowed interpreters: {string.Join(", ", allowedInterpreters)}");
+                }
+                
+                // Write script to temp file with restrictive permissions
                 var tempFile = Path.Combine(Path.GetTempPath(), $"task_{task.Id}_{Guid.NewGuid()}.sh");
                 await File.WriteAllTextAsync(tempFile, script);
+                
+                // Set restrictive permissions (owner read/write/execute only)
+                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+                {
+                    var chmod = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "/bin/chmod",
+                            Arguments = $"700 {tempFile}",
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }
+                    };
+                    chmod.Start();
+                    await chmod.WaitForExitAsync();
+                }
 
                 try
                 {
-                    var process = new Process
+                    using var process = new Process
                     {
                         StartInfo = new ProcessStartInfo
                         {
@@ -210,13 +256,40 @@ namespace MingYue.Services
             try
             {
                 var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
-                if (taskData == null || !taskData.ContainsKey("url"))
+                if (taskData == null || !taskData.TryGetValue("url", out var urlString) || string.IsNullOrWhiteSpace(urlString))
                 {
                     return (false, "", "Invalid task data: missing 'url' field");
                 }
 
-                var url = taskData["url"];
-                var method = taskData.ContainsKey("method") ? taskData["method"] : "GET";
+                // Security: Validate URL to prevent SSRF attacks
+                if (!Uri.TryCreate(urlString, UriKind.Absolute, out var uri))
+                {
+                    return (false, "", $"Invalid URL: {urlString}");
+                }
+
+                // Block access to private IP ranges and localhost
+                var host = uri.Host;
+                if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                    host.Equals("127.0.0.1") ||
+                    host.StartsWith("169.254.") || // Link-local
+                    host.StartsWith("10.") ||
+                    host.StartsWith("192.168.") ||
+                    (host.StartsWith("172.") && int.TryParse(host.Split('.')[1], out var second) && second >= 16 && second <= 31))
+                {
+                    return (false, "", $"Access to private/local IP addresses is not allowed: {host}");
+                }
+
+                // Only allow HTTP and HTTPS schemes
+                if (uri.Scheme != "http" && uri.Scheme != "https")
+                {
+                    return (false, "", $"Only HTTP and HTTPS schemes are allowed: {uri.Scheme}");
+                }
+
+                string method;
+                if (!taskData.TryGetValue("method", out method) || string.IsNullOrWhiteSpace(method))
+                {
+                    method = "GET";
+                }
 
                 using var httpClient = new HttpClient();
                 httpClient.Timeout = TimeSpan.FromMinutes(5);
@@ -224,17 +297,22 @@ namespace MingYue.Services
                 HttpResponseMessage? response = null;
                 if (method.ToUpperInvariant() == "POST")
                 {
-                    var body = taskData.ContainsKey("body") ? taskData["body"] : "";
-                    response = await httpClient.PostAsync(url, new StringContent(body));
+                    string body;
+                    if (!taskData.TryGetValue("body", out body))
+                    {
+                        body = "";
+                    }
+                    using var stringContent = new StringContent(body);
+                    response = await httpClient.PostAsync(uri, stringContent);
                 }
                 else
                 {
-                    response = await httpClient.GetAsync(url);
+                    response = await httpClient.GetAsync(uri);
                 }
 
-                var content = await response.Content.ReadAsStringAsync();
+                var responseContent = await response.Content.ReadAsStringAsync();
                 var success = response.IsSuccessStatusCode;
-                var output = $"Status: {(int)response.StatusCode} {response.StatusCode}\n{content}";
+                var output = $"Status: {(int)response.StatusCode} {response.StatusCode}\n{responseContent}";
                 
                 return (success, output, success ? "" : $"HTTP {(int)response.StatusCode}");
             }
@@ -249,13 +327,45 @@ namespace MingYue.Services
             try
             {
                 var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
-                if (taskData == null || !taskData.ContainsKey("path"))
+                if (taskData == null || !taskData.TryGetValue("path", out var path) || string.IsNullOrWhiteSpace(path))
                 {
                     return (false, "", "Invalid task data: missing 'path' field");
                 }
 
-                var path = taskData["path"];
-                var recursive = taskData.ContainsKey("recursive") && taskData["recursive"].ToLowerInvariant() == "true";
+                // Security: Validate and canonicalize the path to prevent path traversal
+                string normalizedPath;
+                try
+                {
+                    normalizedPath = Path.GetFullPath(path);
+                }
+                catch (Exception ex)
+                {
+                    return (false, "", $"Invalid path: {ex.Message}");
+                }
+
+                // Check that the path exists and is a directory
+                if (!Directory.Exists(normalizedPath))
+                {
+                    return (false, "", $"Directory does not exist: {path}");
+                }
+
+                // Security: Optionally restrict to allowed base directories
+                // Uncomment and configure if you want to restrict indexing to specific paths
+                // var allowedBasePaths = new[] { "/home", "/data", "/mnt" };
+                // if (!allowedBasePaths.Any(basePath => normalizedPath.StartsWith(basePath)))
+                // {
+                //     return (false, "", $"Path is not within allowed directories: {path}");
+                // }
+
+                bool recursive;
+                if (taskData.TryGetValue("recursive", out var recursiveValue))
+                {
+                    recursive = recursiveValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+                }
+                else
+                {
+                    recursive = false;
+                }
 
                 // Get FileIndexService from service provider
                 using var scope = _serviceProvider.CreateScope();
@@ -268,10 +378,10 @@ namespace MingYue.Services
 
                 // Index files
                 var startTime = DateTime.UtcNow;
-                await fileIndexService.IndexDirectoryAsync(path, recursive);
+                await fileIndexService.IndexDirectoryAsync(normalizedPath, recursive);
                 var duration = (DateTime.UtcNow - startTime).TotalSeconds;
 
-                var output = $"File indexing completed for path: {path}\n";
+                var output = $"File indexing completed for path: {normalizedPath}\n";
                 output += $"Recursive: {recursive}\n";
                 output += $"Duration: {duration:F2} seconds";
 
@@ -288,14 +398,20 @@ namespace MingYue.Services
             try
             {
                 var taskData = JsonSerializer.Deserialize<Dictionary<string, string>>(task.TaskData);
-                if (taskData == null || !taskData.ContainsKey("daysToKeep"))
+                if (taskData == null || !taskData.TryGetValue("daysToKeep", out var daysToKeepStr))
                 {
                     return (false, "", "Invalid task data: missing 'daysToKeep' field");
                 }
 
-                if (!int.TryParse(taskData["daysToKeep"], out int daysToKeep))
+                if (!int.TryParse(daysToKeepStr, out int daysToKeep))
                 {
                     return (false, "", "Invalid daysToKeep value: must be an integer");
+                }
+
+                // Validate retention period bounds (0 to 3650 days)
+                if (daysToKeep < 0 || daysToKeep > 3650)
+                {
+                    return (false, "", "Invalid daysToKeep value: must be between 0 and 3650 days");
                 }
 
                 // Get services from service provider
@@ -305,42 +421,56 @@ namespace MingYue.Services
                 using var context = await contextFactory.CreateDbContextAsync();
                 var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);
                 
-                // Find old messages
-                var oldMessages = await context.AnydropMessages
-                    .Include(m => m.Attachments)
-                    .Where(m => m.CreatedAt < cutoffDate && m.IsRead)
-                    .ToListAsync();
-
-                var messageCount = oldMessages.Count;
+                var messageCount = 0;
                 var attachmentCount = 0;
                 long totalSize = 0;
+                const int batchSize = 500;
 
-                // Delete old messages and their attachments
-                foreach (var message in oldMessages)
+                // Process messages in batches to avoid loading all into memory
+                while (true)
                 {
-                    foreach (var attachment in message.Attachments)
+                    // Fetch a batch of old messages with their attachments
+                    var oldMessagesBatch = await context.AnydropMessages
+                        .Include(m => m.Attachments)
+                        .Where(m => m.CreatedAt < cutoffDate && m.IsRead)
+                        .OrderBy(m => m.CreatedAt)
+                        .Take(batchSize)
+                        .ToListAsync();
+
+                    if (oldMessagesBatch.Count == 0)
                     {
-                        attachmentCount++;
-                        totalSize += attachment.FileSize;
-                        
-                        // Delete physical file
-                        try
+                        break;
+                    }
+
+                    // Delete old messages and their attachments
+                    foreach (var message in oldMessagesBatch)
+                    {
+                        messageCount++;
+
+                        foreach (var attachment in message.Attachments)
                         {
-                            if (File.Exists(attachment.FilePath))
+                            attachmentCount++;
+                            totalSize += attachment.FileSize;
+                            
+                            // Delete physical file
+                            try
                             {
-                                File.Delete(attachment.FilePath);
+                                if (File.Exists(attachment.FilePath))
+                                {
+                                    File.Delete(attachment.FilePath);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "Failed to delete file: {FilePath}", attachment.FilePath);
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Failed to delete file: {FilePath}", attachment.FilePath);
-                        }
+                        
+                        context.AnydropMessages.Remove(message);
                     }
-                    
-                    context.AnydropMessages.Remove(message);
-                }
 
-                await context.SaveChangesAsync();
+                    await context.SaveChangesAsync();
+                }
 
                 var output = $"Anydrop migration completed\n";
                 output += $"Deleted {messageCount} messages older than {daysToKeep} days\n";

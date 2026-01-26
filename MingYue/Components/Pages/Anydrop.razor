@@ -602,6 +602,8 @@
     
     private string newMessageContent = string.Empty;
     private List<FluentInputFileEventArgs> selectedFiles = new();
+    
+    private readonly SemaphoreSlim _loadMessagesSemaphore = new(1, 1);
 
     protected override async Task OnInitializedAsync()
     {
@@ -627,6 +629,7 @@
 
     private async Task LoadMessagesAsync()
     {
+        await _loadMessagesSemaphore.WaitAsync();
         try
         {
             allMessages = await AnydropService.GetAllMessagesAsync();
@@ -637,6 +640,10 @@
         {
             Logger.LogError(ex, "Error loading messages");
             ToastService.ShowError("加载消息失败");
+        }
+        finally
+        {
+            _loadMessagesSemaphore.Release();
         }
     }
 
@@ -776,15 +783,15 @@
     {
         var localTime = dateTime.ToLocalTime();
         var now = DateTime.Now;
-        var diff = now.Date - localTime.Date;
+        var dayDiff = (now.Date - localTime.Date).Days;
 
-        if (diff.TotalDays == 0)
+        if (dayDiff == 0)
             return "今天";
         
-        if (diff.TotalDays == 1)
+        if (dayDiff == 1)
             return "昨天";
         
-        if (diff.TotalDays < 7)
+        if (dayDiff < 7)
             return localTime.ToString("dddd");
         
         if (localTime.Year == now.Year)
@@ -1030,5 +1037,6 @@
     public void Dispose()
     {
         AnydropService.MessagesChanged -= OnMessagesChanged;
+        _loadMessagesSemaphore?.Dispose();
     }
 }

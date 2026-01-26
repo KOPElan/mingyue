@@ -87,6 +87,7 @@
     public SettingModel Settings { get; set; } = new();
     private string _currentPath = "";
     private int unreadCount = 0;
+    private readonly SemaphoreSlim _updateUnreadCountSemaphore = new(1, 1);
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,7 +106,15 @@
 
     private async Task UpdateUnreadCountAsync()
     {
-        unreadCount = await NotificationService.GetUnreadCountAsync();
+        await _updateUnreadCountSemaphore.WaitAsync();
+        try
+        {
+            unreadCount = await NotificationService.GetUnreadCountAsync();
+        }
+        finally
+        {
+            _updateUnreadCountSemaphore.Release();
+        }
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -155,5 +164,6 @@
         AuthStateService.OnAuthenticationStateChanged -= StateHasChanged;
         Navigation.LocationChanged -= OnLocationChanged;
         NotificationService.NotificationsChanged -= OnNotificationsChanged;
+        _updateUnreadCountSemaphore?.Dispose();
     }
 }

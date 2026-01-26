@@ -258,7 +258,7 @@ namespace MingYue.Services
             }
 
             // Fallback to machine name + random ID
-            return $"{Environment.MachineName}-{Guid.NewGuid().ToString().Substring(0, 8)}";
+            return $"{Environment.MachineName}-{Guid.NewGuid().ToString()[..8]}";
         }
 
         private void OnMessagesChanged()

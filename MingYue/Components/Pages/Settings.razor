@@ -544,14 +544,8 @@
     {
         try
         {
-            // Get all settings
-            var allSettings = await SettingService.GetAllSettingsAsync();
-            
-            // Delete all settings
-            foreach (var setting in allSettings)
-            {
-                await SettingService.DeleteSettingAsync(setting.Key);
-            }
+            // Delete all settings using a bulk operation for better performance
+            await SettingService.DeleteAllSettingsAsync();
             
             ToastService.ShowSuccess("所有设置已重置为默认值");
             

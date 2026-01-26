@@ -139,6 +139,20 @@ namespace MingYue.Services
             }
         }
 
+        public async Task DeleteAllSettingsAsync()
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                await context.Database.ExecuteSqlRawAsync("DELETE FROM SystemSettings");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting all settings");
+                throw;
+            }
+        }
+
         public async Task<string> ExportSettingsAsync()
         {
             try

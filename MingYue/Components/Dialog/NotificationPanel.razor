@@ -104,6 +104,7 @@
 
 @code {
     private List<Notification> notifications = new();
+    private readonly SemaphoreSlim _loadNotificationsSemaphore = new(1, 1);
 
     protected override async Task OnInitializedAsync()
     {
@@ -119,8 +120,16 @@
 
     private async Task LoadNotificationsAsync()
     {
-        notifications = await NotificationService.GetAllNotificationsAsync();
-        notifications = notifications.OrderByDescending(n => n.CreatedAt).Take(20).ToList();
+        await _loadNotificationsSemaphore.WaitAsync();
+        try
+        {
+            notifications = await NotificationService.GetAllNotificationsAsync();
+            notifications = notifications.OrderByDescending(n => n.CreatedAt).Take(20).ToList();
+        }
+        finally
+        {
+            _loadNotificationsSemaphore.Release();
+        }
     }
 
     private async Task MarkAsReadAsync(int id)
@@ -143,10 +152,18 @@
         await NotificationService.DeleteAllReadAsync();
     }
 
-    private void HandleNotificationClick(Notification notification)
+    private async Task HandleNotificationClick(Notification notification)
     {
         // Mark as read
-        _ = NotificationService.MarkAsReadAsync(notification.Id);
+        try
+        {
+            await NotificationService.MarkAsReadAsync(notification.Id);
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't prevent navigation
+            Console.WriteLine($"Failed to mark notification as read: {ex.Message}");
+        }
 
         // Navigate if action URL exists
         if (!string.IsNullOrEmpty(notification.ActionUrl))
@@ -213,6 +230,7 @@
     public void Dispose()
     {
         NotificationService.NotificationsChanged -= OnNotificationsChanged;
+        _loadNotificationsSemaphore?.Dispose();
     }
 }
 

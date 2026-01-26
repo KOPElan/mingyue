@@ -35,6 +35,11 @@ namespace MingYue.Services
         Task DeleteSettingAsync(string key);
 
         /// <summary>
+        /// Delete all settings (for reset to defaults)
+        /// </summary>
+        Task DeleteAllSettingsAsync();
+
+        /// <summary>
         /// Export all settings as JSON
         /// </summary>
         Task<string> ExportSettingsAsync();

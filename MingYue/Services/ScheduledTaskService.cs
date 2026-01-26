@@ -90,11 +90,9 @@ namespace MingYue.Services
                 var task = await context.ScheduledTasks.FindAsync(id);
                 if (task != null)
                 {
-                    // Also delete execution history
-                    var history = await context.ScheduledTaskExecutionHistories
-                        .Where(h => h.TaskId == id)
-                        .ToListAsync();
-                    context.ScheduledTaskExecutionHistories.RemoveRange(history);
+                    // Delete execution history using a direct SQL statement to avoid loading all records
+                    await context.Database.ExecuteSqlInterpolatedAsync(
+                        $"DELETE FROM ScheduledTaskExecutionHistories WHERE TaskId = {id}");
                     
                     context.ScheduledTasks.Remove(task);
                     await context.SaveChangesAsync();

@@ -281,6 +281,13 @@
                     <span>@selectedItems.Count @(selectedItems.Count == 1 ? "item" : "items") selected</span>
                 </div>
                 <div class="action-bar-buttons">
+                    @if (selectedItems.Count == 1)
+                    {
+                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@RenameSelectedItem" Title="Rename">
+                            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Rename())" />
+                            Rename
+                        </FluentButton>
+                    }
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@DownloadSelected" Title="Download">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
                         Download
@@ -1439,6 +1446,15 @@
             Logger.LogError(ex, "Error in batch delete");
             ToastService.ShowError($"Delete operation failed: {ex.Message}");
         }
+    }
+
+    private void RenameSelectedItem()
+    {
+        if (selectedItems.Count != 1) return;
+        
+        var item = selectedItems.First();
+        OpenRenameDialog(item);
+        selectedItems.Clear();
     }
 
     #endregion

@@ -1,10 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MingYue.Services;
 
 namespace MingYue.Controllers;
 
-[Authorize]
 [IgnoreAntiforgeryToken]
 [ApiController]
 [Route("api/files")]

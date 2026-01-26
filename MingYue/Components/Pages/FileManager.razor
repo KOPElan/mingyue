@@ -726,13 +726,12 @@
 
     private bool IsPathOnDisk(string path, string diskPath)
     {
-        // Normalize paths for comparison
-        var normalizedPath = path.TrimEnd('/');
-        var normalizedDiskPath = diskPath.TrimEnd('/');
+        // Normalize paths for comparison (handle both Unix and Windows separators)
+        var normalizedPath = path.TrimEnd('/', '\\');
+        var normalizedDiskPath = diskPath.TrimEnd('/', '\\');
         
         // Check if the current path starts with the disk path
-        return normalizedPath.StartsWith(normalizedDiskPath, StringComparison.OrdinalIgnoreCase) ||
-               normalizedPath == normalizedDiskPath;
+        return normalizedPath.StartsWith(normalizedDiskPath, StringComparison.OrdinalIgnoreCase);
     }
 
     private List<(string Name, string Path)> GetPathSegments()

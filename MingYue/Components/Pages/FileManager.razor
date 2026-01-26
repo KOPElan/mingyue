@@ -702,7 +702,7 @@
 
     private async Task LoadThumbnails()
     {
-        // Load thumbnails for image files in grid view
+        // Load thumbnails for image and video files in grid view
         if (viewMode != ViewMode.Grid)
         {
             // Clear thumbnail data when not in grid view to save memory
@@ -715,10 +715,10 @@
 
         try
         {
-            var imageFiles = fileItems.Where(f => !f.IsDirectory && IsImageFile(f)).ToList();
+            var mediaFiles = fileItems.Where(f => !f.IsDirectory && (IsImageFile(f) || IsVideoFile(f))).ToList();
 
             // Load thumbnails in parallel for better performance
-            var thumbnailTasks = imageFiles.Select(async item =>
+            var thumbnailTasks = mediaFiles.Select(async item =>
             {
                 try
                 {
@@ -1349,6 +1349,13 @@
         if (file.IsDirectory) return false;
         var ext = file.Extension.ToLowerInvariant();
         return ext is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg";
+    }
+
+    private bool IsVideoFile(FileItemInfo file)
+    {
+        if (file.IsDirectory) return false;
+        var ext = file.Extension.ToLowerInvariant();
+        return ext is ".mp4" or ".avi" or ".mov" or ".mkv" or ".wmv" or ".flv" or ".webm" or ".m4v";
     }
 
     private string GetMimeType(string extension)

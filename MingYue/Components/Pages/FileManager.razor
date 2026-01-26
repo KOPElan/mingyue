@@ -1038,6 +1038,9 @@
     {
         try
         {
+            // Wait a bit longer for dropzone script to load
+            await Task.Delay(300);
+            
             dotNetHelper = DotNetObjectReference.Create(this);
             var uploadUrl = "/api/files/upload-chunk";
             await JSRuntime.InvokeVoidAsync("initializeChunkedDropzone", 
@@ -1047,9 +1050,18 @@
                 dotNetHelper,
                 1048576); // 1MB chunks
         }
+        catch (JSException jsEx) when (jsEx.Message.Contains("Dropzone is not defined"))
+        {
+            Logger.LogError(jsEx, "Dropzone library not loaded");
+            uploadStatusMessage = "Upload component not ready. Please refresh the page.";
+            uploadMessageIntent = MessageIntent.Error;
+            ToastService.ShowError("Dropzone.js library failed to load. Please check your internet connection and refresh the page.");
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error initializing dropzone");
+            uploadStatusMessage = $"Failed to initialize upload: {ex.Message}";
+            uploadMessageIntent = MessageIntent.Error;
             ToastService.ShowError("Failed to initialize upload component");
         }
     }

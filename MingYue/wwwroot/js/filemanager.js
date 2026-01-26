@@ -56,6 +56,12 @@ window.initializeDropZone = function (elementId, dotNetHelper) {
 
 // Initialize Dropzone for chunked file upload
 window.initializeChunkedDropzone = function (elementId, uploadUrl, currentPath, dotNetHelper, chunkSize = 1048576) {
+    // Check if Dropzone is loaded
+    if (typeof Dropzone === 'undefined') {
+        console.error('Dropzone library is not loaded. Please ensure the CDN script is included.');
+        return null;
+    }
+    
     const element = document.getElementById(elementId);
     if (!element) {
         console.error('Dropzone element not found:', elementId);

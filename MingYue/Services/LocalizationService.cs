@@ -23,17 +23,17 @@ namespace MingYue.Services
             _localizer = localizer;
             _systemSettingService = systemSettingService;
             _logger = logger;
-            
-            // Load saved culture from settings
-            Task.Run(async () =>
+        }
+
+        // Lazy initialization to load saved culture
+        private async Task InitializeAsync()
+        {
+            var savedCulture = await _systemSettingService.GetSettingValueAsync("Language");
+            if (!string.IsNullOrEmpty(savedCulture))
             {
-                var savedCulture = await _systemSettingService.GetSettingValueAsync("Language");
-                if (!string.IsNullOrEmpty(savedCulture))
-                {
-                    _currentCulture = savedCulture;
-                    SetThreadCulture(_currentCulture);
-                }
-            });
+                _currentCulture = savedCulture;
+                SetThreadCulture(_currentCulture);
+            }
         }
 
         public string GetCurrentCulture()

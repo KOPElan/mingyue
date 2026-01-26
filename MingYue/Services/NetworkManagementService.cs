@@ -138,65 +138,66 @@ namespace MingYue.Services
 
         public async Task<bool> SetInterfaceEnabledAsync(string interfaceId, bool enabled)
         {
-            return await Task.Run(() =>
+            try
             {
-                try
+                // Note: Enabling/disabling network interfaces requires administrative privileges
+                // and is platform-specific. This is a simplified implementation.
+                
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    // Note: Enabling/disabling network interfaces requires administrative privileges
-                    // and is platform-specific. This is a simplified implementation.
-                    
-                    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    {
-                        _logger.LogWarning("Network interface management is only supported on Linux");
-                        return false;
-                    }
-
-                    var interfaces = NetworkInterface.GetAllNetworkInterfaces();
-                    var ni = interfaces.FirstOrDefault(i => i.Id == interfaceId);
-
-                    if (ni == null)
-                    {
-                        _logger.LogWarning("Network interface {InterfaceId} not found", interfaceId);
-                        return false;
-                    }
-
-                    // On Linux, use ip command to enable/disable interface
-                    var action = enabled ? "up" : "down";
-                    var process = new System.Diagnostics.Process
-                    {
-                        StartInfo = new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = "/bin/bash",
-                            Arguments = $"-c \"ip link set {ni.Name} {action}\"",
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        }
-                    };
-
-                    process.Start();
-                    process.WaitForExit();
-
-                    if (process.ExitCode == 0)
-                    {
-                        _logger.LogInformation("Network interface {InterfaceName} set to {State}", ni.Name, action);
-                        return true;
-                    }
-                    else
-                    {
-                        var error = process.StandardError.ReadToEnd();
-                        _logger.LogError("Failed to set network interface {InterfaceName} to {State}: {Error}", 
-                            ni.Name, action, error);
-                        return false;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error setting interface {InterfaceId} enabled state", interfaceId);
+                    _logger.LogWarning("Network interface management is only supported on Linux");
                     return false;
                 }
-            });
+
+                var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+                var ni = interfaces.FirstOrDefault(i => i.Id == interfaceId);
+
+                if (ni == null)
+                {
+                    _logger.LogWarning("Network interface {InterfaceId} not found", interfaceId);
+                    return false;
+                }
+
+                // On Linux, use ip command to enable/disable interface
+                var action = enabled ? "up" : "down";
+                
+                // Sanitize interface name to prevent command injection
+                var safeName = ni.Name.Replace("'", "").Replace("\"", "").Replace(";", "").Replace("|", "").Replace("&", "");
+                
+                var process = new System.Diagnostics.Process
+                {
+                    StartInfo = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "/usr/sbin/ip",
+                        Arguments = $"link set '{safeName}' {action}",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                await process.WaitForExitAsync();
+
+                if (process.ExitCode == 0)
+                {
+                    _logger.LogInformation("Network interface {InterfaceName} set to {State}", safeName, action);
+                    return true;
+                }
+                else
+                {
+                    var error = await process.StandardError.ReadToEndAsync();
+                    _logger.LogError("Failed to set network interface {InterfaceName} to {State}: {Error}", 
+                        safeName, action, error);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting interface {InterfaceId} enabled state", interfaceId);
+                return false;
+            }
         }
 
         public async Task<bool> TestConnectivityAsync(string host, int timeout = 5000)

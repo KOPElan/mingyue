@@ -40,6 +40,9 @@
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/anydrop"))" Title="Anydrop">
                     <FluentIcon Value="@(new Icons.Regular.Size20.ShareAndroid())"></FluentIcon>
                 </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/network"))" Title="网络管理">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Wifi1())"></FluentIcon>
+                </FluentButton>
                 <!-- Notification Button with Badge -->
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="OpenNotificationPanel" Title="通知" Style="position: relative;">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" />

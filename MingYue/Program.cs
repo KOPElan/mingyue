@@ -52,6 +52,7 @@ builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
 builder.Services.AddScoped<IScheduledTaskService, ScheduledTaskService>();
 builder.Services.AddScoped<IAnydropService, AnydropService>();
 builder.Services.AddScoped<ILocalizationService, LocalizationService>();
+builder.Services.AddScoped<INetworkManagementService, NetworkManagementService>();
 builder.Services.AddScoped<AuthenticationStateService>();
 
 // Add background services

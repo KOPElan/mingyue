@@ -1,0 +1,329 @@
+@page "/network"
+@using MingYue.Services
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+@inject INetworkManagementService NetworkService
+@inject NavigationManager Navigation
+@inject IToastService ToastService
+@inject AuthenticationStateService AuthStateService
+
+<PageTitle>网络管理 - MingYue</PageTitle>
+
+@if (!AuthStateService.IsAuthenticated)
+{
+    <FluentCard>
+        <h3>未授权</h3>
+        <p>您需要登录才能访问此页面。</p>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Navigation.NavigateTo("/login"))">
+            前往登录
+        </FluentButton>
+    </FluentCard>
+}
+else
+{
+    <div style="padding: 24px;">
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="24">
+            <!-- Header -->
+            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+                <FluentLabel Typo="Typography.H3">网络管理</FluentLabel>
+                <FluentButton Appearance="Appearance.Accent" OnClick="RefreshData">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.ArrowClockwise())" Slot="start" />
+                    刷新
+                </FluentButton>
+            </FluentStack>
+
+            <!-- Network Statistics Card -->
+            @if (statistics != null)
+            {
+                <FluentCard>
+                    <FluentLabel Typo="Typography.H5">网络统计</FluentLabel>
+                    <FluentDivider />
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                            <FluentLabel Typo="Typography.Body">总接收流量</FluentLabel>
+                            <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
+                                @FormatBytes(statistics.TotalBytesReceived)
+                            </FluentLabel>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                            <FluentLabel Typo="Typography.Body">总发送流量</FluentLabel>
+                            <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
+                                @FormatBytes(statistics.TotalBytesSent)
+                            </FluentLabel>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                            <FluentLabel Typo="Typography.Body">总接收包数</FluentLabel>
+                            <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
+                                @statistics.TotalPacketsReceived.ToString("N0")
+                            </FluentLabel>
+                        </FluentStack>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                            <FluentLabel Typo="Typography.Body">总发送包数</FluentLabel>
+                            <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
+                                @statistics.TotalPacketsSent.ToString("N0")
+                            </FluentLabel>
+                        </FluentStack>
+                    </div>
+                    <FluentLabel Typo="Typography.Body" Style="margin-top: 12px; color: var(--neutral-foreground-hint); font-size: 12px;">
+                        统计时间: @statistics.CollectedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                    </FluentLabel>
+                </FluentCard>
+            }
+
+            <!-- Network Interfaces Table -->
+            <FluentCard>
+                <FluentLabel Typo="Typography.H5">网络接口</FluentLabel>
+                <FluentDivider />
+                
+                @if (isLoading)
+                {
+                    <div style="text-align: center; padding: 40px;">
+                        <FluentProgressRing />
+                        <FluentLabel>加载中...</FluentLabel>
+                    </div>
+                }
+                else if (interfaces.Count == 0)
+                {
+                    <div style="text-align: center; padding: 40px;">
+                        <FluentLabel>未找到网络接口</FluentLabel>
+                    </div>
+                }
+                else
+                {
+                    <FluentDataGrid Items="@interfaces.AsQueryable()" GridTemplateColumns="2fr 1fr 2fr 1fr 1fr 1fr 1fr" Style="margin-top: 16px;">
+                        <PropertyColumn Property="@(i => i.Name)" Title="名称" Sortable="true" />
+                        <PropertyColumn Property="@(i => i.Type)" Title="类型" Sortable="true" />
+                        <TemplateColumn Title="IP地址">
+                            <div>
+                                @foreach (var ip in context.IpAddresses)
+                                {
+                                    <div>@ip</div>
+                                }
+                            </div>
+                        </TemplateColumn>
+                        <PropertyColumn Property="@(i => i.MacAddress)" Title="MAC地址" />
+                        <TemplateColumn Title="速度">
+                            @if (context.Speed > 0)
+                            {
+                                <span>@FormatSpeed(context.Speed)</span>
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </TemplateColumn>
+                        <TemplateColumn Title="状态" Sortable="true">
+                            <FluentBadge Appearance="@(context.IsUp ? Appearance.Accent : Appearance.Neutral)">
+                                @context.Status
+                            </FluentBadge>
+                        </TemplateColumn>
+                        <TemplateColumn Title="操作">
+                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => ViewInterfaceDetails(context))">
+                                详情
+                            </FluentButton>
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                }
+            </FluentCard>
+
+            <!-- Connectivity Test Card -->
+            <FluentCard>
+                <FluentLabel Typo="Typography.H5">连接测试</FluentLabel>
+                <FluentDivider />
+                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="16" Style="margin-top: 16px;">
+                    <FluentTextField @bind-Value="testHost" Placeholder="输入主机地址或IP" Style="flex: 1;">
+                        <FluentIcon Value="@(new Icons.Regular.Size20.Globe())" Slot="start" />
+                    </FluentTextField>
+                    <FluentButton Appearance="Appearance.Accent" OnClick="TestConnectivity" Disabled="@isTestingConnectivity">
+                        @if (isTestingConnectivity)
+                        {
+                            <FluentProgressRing Style="width: 16px; height: 16px;" />
+                            <span>测试中...</span>
+                        }
+                        else
+                        {
+                            <FluentIcon Value="@(new Icons.Regular.Size20.CloudCheckmark())" Slot="start" />
+                            <span>测试连接</span>
+                        }
+                    </FluentButton>
+                </FluentStack>
+                @if (!string.IsNullOrEmpty(connectivityResult))
+                {
+                    <FluentMessageBar Intent="@connectivityResultType" Style="margin-top: 12px;">
+                        @connectivityResult
+                    </FluentMessageBar>
+                }
+            </FluentCard>
+        </FluentStack>
+    </div>
+
+    <!-- Interface Details Dialog -->
+    @if (selectedInterface != null)
+    {
+        <FluentDialog @bind-Hidden="@hideDetailsDialog" Modal="true" TrapFocus="true" aria-label="接口详情">
+            <FluentDialogHeader>
+                <FluentLabel Typo="Typography.H5">@selectedInterface.Name - 详细信息</FluentLabel>
+            </FluentDialogHeader>
+            <FluentDialogBody>
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">名称:</FluentLabel>
+                        <FluentLabel>@selectedInterface.Name</FluentLabel>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">描述:</FluentLabel>
+                        <FluentLabel>@selectedInterface.Description</FluentLabel>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">类型:</FluentLabel>
+                        <FluentLabel>@selectedInterface.Type</FluentLabel>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">状态:</FluentLabel>
+                        <FluentBadge Appearance="@(selectedInterface.IsUp ? Appearance.Accent : Appearance.Neutral)">
+                            @selectedInterface.Status
+                        </FluentBadge>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">MAC地址:</FluentLabel>
+                        <FluentLabel>@selectedInterface.MacAddress</FluentLabel>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">速度:</FluentLabel>
+                        <FluentLabel>@FormatSpeed(selectedInterface.Speed)</FluentLabel>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <FluentLabel Style="font-weight: bold;">IP地址:</FluentLabel>
+                        @foreach (var ip in selectedInterface.IpAddresses)
+                        {
+                            <FluentLabel Style="margin-left: 16px;">@ip</FluentLabel>
+                        }
+                    </FluentStack>
+                    <FluentDivider />
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">接收流量:</FluentLabel>
+                        <FluentLabel>@FormatBytes(selectedInterface.BytesReceived)</FluentLabel>
+                    </FluentStack>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                        <FluentLabel Style="font-weight: bold; min-width: 120px;">发送流量:</FluentLabel>
+                        <FluentLabel>@FormatBytes(selectedInterface.BytesSent)</FluentLabel>
+                    </FluentStack>
+                </FluentStack>
+            </FluentDialogBody>
+            <FluentDialogFooter>
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => hideDetailsDialog = true)">
+                    关闭
+                </FluentButton>
+            </FluentDialogFooter>
+        </FluentDialog>
+    }
+}
+
+@code {
+    private List<NetworkInterfaceInfo> interfaces = new();
+    private NetworkStatistics? statistics;
+    private bool isLoading = true;
+    private NetworkInterfaceInfo? selectedInterface;
+    private bool hideDetailsDialog = true;
+
+    private string testHost = "8.8.8.8";
+    private bool isTestingConnectivity = false;
+    private string connectivityResult = string.Empty;
+    private MessageIntent connectivityResultType = MessageIntent.Info;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        try
+        {
+            interfaces = await NetworkService.GetAllNetworkInterfacesAsync();
+            statistics = await NetworkService.GetNetworkStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("加载网络信息失败: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+        ToastService.ShowSuccess("数据已刷新");
+    }
+
+    private void ViewInterfaceDetails(NetworkInterfaceInfo interfaceInfo)
+    {
+        selectedInterface = interfaceInfo;
+        hideDetailsDialog = false;
+    }
+
+    private async Task TestConnectivity()
+    {
+        if (string.IsNullOrWhiteSpace(testHost))
+        {
+            ToastService.ShowWarning("请输入要测试的主机地址");
+            return;
+        }
+
+        isTestingConnectivity = true;
+        connectivityResult = string.Empty;
+
+        try
+        {
+            var success = await NetworkService.TestConnectivityAsync(testHost);
+            if (success)
+            {
+                connectivityResult = $"连接到 {testHost} 成功";
+                connectivityResultType = MessageIntent.Success;
+            }
+            else
+            {
+                connectivityResult = $"无法连接到 {testHost}";
+                connectivityResultType = MessageIntent.Error;
+            }
+        }
+        catch (Exception ex)
+        {
+            connectivityResult = $"测试失败: {ex.Message}";
+            connectivityResultType = MessageIntent.Error;
+        }
+        finally
+        {
+            isTestingConnectivity = false;
+        }
+    }
+
+    private string FormatBytes(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private string FormatSpeed(long bitsPerSecond)
+    {
+        string[] sizes = { "bps", "Kbps", "Mbps", "Gbps" };
+        double speed = bitsPerSecond;
+        int order = 0;
+        while (speed >= 1000 && order < sizes.Length - 1)
+        {
+            order++;
+            speed = speed / 1000;
+        }
+        return $"{speed:0.##} {sizes[order]}";
+    }
+}

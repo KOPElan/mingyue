@@ -308,6 +308,12 @@
                                             </FluentButton>
                                         }
                                         <FluentButton Appearance="Appearance.Lightweight" 
+                                                    OnClick="@(() => OpenSmartInfoDialog(disk))"
+                                                    Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
+                                                    Title="SMART 信息">
+                                            <FluentIcon Value="@(new Icons.Regular.Size16.Info())" />
+                                        </FluentButton>
+                                        <FluentButton Appearance="Appearance.Lightweight" 
                                                     OnClick="@(() => OpenPowerManagementDialog(disk))"
                                                     Disabled="@(string.IsNullOrEmpty(disk.DevicePath))"
                                                     Title="电源管理">
@@ -640,6 +646,152 @@
     </FluentDialogFooter>
 </FluentDialog>
 
+<!-- SMART Information Dialog -->
+<FluentDialog @ref="smartDialog" @bind-Hidden="@isSmartDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 800px; max-width: 1000px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Info())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                SMART 信息 - @selectedDisk?.Name
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        @if (smartInfo == null)
+        {
+            <FluentProgressRing />
+            <p>正在加载 SMART 信息...</p>
+        }
+        else if (!smartInfo.Success)
+        {
+            <FluentMessageBar Intent="MessageIntent.Error">
+                @smartInfo.ErrorMessage
+            </FluentMessageBar>
+        }
+        else
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+                <!-- Basic Information -->
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">基本信息</FluentLabel>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        <div>
+                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">型号</FluentLabel>
+                            <FluentLabel>@(string.IsNullOrEmpty(smartInfo.Model) ? "-" : smartInfo.Model)</FluentLabel>
+                        </div>
+                        <div>
+                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">序列号</FluentLabel>
+                            <FluentLabel>@(string.IsNullOrEmpty(smartInfo.SerialNumber) ? "-" : smartInfo.SerialNumber)</FluentLabel>
+                        </div>
+                        <div>
+                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">固件版本</FluentLabel>
+                            <FluentLabel>@(string.IsNullOrEmpty(smartInfo.FirmwareVersion) ? "-" : smartInfo.FirmwareVersion)</FluentLabel>
+                        </div>
+                        <div>
+                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">容量</FluentLabel>
+                            <FluentLabel>@(string.IsNullOrEmpty(smartInfo.Capacity) ? "-" : smartInfo.Capacity)</FluentLabel>
+                        </div>
+                    </FluentStack>
+                </FluentStack>
+
+                <!-- Health Status -->
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">健康状态</FluentLabel>
+                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10" Style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                        <div>
+                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">整体健康状态</FluentLabel>
+                            @if (smartInfo.HealthStatus.Contains("PASSED", StringComparison.OrdinalIgnoreCase) || 
+                                 smartInfo.HealthStatus.Contains("OK", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <FluentBadge Fill="success" BackgroundColor="var(--success-color, green)" Color="white">@smartInfo.HealthStatus</FluentBadge>
+                            }
+                            else if (smartInfo.HealthStatus.Contains("FAILED", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <FluentBadge Fill="danger" BackgroundColor="var(--error-color, red)" Color="white">@smartInfo.HealthStatus</FluentBadge>
+                            }
+                            else
+                            {
+                                <FluentLabel>@(string.IsNullOrEmpty(smartInfo.HealthStatus) ? "-" : smartInfo.HealthStatus)</FluentLabel>
+                            }
+                        </div>
+                        <div>
+                            <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">SMART 支持</FluentLabel>
+                            <FluentLabel>@(smartInfo.IsSupported ? "是" : "否") @(smartInfo.IsEnabled ? "(已启用)" : "(未启用)")</FluentLabel>
+                        </div>
+                        @if (smartInfo.Temperature.HasValue)
+                        {
+                            <div>
+                                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">温度</FluentLabel>
+                                <FluentLabel>@smartInfo.Temperature.Value °C</FluentLabel>
+                            </div>
+                        }
+                        @if (smartInfo.PowerOnHours.HasValue)
+                        {
+                            <div>
+                                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">通电时间</FluentLabel>
+                                <FluentLabel>@smartInfo.PowerOnHours.Value 小时 (@(smartInfo.PowerOnHours.Value / 24) 天)</FluentLabel>
+                            </div>
+                        }
+                        @if (smartInfo.PowerCycleCount.HasValue)
+                        {
+                            <div>
+                                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-hint);">电源循环次数</FluentLabel>
+                                <FluentLabel>@smartInfo.PowerCycleCount.Value 次</FluentLabel>
+                            </div>
+                        }
+                    </FluentStack>
+                </FluentStack>
+
+                <!-- SMART Attributes -->
+                @if (smartInfo.Attributes.Count > 0)
+                {
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                        <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">SMART 属性</FluentLabel>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <FluentDataGrid Items="@smartInfo.Attributes.AsQueryable()" GridTemplateColumns="0.5fr 2fr 0.8fr 0.8fr 0.8fr 1.5fr">
+                                <PropertyColumn Property="@(a => a.Id)" Title="ID" Sortable="true" />
+                                <PropertyColumn Property="@(a => a.Name)" Title="属性名称" Sortable="true" />
+                                <PropertyColumn Property="@(a => a.Value)" Title="当前值" Sortable="true" />
+                                <PropertyColumn Property="@(a => a.Worst)" Title="最差值" Sortable="true" />
+                                <PropertyColumn Property="@(a => a.Threshold)" Title="阈值" Sortable="true" />
+                                <TemplateColumn Title="原始值" Sortable="true">
+                                    <span style="@(context.Failed ? "color: var(--error-color, red); font-weight: bold;" : "")">
+                                        @context.RawValue
+                                        @if (context.Failed)
+                                        {
+                                            <text> ⚠️</text>
+                                        }
+                                    </span>
+                                </TemplateColumn>
+                            </FluentDataGrid>
+                        </div>
+                        @if (smartInfo.Attributes.Any(a => a.Failed))
+                        {
+                            <FluentMessageBar Intent="MessageIntent.Warning">
+                                警告：部分 SMART 属性已低于阈值，磁盘可能存在问题。建议尽快备份数据。
+                            </FluentMessageBar>
+                        }
+                    </FluentStack>
+                }
+
+                <!-- Raw Output -->
+                <FluentAccordion>
+                    <FluentAccordionItem Heading="原始输出">
+                        <pre style="max-height: 300px; overflow-y: auto; background: var(--neutral-layer-2); padding: 12px; border-radius: 4px; font-size: 12px;">@smartInfo.RawOutput</pre>
+                    </FluentAccordionItem>
+                </FluentAccordion>
+            </FluentStack>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseSmartDialog">
+            关闭
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
 <!-- Power Management Dialog -->
 <FluentDialog @ref="powerDialog" @bind-Hidden="@isPowerDialogHidden" TrapFocus="true" Modal="true">
     <FluentDialogHeader ShowDismiss="true">
@@ -687,16 +839,19 @@
     
     private FluentDialog? wizardDialog;
     private FluentDialog? powerDialog;
+    private FluentDialog? smartDialog;
     private bool isLoading = true;
     private bool isAuthorized = false;
     private bool isWizardHidden = true;
     private bool isPowerDialogHidden = true;
+    private bool isSmartDialogHidden = true;
     
     private int wizardStep = 1;
     private NetworkDiskConfiguration networkDiskConfig = new();
     
     private DiskInfo? selectedDisk;
     private int spinDownTimeout = 0;
+    private SmartInfo? smartInfo;
 
     /// <summary>
     /// Initialize the page
@@ -969,6 +1124,43 @@
     {
         isWizardHidden = true;
         wizardStep = 1;
+    }
+
+    #endregion
+
+    #region Power Management
+
+    /// <summary>
+    /// Open SMART information dialog
+    /// </summary>
+    private async Task OpenSmartInfoDialog(DiskInfo disk)
+    {
+        selectedDisk = disk;
+        smartInfo = null; // Reset to show loading state
+        isSmartDialogHidden = false;
+        
+        try
+        {
+            smartInfo = await DiskService.GetDiskSmartInfoAsync(disk.DevicePath);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading SMART info for {DiskName}", disk.Name);
+            smartInfo = new SmartInfo
+            {
+                Success = false,
+                ErrorMessage = $"加载 SMART 信息失败: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Close SMART information dialog
+    /// </summary>
+    private void CloseSmartDialog()
+    {
+        isSmartDialogHidden = true;
+        smartInfo = null;
     }
 
     #endregion

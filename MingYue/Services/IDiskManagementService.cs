@@ -22,6 +22,9 @@ namespace MingYue.Services
         Task<DiskOperationResult> MountNetworkDiskAsync(string server, string sharePath, string mountPoint, NetworkDiskType diskType, string? username = null, string? password = null, string? domain = null, string? options = null);
         Task<DiskOperationResult> MountNetworkDiskPermanentAsync(string server, string sharePath, string mountPoint, NetworkDiskType diskType, string? username = null, string? password = null, string? domain = null, string? options = null);
 
+        // SMART information
+        Task<SmartInfo> GetDiskSmartInfoAsync(string devicePath);
+
         // Feature detection
         Task<DiskManagementFeatureDetection> DetectFeaturesAsync();
     }

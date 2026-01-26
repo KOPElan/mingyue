@@ -1894,6 +1894,232 @@ namespace MingYue.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Gets SMART (Self-Monitoring, Analysis and Reporting Technology) information for a disk
+        /// </summary>
+        public async Task<SmartInfo> GetDiskSmartInfoAsync(string devicePath)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return new SmartInfo
+                {
+                    Success = false,
+                    ErrorMessage = "SMART 信息查询仅在 Linux 系统上支持"
+                };
+            }
+
+            if (!ValidateDevicePath(devicePath))
+            {
+                return new SmartInfo
+                {
+                    Success = false,
+                    ErrorMessage = "无效的设备路径"
+                };
+            }
+
+            try
+            {
+                // Check if smartctl is available
+                var checkProcess = new ProcessStartInfo
+                {
+                    FileName = "which",
+                    Arguments = "smartctl",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var checkProc = Process.Start(checkProcess);
+                if (checkProc == null)
+                {
+                    return new SmartInfo
+                    {
+                        Success = false,
+                        ErrorMessage = "无法检查 smartctl 是否可用"
+                    };
+                }
+
+                await checkProc.WaitForExitAsync();
+                if (checkProc.ExitCode != 0)
+                {
+                    return new SmartInfo
+                    {
+                        Success = false,
+                        ErrorMessage = "smartctl 未安装。请安装 smartmontools 软件包 (sudo apt install smartmontools)"
+                    };
+                }
+
+                // Run smartctl to get SMART information
+                var processInfo = new ProcessStartInfo
+                {
+                    FileName = "smartctl",
+                    Arguments = $"-a {devicePath}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = Process.Start(processInfo);
+                if (process == null)
+                {
+                    return new SmartInfo
+                    {
+                        Success = false,
+                        ErrorMessage = "无法启动 smartctl 进程"
+                    };
+                }
+
+                await process.WaitForExitAsync();
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+
+                // Parse the output
+                var smartInfo = ParseSmartOutput(output);
+                smartInfo.RawOutput = output;
+                smartInfo.Success = true;
+
+                return smartInfo;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting SMART info for {DevicePath}", devicePath);
+                return new SmartInfo
+                {
+                    Success = false,
+                    ErrorMessage = $"获取 SMART 信息时出错: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Parses smartctl output to extract SMART information
+        /// </summary>
+        private SmartInfo ParseSmartOutput(string output)
+        {
+            var smartInfo = new SmartInfo();
+            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            bool inAttributeSection = false;
+
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+
+                // Check SMART support
+                if (trimmed.Contains("SMART support is:"))
+                {
+                    smartInfo.IsSupported = trimmed.Contains("Available");
+                    smartInfo.IsEnabled = trimmed.Contains("Enabled");
+                }
+                // Health status
+                else if (trimmed.StartsWith("SMART overall-health self-assessment test result:", StringComparison.OrdinalIgnoreCase) ||
+                         trimmed.StartsWith("SMART Health Status:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        smartInfo.HealthStatus = parts[1].Trim();
+                    }
+                }
+                // Model
+                else if (trimmed.StartsWith("Device Model:", StringComparison.OrdinalIgnoreCase) ||
+                         trimmed.StartsWith("Model Number:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        smartInfo.Model = parts[1].Trim();
+                    }
+                }
+                // Serial Number
+                else if (trimmed.StartsWith("Serial Number:", StringComparison.OrdinalIgnoreCase) ||
+                         trimmed.StartsWith("Serial number:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        smartInfo.SerialNumber = parts[1].Trim();
+                    }
+                }
+                // Firmware Version
+                else if (trimmed.StartsWith("Firmware Version:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        smartInfo.FirmwareVersion = parts[1].Trim();
+                    }
+                }
+                // Capacity
+                else if (trimmed.StartsWith("User Capacity:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        smartInfo.Capacity = parts[1].Trim();
+                    }
+                }
+                // Attribute table header
+                else if (trimmed.Contains("ID#") && trimmed.Contains("ATTRIBUTE_NAME"))
+                {
+                    inAttributeSection = true;
+                    continue;
+                }
+                // Parse attributes
+                else if (inAttributeSection)
+                {
+                    // Stop parsing attributes when we hit a blank line or new section
+                    if (string.IsNullOrWhiteSpace(trimmed) || !char.IsDigit(trimmed[0]))
+                    {
+                        inAttributeSection = false;
+                        continue;
+                    }
+
+                    var parts = WhitespaceRegex.Split(trimmed);
+                    if (parts.Length >= 10 && int.TryParse(parts[0], out int id))
+                    {
+                        var attribute = new SmartAttribute
+                        {
+                            Id = id,
+                            Name = parts[1],
+                            Value = int.TryParse(parts[3], out int val) ? val : 0,
+                            Worst = int.TryParse(parts[4], out int worst) ? worst : 0,
+                            Threshold = int.TryParse(parts[5], out int thresh) ? thresh : 0,
+                            RawValue = parts.Length > 9 ? parts[9] : ""
+                        };
+
+                        smartInfo.Attributes.Add(attribute);
+
+                        // Extract special values
+                        if (attribute.Name.Contains("Temperature", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (int.TryParse(attribute.RawValue.Split(' ')[0], out int temp))
+                            {
+                                smartInfo.Temperature = temp;
+                            }
+                        }
+                        else if (attribute.Name.Contains("Power_On_Hours", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (long.TryParse(attribute.RawValue, out long hours))
+                            {
+                                smartInfo.PowerOnHours = hours;
+                            }
+                        }
+                        else if (attribute.Name.Contains("Power_Cycle_Count", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (long.TryParse(attribute.RawValue, out long cycles))
+                            {
+                                smartInfo.PowerCycleCount = cycles;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return smartInfo;
+        }
     }
 
     // JSON models for lsblk output

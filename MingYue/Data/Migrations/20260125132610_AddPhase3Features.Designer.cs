@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MingYue.Data;
 
@@ -10,9 +11,11 @@ using MingYue.Data;
 namespace MingYue.Data.Migrations
 {
     [DbContext(typeof(MingYueDbContext))]
-    partial class MingYueDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260125132610_AddPhase3Features")]
+    partial class AddPhase3Features
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.1");

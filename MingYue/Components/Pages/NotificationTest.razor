@@ -1,0 +1,120 @@
+@page "/notification-test"
+@using MingYue.Models
+@using MingYue.Services
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>通知功能测试 - MingYue</PageTitle>
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="16" Style="padding: 20px;">
+    <FluentLabel Typo="Typography.Header">通知功能测试</FluentLabel>
+    
+    <FluentCard>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+            <FluentLabel Typo="Typography.Subject">创建测试通知</FluentLabel>
+            
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => CreateTestNotification("Info"))">
+                创建信息通知
+            </FluentButton>
+            
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => CreateTestNotification("Success"))">
+                创建成功通知
+            </FluentButton>
+            
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => CreateTestNotification("Warning"))">
+                创建警告通知
+            </FluentButton>
+            
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => CreateTestNotification("Error"))">
+                创建错误通知
+            </FluentButton>
+            
+            <FluentButton Appearance="Appearance.Neutral" OnClick="CreateMultipleNotifications">
+                创建5个随机通知
+            </FluentButton>
+            
+            <FluentDivider />
+            
+            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => Navigation.NavigateTo("/"))">
+                返回首页查看通知
+            </FluentButton>
+        </FluentStack>
+    </FluentCard>
+    
+    <FluentCard>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+            <FluentLabel Typo="Typography.Subject">当前通知统计</FluentLabel>
+            <FluentLabel>未读通知数: @unreadCount</FluentLabel>
+            <FluentLabel>总通知数: @totalCount</FluentLabel>
+        </FluentStack>
+    </FluentCard>
+</FluentStack>
+
+@code {
+    private int unreadCount = 0;
+    private int totalCount = 0;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateStats();
+        NotificationService.NotificationsChanged += OnNotificationsChanged;
+    }
+    
+    private async void OnNotificationsChanged(object? sender, EventArgs e)
+    {
+        await UpdateStats();
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task UpdateStats()
+    {
+        unreadCount = await NotificationService.GetUnreadCountAsync();
+        var all = await NotificationService.GetAllNotificationsAsync();
+        totalCount = all.Count;
+    }
+    
+    private async Task CreateTestNotification(string type)
+    {
+        var title = type switch
+        {
+            "Success" => "操作成功",
+            "Warning" => "警告提示",
+            "Error" => "错误发生",
+            _ => "系统通知"
+        };
+        
+        var message = type switch
+        {
+            "Success" => "您的操作已成功完成！",
+            "Warning" => "请注意此操作可能影响系统性能",
+            "Error" => "操作失败，请稍后重试",
+            _ => "这是一条测试通知消息"
+        };
+        
+        await NotificationService.CreateNotificationAsync(
+            title,
+            message,
+            type,
+            type == "Error" ? "/settings" : null
+        );
+    }
+    
+    private async Task CreateMultipleNotifications()
+    {
+        var types = new[] { "Info", "Success", "Warning", "Error" };
+        var random = new Random();
+        
+        for (int i = 0; i < 5; i++)
+        {
+            var type = types[random.Next(types.Length)];
+            await CreateTestNotification(type);
+            await Task.Delay(100); // Small delay between notifications
+        }
+    }
+    
+    public void Dispose()
+    {
+        NotificationService.NotificationsChanged -= OnNotificationsChanged;
+    }
+}

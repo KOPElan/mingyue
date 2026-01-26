@@ -1,0 +1,614 @@
+@page "/scheduled-tasks"
+@using MingYue.Models
+@using MingYue.Services
+@inject IScheduledTaskService TaskService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<ScheduledTasks> Logger
+@inject IToastService ToastService
+
+<PageTitle>计划任务 - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+    </FluentMessageBar>
+    return;
+}
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">计划任务</h2>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddDialog">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
+            添加任务
+        </FluentButton>
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else if (tasks.Count == 0)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info">
+            未找到任务。点击"添加任务"创建您的第一个计划任务。
+        </FluentMessageBar>
+    }
+    else
+    {
+        <FluentDataGrid Items="@tasks.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1.2fr 1fr 1fr 1.5fr">
+            <PropertyColumn Property="@(t => t.Name)" Title="名称" Sortable="true" />
+            <TemplateColumn Title="描述">
+                <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@context.Description">
+                    @context.Description
+                </div>
+            </TemplateColumn>
+            <PropertyColumn Property="@(t => t.TaskType)" Title="类型" Sortable="true" />
+            <PropertyColumn Property="@(t => t.CronExpression)" Title="Cron表达式" Sortable="true" />
+            <TemplateColumn Title="状态" Sortable="true">
+                @if (context.IsEnabled)
+                {
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">启用</FluentBadge>
+                }
+                else
+                {
+                    <FluentBadge Fill="neutral">禁用</FluentBadge>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="上次运行">
+                @if (context.LastRunAt.HasValue)
+                {
+                    <span>@context.LastRunAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                }
+                else
+                {
+                    <span style="color: gray;">从未运行</span>
+                }
+            </TemplateColumn>
+            <TemplateColumn Title="操作">
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => ToggleTaskEnabled(context))" title="@(context.IsEnabled ? "禁用" : "启用")">
+                    @if (context.IsEnabled)
+                    {
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Pause())" />
+                    }
+                    else
+                    {
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Play())" />
+                    }
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenHistoryDialog(context))" title="执行历史">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.History())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" Disabled="true" title="手动执行（即将推出）">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.PlayCircle())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))" title="编辑">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Edit())" />
+                </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenDeleteDialog(context))" title="删除">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                </FluentButton>
+            </TemplateColumn>
+        </FluentDataGrid>
+    }
+</FluentStack>
+
+<!-- Add/Edit Task Dialog -->
+<FluentDialog @ref="taskDialog" @bind-Hidden="@isTaskDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 600px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.CalendarClock())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                @(editingTask == null ? "添加计划任务" : "编辑计划任务")
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <EditForm Model="@currentTask" OnValidSubmit="@SaveTask">
+            <DataAnnotationsValidator />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <FluentTextField 
+                    @bind-Value="currentTask!.Name"
+                    Label="名称"
+                    Required="true"
+                    Style="width: 100%;"
+                    Maxlength="200" />
+                
+                <FluentTextField 
+                    @bind-Value="currentTask!.Description"
+                    Label="描述"
+                    Style="width: 100%;"
+                    Maxlength="1000" />
+                
+                <FluentSelect 
+                    TOption="string"
+                    Items="@taskTypes"
+                    @bind-SelectedOption="currentTask!.TaskType"
+                    Label="任务类型"
+                    Required="true"
+                    Style="width: 100%;">
+                    <OptionTemplate Context="type">@GetTaskTypeDisplay(type)</OptionTemplate>
+                </FluentSelect>
+                
+                <FluentTextArea 
+                    @bind-Value="currentTask!.TaskData"
+                    Label="任务数据（JSON格式）"
+                    Required="true"
+                    Style="width: 100%;"
+                    Rows="5"
+                    Resize="TextAreaResize.Vertical" />
+                
+                @if (!string.IsNullOrEmpty(currentTask?.TaskType))
+                {
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="5" Style="margin-top: -10px; padding: 10px; background-color: var(--neutral-layer-2); border-radius: 4px;">
+                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">@currentTask.TaskType 任务数据示例：</small>
+                        @if (currentTask.TaskType == "FileIndex")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"path": "/path/to/directory", "recursive": "true"}</code></small>
+                            <small style="color: var(--neutral-foreground-hint);">• path: 要索引的目录路径</small>
+                            <small style="color: var(--neutral-foreground-hint);">• recursive: 是否递归索引子目录（true/false）</small>
+                        }
+                        else if (currentTask.TaskType == "AnydropMigration")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"daysToKeep": "30"}</code></small>
+                            <small style="color: var(--neutral-foreground-hint);">• daysToKeep: 保留最近N天的已读消息，超过此天数的将被删除</small>
+                        }
+                        else if (currentTask.TaskType == "Command")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"command": "ls -la", "workingDirectory": "/tmp"}</code></small>
+                        }
+                        else if (currentTask.TaskType == "Script")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"script": "#!/bin/bash\necho 'Hello'", "interpreter": "/bin/bash"}</code></small>
+                        }
+                        else if (currentTask.TaskType == "Http")
+                        {
+                            <small style="color: var(--neutral-foreground-rest);"><code>{"url": "https://api.example.com", "method": "GET"}</code></small>
+                        }
+                    </FluentStack>
+                }
+                
+                <div>
+                    <FluentTextField 
+                        @bind-Value="currentTask!.CronExpression"
+                        Label="Cron表达式"
+                        Required="true"
+                        Style="width: 100%;"
+                        Maxlength="100" />
+                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="5" Style="margin-top: 8px; padding: 10px; background-color: var(--neutral-layer-2); border-radius: 4px;">
+                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">常用Cron表达式示例（6位格式，包含秒）：</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 0 * * *</code> - 每天午夜执行</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 */6 * * *</code> - 每6小时执行一次</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 0 * * 0</code> - 每周日午夜执行</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 */15 * * * *</code> - 每15分钟执行一次</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 9 * * 1-5</code> - 工作日上午9点执行</small>
+                    </FluentStack>
+                </div>
+                
+                <FluentCheckbox 
+                    @bind-Value="currentTask!.IsEnabled"
+                    Label="启用任务" />
+            </FluentStack>
+        </EditForm>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveTask">
+            保存
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseTaskDialog">
+            取消
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Delete Confirmation Dialog -->
+<FluentDialog @ref="deleteDialog" @bind-Hidden="@isDeleteDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Warning())" Color="@Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                确认删除
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <p>确定要删除任务 "<strong>@taskToDelete?.Name</strong>" 吗？此操作无法撤销。</p>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDelete">
+            删除
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDeleteDialog">
+            取消
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Execution History Dialog -->
+<FluentDialog @ref="historyDialog" @bind-Hidden="@isHistoryDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 800px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.History())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                执行历史 - @selectedTask?.Name
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        @if (isLoadingHistory)
+        {
+            <FluentProgressRing />
+        }
+        else if (executionHistory.Count == 0)
+        {
+            <FluentMessageBar Intent="MessageIntent.Info">
+                该任务还没有执行历史记录。
+            </FluentMessageBar>
+        }
+        else
+        {
+            <FluentDataGrid Items="@executionHistory.AsQueryable()" Style="max-height: 500px; overflow-y: auto;">
+                <TemplateColumn Title="开始时间">
+                    @context.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                </TemplateColumn>
+                <TemplateColumn Title="完成时间">
+                    @if (context.CompletedAt.HasValue)
+                    {
+                        @context.CompletedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                    else
+                    {
+                        <span style="color: gray;">运行中</span>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="耗时">
+                    @if (context.CompletedAt.HasValue)
+                    {
+                        var duration = context.CompletedAt.Value - context.StartedAt;
+                        <span>@duration.TotalSeconds.ToString("F2")秒</span>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="状态">
+                    @if (context.Success)
+                    {
+                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">成功</FluentBadge>
+                    }
+                    else
+                    {
+                        <FluentBadge Fill="error" BackgroundColor="red" Color="white">失败</FluentBadge>
+                    }
+                </TemplateColumn>
+                <TemplateColumn Title="详情">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenHistoryDetailDialog(context))">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Info())" />
+                        查看
+                    </FluentButton>
+                </TemplateColumn>
+            </FluentDataGrid>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseHistoryDialog">
+            关闭
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- History Detail Dialog -->
+<FluentDialog @ref="historyDetailDialog" @bind-Hidden="@isHistoryDetailDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 700px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                执行详情
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        @if (selectedHistory != null)
+        {
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                <div>
+                    <strong>开始时间：</strong> @selectedHistory.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                </div>
+                <div>
+                    <strong>完成时间：</strong> 
+                    @if (selectedHistory.CompletedAt.HasValue)
+                    {
+                        @selectedHistory.CompletedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                    }
+                    else
+                    {
+                        <span>运行中</span>
+                    }
+                </div>
+                <div>
+                    <strong>状态：</strong>
+                    @if (selectedHistory.Success)
+                    {
+                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">成功</FluentBadge>
+                    }
+                    else
+                    {
+                        <FluentBadge Fill="error" BackgroundColor="red" Color="white">失败</FluentBadge>
+                    }
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(selectedHistory.Output))
+                {
+                    <div>
+                        <strong>输出：</strong>
+                        <FluentTextArea 
+                            Value="@selectedHistory.Output"
+                            Readonly="true"
+                            Style="width: 100%; margin-top: 8px;"
+                            Rows="10"
+                            Resize="TextAreaResize.Vertical" />
+                    </div>
+                }
+                
+                @if (!string.IsNullOrWhiteSpace(selectedHistory.ErrorMessage))
+                {
+                    <div>
+                        <strong style="color: red;">错误信息：</strong>
+                        <FluentTextArea 
+                            Value="@selectedHistory.ErrorMessage"
+                            Readonly="true"
+                            Style="width: 100%; margin-top: 8px; border-color: red;"
+                            Rows="6"
+                            Resize="TextAreaResize.Vertical" />
+                    </div>
+                }
+            </FluentStack>
+        }
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseHistoryDetailDialog">
+            关闭
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<ScheduledTask> tasks = new();
+    private ScheduledTask? editingTask;
+    private ScheduledTask currentTask = new();
+    private ScheduledTask? taskToDelete;
+    private ScheduledTask? selectedTask;
+    private List<ScheduledTaskExecutionHistory> executionHistory = new();
+    private ScheduledTaskExecutionHistory? selectedHistory;
+    
+    private readonly string[] taskTypes = new[] { "Script", "Command", "Http", "FileIndex", "AnydropMigration" };
+    
+    private FluentDialog? taskDialog;
+    private FluentDialog? deleteDialog;
+    private FluentDialog? historyDialog;
+    private FluentDialog? historyDetailDialog;
+    
+    private bool isLoading = true;
+    private bool isLoadingHistory = false;
+    private bool isAuthorized = false;
+    private bool isTaskDialogHidden = true;
+    private bool isDeleteDialogHidden = true;
+    private bool isHistoryDialogHidden = true;
+    private bool isHistoryDetailDialogHidden = true;
+
+    private string GetTaskTypeDisplay(string type)
+    {
+        return type switch
+        {
+            "Script" => "Script - 脚本执行",
+            "Command" => "Command - 命令执行",
+            "Http" => "Http - HTTP请求",
+            "FileIndex" => "FileIndex - 文件索引",
+            "AnydropMigration" => "AnydropMigration - Anydrop清理",
+            _ => type
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access scheduled tasks", 
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
+        await LoadTasks();
+    }
+
+    private async Task LoadTasks()
+    {
+        isLoading = true;
+        try
+        {
+            tasks = await TaskService.GetAllTasksAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading scheduled tasks");
+            ToastService.ShowError("加载计划任务失败");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenAddDialog()
+    {
+        editingTask = null;
+        currentTask = new ScheduledTask
+        {
+            IsEnabled = true,
+            TaskType = "Script",
+            CronExpression = "0 0 0 * * *"
+        };
+        isTaskDialogHidden = false;
+    }
+
+    private void OpenEditDialog(ScheduledTask task)
+    {
+        editingTask = task;
+        currentTask = new ScheduledTask
+        {
+            Id = task.Id,
+            Name = task.Name,
+            Description = task.Description,
+            TaskType = task.TaskType,
+            TaskData = task.TaskData,
+            CronExpression = task.CronExpression,
+            IsEnabled = task.IsEnabled
+        };
+        isTaskDialogHidden = false;
+    }
+
+    private async Task SaveTask()
+    {
+        try
+        {
+            // Validate JSON in TaskData
+            if (!string.IsNullOrWhiteSpace(currentTask.TaskData))
+            {
+                try
+                {
+                    System.Text.Json.JsonDocument.Parse(currentTask.TaskData);
+                }
+                catch
+                {
+                    ToastService.ShowError("任务数据必须是有效的JSON格式");
+                    return;
+                }
+            }
+
+            if (editingTask == null)
+            {
+                await TaskService.CreateTaskAsync(currentTask);
+                ToastService.ShowSuccess("任务创建成功");
+            }
+            else
+            {
+                await TaskService.UpdateTaskAsync(currentTask);
+                ToastService.ShowSuccess("任务更新成功");
+            }
+
+            await LoadTasks();
+            CloseTaskDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving scheduled task");
+            ToastService.ShowError("保存任务失败");
+        }
+    }
+
+    private void OpenDeleteDialog(ScheduledTask task)
+    {
+        taskToDelete = task;
+        isDeleteDialogHidden = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (taskToDelete == null) return;
+
+        try
+        {
+            await TaskService.DeleteTaskAsync(taskToDelete.Id);
+            ToastService.ShowSuccess("任务删除成功");
+            await LoadTasks();
+            CloseDeleteDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting scheduled task");
+            ToastService.ShowError("删除任务失败");
+        }
+    }
+
+    private async Task ToggleTaskEnabled(ScheduledTask task)
+    {
+        try
+        {
+            await TaskService.SetTaskEnabledAsync(task.Id, !task.IsEnabled);
+            ToastService.ShowSuccess(task.IsEnabled ? "任务已禁用" : "任务已启用");
+            await LoadTasks();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error toggling task enabled state");
+            ToastService.ShowError("切换任务状态失败");
+        }
+    }
+
+    private async Task OpenHistoryDialog(ScheduledTask task)
+    {
+        selectedTask = task;
+        isHistoryDialogHidden = false;
+        isLoadingHistory = true;
+
+        try
+        {
+            executionHistory = await TaskService.GetTaskHistoryAsync(task.Id, 50);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading task execution history");
+            ToastService.ShowError("加载执行历史失败");
+            executionHistory = new List<ScheduledTaskExecutionHistory>();
+        }
+        finally
+        {
+            isLoadingHistory = false;
+        }
+    }
+
+    private void OpenHistoryDetailDialog(ScheduledTaskExecutionHistory history)
+    {
+        selectedHistory = history;
+        isHistoryDetailDialogHidden = false;
+    }
+
+    private void CloseTaskDialog()
+    {
+        isTaskDialogHidden = true;
+    }
+
+    private void CloseDeleteDialog()
+    {
+        isDeleteDialogHidden = true;
+        taskToDelete = null;
+    }
+
+    private void CloseHistoryDialog()
+    {
+        isHistoryDialogHidden = true;
+        selectedTask = null;
+        executionHistory = new List<ScheduledTaskExecutionHistory>();
+    }
+
+    private void CloseHistoryDetailDialog()
+    {
+        isHistoryDetailDialogHidden = true;
+        selectedHistory = null;
+    }
+}

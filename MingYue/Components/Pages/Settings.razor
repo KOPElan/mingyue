@@ -1,0 +1,605 @@
+@page "/settings"
+@using MingYue.Models
+@using MingYue.Services
+@using System.Text.Json
+@inject ISystemSettingService SettingService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<Settings> Logger
+@inject IToastService ToastService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>系统设置 - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+    </FluentMessageBar>
+    return;
+}
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">系统设置</h2>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@OpenImportDialog">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
+            导入设置
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@ExportSettings">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())" />
+            导出设置
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@OpenResetDialog">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowReset())" />
+            重置为默认值
+        </FluentButton>
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else
+    {
+        <FluentAccordion>
+            <!-- 常规设置 -->
+            <FluentAccordionItem Heading="常规设置" Expanded="true">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">语言</FluentLabel>
+                            <FluentSelect 
+                                TOption="string"
+                                @bind-Value="@generalSettings.Language"
+                                @bind-Value:after="@(() => SaveSettingAsync("system.language", generalSettings.Language, "常规设置", "系统界面语言"))"
+                                Items="@languageOptions"
+                                OptionValue="@(i => i)"
+                                OptionText="@(i => i == "zh-CN" ? "中文" : "English")"
+                                Style="width: 100%; max-width: 300px;" />
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">时区</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@generalSettings.TimeZone"
+                                Style="width: 100%; max-width: 300px;" 
+                                Placeholder="Asia/Shanghai" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("system.timezone", generalSettings.TimeZone, "常规设置", "系统时区"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">系统名称</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@generalSettings.SystemName"
+                                Style="width: 100%; max-width: 300px;" 
+                                Placeholder="MingYue" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("system.name", generalSettings.SystemName, "常规设置", "系统显示名称"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+                </FluentStack>
+            </FluentAccordionItem>
+
+            <!-- 外观设置 -->
+            <FluentAccordionItem Heading="外观设置">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">主题模式</FluentLabel>
+                            <FluentSelect 
+                                TOption="string"
+                                @bind-Value="@appearanceSettings.ThemeMode"
+                                @bind-Value:after="@(() => SaveSettingAsync("theme.mode", appearanceSettings.ThemeMode, "外观设置", "主题模式 (light/dark/auto)"))"
+                                Items="@themeModeOptions"
+                                OptionValue="@(i => i)"
+                                OptionText="@(i => i == "light" ? "浅色" : i == "dark" ? "深色" : "自动")"
+                                Style="width: 100%; max-width: 300px;" />
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">主题色</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@appearanceSettings.AccentColor"
+                                Style="width: 100%; max-width: 300px;" 
+                                Placeholder="#0078d4" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("theme.accentColor", appearanceSettings.AccentColor, "外观设置", "主题强调色"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">卡片圆角</FluentLabel>
+                            <FluentNumberField 
+                                @bind-Value="@appearanceSettings.BorderRadius"
+                                Min="0"
+                                Max="20"
+                                Style="width: 100%; max-width: 300px;" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("theme.borderRadius", appearanceSettings.BorderRadius.ToString(), "外观设置", "卡片圆角大小(px)"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+                </FluentStack>
+            </FluentAccordionItem>
+
+            <!-- 安全设置 -->
+            <FluentAccordionItem Heading="安全设置">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">会话超时（分钟）</FluentLabel>
+                            <FluentNumberField 
+                                @bind-Value="@securitySettings.SessionTimeout"
+                                Min="5"
+                                Max="1440"
+                                Style="width: 100%; max-width: 300px;" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("security.sessionTimeout", securitySettings.SessionTimeout.ToString(), "安全设置", "会话超时时间（分钟）"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">密码策略</FluentLabel>
+                            <FluentCheckbox 
+                                @bind-Value="@securitySettings.RequireStrongPassword"
+                                @bind-Value:after="@(() => SaveSettingAsync("security.requireStrongPassword", securitySettings.RequireStrongPassword.ToString().ToLower(), "安全设置", "是否要求强密码"))"
+                                Label="要求强密码" />
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">最小密码长度</FluentLabel>
+                            <FluentNumberField 
+                                @bind-Value="@securitySettings.MinPasswordLength"
+                                Min="6"
+                                Max="32"
+                                Style="width: 100%; max-width: 300px;" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("security.minPasswordLength", securitySettings.MinPasswordLength.ToString(), "安全设置", "最小密码长度"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">登录失败锁定</FluentLabel>
+                            <FluentCheckbox 
+                                @bind-Value="@securitySettings.EnableLoginLockout"
+                                @bind-Value:after="@(() => SaveSettingAsync("security.enableLoginLockout", securitySettings.EnableLoginLockout.ToString().ToLower(), "安全设置", "启用登录失败锁定"))"
+                                Label="启用登录失败锁定" />
+                        </FluentStack>
+                    </FluentCard>
+                </FluentStack>
+            </FluentAccordionItem>
+
+            <!-- 文件管理设置 -->
+            <FluentAccordionItem Heading="文件管理设置">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">最大上传大小（MB）</FluentLabel>
+                            <FluentNumberField 
+                                @bind-Value="@fileSettings.MaxUploadSize"
+                                Min="1"
+                                Max="10240"
+                                Style="width: 100%; max-width: 300px;" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.maxUploadSize", fileSettings.MaxUploadSize.ToString(), "文件管理设置", "最大上传文件大小（MB）"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">默认路径</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@fileSettings.DefaultPath"
+                                Style="width: 100%; max-width: 500px;" 
+                                Placeholder="/data" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.defaultPath", fileSettings.DefaultPath, "文件管理设置", "文件管理器默认路径"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">显示隐藏文件</FluentLabel>
+                            <FluentCheckbox 
+                                @bind-Value="@fileSettings.ShowHiddenFiles"
+                                @bind-Value:after="@(() => SaveSettingAsync("filemanager.showHiddenFiles", fileSettings.ShowHiddenFiles.ToString().ToLower(), "文件管理设置", "是否显示隐藏文件"))"
+                                Label="显示以 . 开头的隐藏文件" />
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">允许的文件类型</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@fileSettings.AllowedFileTypes"
+                                Style="width: 100%; max-width: 500px;" 
+                                Placeholder="留空表示允许所有类型，或输入如: .jpg,.png,.pdf" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.allowedFileTypes", fileSettings.AllowedFileTypes, "文件管理设置", "允许上传的文件类型"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+                </FluentStack>
+            </FluentAccordionItem>
+
+            <!-- Docker设置 -->
+            <FluentAccordionItem Heading="Docker设置">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">Docker Host</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@dockerSettings.DockerHost"
+                                Style="width: 100%; max-width: 500px;" 
+                                Placeholder="unix:///var/run/docker.sock" />
+                            <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">
+                                Unix Socket: unix:///var/run/docker.sock 或 TCP: tcp://localhost:2375
+                            </FluentLabel>
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.host", dockerSettings.DockerHost, "Docker设置", "Docker守护进程地址"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">Docker API版本</FluentLabel>
+                            <FluentTextField 
+                                @bind-Value="@dockerSettings.ApiVersion"
+                                Style="width: 100%; max-width: 300px;" 
+                                Placeholder="1.43" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.apiVersion", dockerSettings.ApiVersion, "Docker设置", "Docker API版本"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">自动更新容器</FluentLabel>
+                            <FluentCheckbox 
+                                @bind-Value="@dockerSettings.AutoUpdateContainers"
+                                @bind-Value:after="@(() => SaveSettingAsync("docker.autoUpdateContainers", dockerSettings.AutoUpdateContainers.ToString().ToLower(), "Docker设置", "是否自动更新容器"))"
+                                Label="启用容器自动更新检查" />
+                        </FluentStack>
+                    </FluentCard>
+
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">容器日志最大行数</FluentLabel>
+                            <FluentNumberField 
+                                @bind-Value="@dockerSettings.LogMaxLines"
+                                Min="100"
+                                Max="10000"
+                                Style="width: 100%; max-width: 300px;" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.logMaxLines", dockerSettings.LogMaxLines.ToString(), "Docker设置", "容器日志显示最大行数"))">
+                                保存
+                            </FluentButton>
+                        </FluentStack>
+                    </FluentCard>
+                </FluentStack>
+            </FluentAccordionItem>
+        </FluentAccordion>
+    }
+</FluentStack>
+
+<!-- 导入设置对话框 -->
+<FluentDialog @ref="importDialog" @bind-Hidden="@isImportDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.ArrowDownload())" />
+            <FluentLabel Typo="Typography.PaneHeader">导入设置</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentLabel Typo="Typography.Body">
+                请粘贴之前导出的JSON设置内容：
+            </FluentLabel>
+            <FluentTextArea 
+                @bind-Value="@importJson"
+                Rows="15"
+                Style="width: 100%; font-family: monospace; font-size: 12px;" 
+                Placeholder="粘贴JSON内容..." />
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ImportSettings">
+            导入
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseImportDialog">
+            取消
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- 重置确认对话框 -->
+<FluentDialog @ref="resetDialog" @bind-Hidden="@isResetDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Warning())" Color="Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">重置确认</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentMessageBar Intent="MessageIntent.Warning">
+            <p>您确定要将所有设置重置为默认值吗？此操作无法撤销。</p>
+        </FluentMessageBar>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ResetSettings">
+            确认重置
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseResetDialog">
+            取消
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private bool isAuthorized = false;
+    private bool isLoading = true;
+    private bool isImportDialogHidden = true;
+    private bool isResetDialogHidden = true;
+    private string importJson = string.Empty;
+
+    private FluentDialog? importDialog;
+    private FluentDialog? resetDialog;
+
+    // Settings models
+    private GeneralSettings generalSettings = new();
+    private AppearanceSettings appearanceSettings = new();
+    private SecuritySettings securitySettings = new();
+    private FileSettings fileSettings = new();
+    private DockerSettings dockerSettings = new();
+
+    // Options for select dropdowns
+    private List<string> languageOptions = new() { "zh-CN", "en-US" };
+    private List<string> themeModeOptions = new() { "light", "dark", "auto" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access settings", 
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
+        await LoadAllSettings();
+    }
+
+    private async Task LoadAllSettings()
+    {
+        isLoading = true;
+        try
+        {
+            // Load general settings
+            generalSettings.Language = await SettingService.GetSettingValueAsync("system.language", "zh-CN") ?? "zh-CN";
+            generalSettings.TimeZone = await SettingService.GetSettingValueAsync("system.timezone", "Asia/Shanghai") ?? "Asia/Shanghai";
+            generalSettings.SystemName = await SettingService.GetSettingValueAsync("system.name", "MingYue") ?? "MingYue";
+
+            // Load appearance settings
+            appearanceSettings.ThemeMode = await SettingService.GetSettingValueAsync("theme.mode", "auto") ?? "auto";
+            appearanceSettings.AccentColor = await SettingService.GetSettingValueAsync("theme.accentColor", "#0078d4") ?? "#0078d4";
+            var borderRadiusStr = await SettingService.GetSettingValueAsync("theme.borderRadius", "4");
+            appearanceSettings.BorderRadius = int.TryParse(borderRadiusStr, out var br) ? br : 4;
+
+            // Load security settings
+            var sessionTimeoutStr = await SettingService.GetSettingValueAsync("security.sessionTimeout", "30");
+            securitySettings.SessionTimeout = int.TryParse(sessionTimeoutStr, out var st) ? st : 30;
+            
+            var requireStrongPasswordStr = await SettingService.GetSettingValueAsync("security.requireStrongPassword", "true");
+            securitySettings.RequireStrongPassword = bool.TryParse(requireStrongPasswordStr, out var rsp) && rsp;
+            
+            var minPasswordLengthStr = await SettingService.GetSettingValueAsync("security.minPasswordLength", "8");
+            securitySettings.MinPasswordLength = int.TryParse(minPasswordLengthStr, out var mpl) ? mpl : 8;
+            
+            var enableLoginLockoutStr = await SettingService.GetSettingValueAsync("security.enableLoginLockout", "true");
+            securitySettings.EnableLoginLockout = bool.TryParse(enableLoginLockoutStr, out var ell) && ell;
+
+            // Load file settings
+            var maxUploadSizeStr = await SettingService.GetSettingValueAsync("filemanager.maxUploadSize", "100");
+            fileSettings.MaxUploadSize = int.TryParse(maxUploadSizeStr, out var mus) ? mus : 100;
+            
+            fileSettings.DefaultPath = await SettingService.GetSettingValueAsync("filemanager.defaultPath", "/data") ?? "/data";
+            
+            var showHiddenFilesStr = await SettingService.GetSettingValueAsync("filemanager.showHiddenFiles", "false");
+            fileSettings.ShowHiddenFiles = bool.TryParse(showHiddenFilesStr, out var shf) && shf;
+            
+            fileSettings.AllowedFileTypes = await SettingService.GetSettingValueAsync("filemanager.allowedFileTypes", "") ?? "";
+
+            // Load docker settings
+            dockerSettings.DockerHost = await SettingService.GetSettingValueAsync("docker.host", "unix:///var/run/docker.sock") ?? "unix:///var/run/docker.sock";
+            dockerSettings.ApiVersion = await SettingService.GetSettingValueAsync("docker.apiVersion", "1.43") ?? "1.43";
+            
+            var autoUpdateContainersStr = await SettingService.GetSettingValueAsync("docker.autoUpdateContainers", "false");
+            dockerSettings.AutoUpdateContainers = bool.TryParse(autoUpdateContainersStr, out var auc) && auc;
+            
+            var logMaxLinesStr = await SettingService.GetSettingValueAsync("docker.logMaxLines", "1000");
+            dockerSettings.LogMaxLines = int.TryParse(logMaxLinesStr, out var lml) ? lml : 1000;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading settings");
+            ToastService.ShowError("加载设置失败");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveSettingAsync(string key, string value, string category, string description)
+    {
+        try
+        {
+            await SettingService.SetSettingAsync(key, value, category, description);
+            ToastService.ShowSuccess("设置已保存");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving setting {Key}", key);
+            ToastService.ShowError($"保存设置失败: {key}");
+        }
+    }
+
+    private async Task ExportSettings()
+    {
+        try
+        {
+            var json = await SettingService.ExportSettingsAsync();
+            
+            // Download the JSON file
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            var base64 = Convert.ToBase64String(bytes);
+            var fileName = $"mingyue-settings-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+            
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
+            
+            ToastService.ShowSuccess("设置已导出");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error exporting settings");
+            ToastService.ShowError("导出设置失败");
+        }
+    }
+
+    private void OpenImportDialog()
+    {
+        importJson = string.Empty;
+        isImportDialogHidden = false;
+    }
+
+    private async Task ImportSettings()
+    {
+        if (string.IsNullOrWhiteSpace(importJson))
+        {
+            ToastService.ShowWarning("请输入JSON内容");
+            return;
+        }
+
+        try
+        {
+            // Validate JSON
+            JsonDocument.Parse(importJson);
+            
+            await SettingService.ImportSettingsAsync(importJson);
+            ToastService.ShowSuccess("设置导入成功");
+            
+            CloseImportDialog();
+            await LoadAllSettings();
+        }
+        catch (JsonException)
+        {
+            ToastService.ShowError("JSON格式无效");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error importing settings");
+            ToastService.ShowError("导入设置失败");
+        }
+    }
+
+    private void CloseImportDialog()
+    {
+        isImportDialogHidden = true;
+        importJson = string.Empty;
+    }
+
+    private void OpenResetDialog()
+    {
+        isResetDialogHidden = false;
+    }
+
+    private async Task ResetSettings()
+    {
+        try
+        {
+            // Delete all settings using a bulk operation for better performance
+            await SettingService.DeleteAllSettingsAsync();
+            
+            ToastService.ShowSuccess("所有设置已重置为默认值");
+            
+            CloseResetDialog();
+            await LoadAllSettings();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error resetting settings");
+            ToastService.ShowError("重置设置失败");
+        }
+    }
+
+    private void CloseResetDialog()
+    {
+        isResetDialogHidden = true;
+    }
+
+    // Settings classes
+    private class GeneralSettings
+    {
+        public string Language { get; set; } = "zh-CN";
+        public string TimeZone { get; set; } = "Asia/Shanghai";
+        public string SystemName { get; set; } = "MingYue";
+    }
+
+    private class AppearanceSettings
+    {
+        public string ThemeMode { get; set; } = "auto";
+        public string AccentColor { get; set; } = "#0078d4";
+        public int BorderRadius { get; set; } = 4;
+    }
+
+    private class SecuritySettings
+    {
+        public int SessionTimeout { get; set; } = 30;
+        public bool RequireStrongPassword { get; set; } = true;
+        public int MinPasswordLength { get; set; } = 8;
+        public bool EnableLoginLockout { get; set; } = true;
+    }
+
+    private class FileSettings
+    {
+        public int MaxUploadSize { get; set; } = 100;
+        public string DefaultPath { get; set; } = "/data";
+        public bool ShowHiddenFiles { get; set; } = false;
+        public string AllowedFileTypes { get; set; } = "";
+    }
+
+    private class DockerSettings
+    {
+        public string DockerHost { get; set; } = "unix:///var/run/docker.sock";
+        public string ApiVersion { get; set; } = "1.43";
+        public bool AutoUpdateContainers { get; set; } = false;
+        public int LogMaxLines { get; set; } = 1000;
+    }
+}

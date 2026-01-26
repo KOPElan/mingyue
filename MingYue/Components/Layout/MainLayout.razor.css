@@ -19,6 +19,41 @@
         top: 0.5rem;
     }
 
+/* Header */
+.home-header {
+    padding: 1.5rem;    
+}
+
+.home-logo {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.1));
+    border-radius: var(--control-corner-radius, 0.5rem);
+    backdrop-filter: blur(10px);
+}
+
+.home-title-main {
+    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.9));
+}
+
+.home-title-sub {
+    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.5));
+}
+
+.home-user-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-fill-rest, #3b82f6) 0%, #06b6d4 100%);
+    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.2));
+    cursor: pointer;
+}
+
+
 /* Responsive container for layout Body (class="home-content")
    - On narrow screens it fills the viewport width with small padding
    - On wider screens it centers content and leaves empty space on sides
@@ -112,37 +147,3 @@
     opacity: 0.15;
 }
 
-/* Header */
-.home-header {
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.home-logo {
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--neutral-layer-4, rgba(255, 255, 255, 0.05));
-    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.1));
-    border-radius: var(--control-corner-radius, 0.5rem);
-    backdrop-filter: blur(10px);
-}
-
-.home-title-main {
-    color: var(--neutral-foreground-rest, rgba(255, 255, 255, 0.9));
-}
-
-.home-title-sub {
-    color: var(--neutral-foreground-hint, rgba(255, 255, 255, 0.5));
-}
-
-.home-user-avatar {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-fill-rest, #3b82f6) 0%, #06b6d4 100%);
-    border: 1px solid var(--neutral-stroke-layer-rest, rgba(255, 255, 255, 0.2));
-    cursor: pointer;
-}

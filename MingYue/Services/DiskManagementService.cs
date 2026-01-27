@@ -348,25 +348,32 @@ namespace MingYue.Services
                     Directory.CreateDirectory(mountPoint);
                 }
 
-                var arguments = devicePath + " " + mountPoint;
-                if (!string.IsNullOrEmpty(fileSystem))
-                {
-                    arguments = $"-t {fileSystem} {arguments}";
-                }
-                if (!string.IsNullOrEmpty(options))
-                {
-                    arguments = $"-o {options} {arguments}";
-                }
-
                 var processInfo = new ProcessStartInfo
                 {
                     FileName = "sudo",
-                    Arguments = $"mount {arguments}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Build mount command arguments using ArgumentList for proper escaping
+                processInfo.ArgumentList.Add("mount");
+                
+                if (!string.IsNullOrEmpty(fileSystem))
+                {
+                    processInfo.ArgumentList.Add("-t");
+                    processInfo.ArgumentList.Add(fileSystem);
+                }
+                
+                if (!string.IsNullOrEmpty(options))
+                {
+                    processInfo.ArgumentList.Add("-o");
+                    processInfo.ArgumentList.Add(options);
+                }
+                
+                processInfo.ArgumentList.Add(devicePath);
+                processInfo.ArgumentList.Add(mountPoint);
 
                 using var process = Process.Start(processInfo);
                 if (process != null)
@@ -485,12 +492,15 @@ namespace MingYue.Services
                 var processInfo = new ProcessStartInfo
                 {
                     FileName = "sudo",
-                    Arguments = $"umount {mountPoint}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Build umount command arguments using ArgumentList for proper escaping
+                processInfo.ArgumentList.Add("umount");
+                processInfo.ArgumentList.Add(mountPoint);
 
                 using var process = Process.Start(processInfo);
                 if (process != null)

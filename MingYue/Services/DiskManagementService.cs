@@ -1487,7 +1487,7 @@ namespace MingYue.Services
 
                 // Log the mount command for debugging
                 var commandArgs = string.Join(" ", processInfo.ArgumentList.Select(arg => 
-                    arg.Contains("credentials=") ? arg.Split('=')[0] + "=***" : arg));
+                    arg.StartsWith("credentials=") ? "credentials=***" : arg));
                 _logger.LogInformation("Executing mount command: {FileName} {Arguments}", processInfo.FileName, commandArgs);
 
                 try

@@ -266,8 +266,9 @@ namespace MingYue.Services
         /// </summary>
         private bool IsInThumbnailDirectory(string filePath)
         {
-            var thumbnailDirPath = Path.Combine(Path.DirectorySeparatorChar.ToString(), ThumbnailDirName, Path.DirectorySeparatorChar.ToString());
-            return filePath.Contains(thumbnailDirPath);
+            // Check if any part of the path contains the .thumbnail directory
+            var pathParts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return pathParts.Contains(ThumbnailDirName, StringComparer.OrdinalIgnoreCase);
         }
     }
 }

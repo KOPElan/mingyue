@@ -1,11 +1,14 @@
 ﻿@page "/"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject ISystemMonitorService SystemMonitorService
 @inject IApplicationService ApplicationService
 @inject IDockItemService DockItemService
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> Localizer
 @implements IDisposable
 
 <PageTitle>MingYue - Home Server Portal</PageTitle>
@@ -25,15 +28,15 @@
                 <div class="info-card-glow weather-glow"></div>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-                        <FluentLabel Typo="Typography.Body" Class="info-card-label">天气</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">@Localizer["Weather"]</FluentLabel>
                         <div class="info-card-icon weather-icon">
                             <FluentIcon Value="@(new Icons.Regular.Size24.WeatherSunny())" Color="Color.Custom" CustomColor="#facc15" />
                         </div>
                     </FluentStack>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
                         <div class="weather-temp">18°</div>
-                        <FluentLabel Typo="Typography.Body" Class="weather-condition">晴朗</FluentLabel>
-                        <FluentLabel Typo="Typography.Body" Class="weather-range">最高 22° / 最低 14°</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="weather-condition">Clear</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="weather-range">H: 22° / L: 14°</FluentLabel>
                     </FluentStack>
                 </FluentStack>
             </FluentCard>
@@ -44,20 +47,20 @@
                 <div class="info-card-glow system-glow"></div>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-                        <FluentLabel Typo="Typography.Body" Class="info-card-label">系统监控</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">@Localizer["SystemMonitor"]</FluentLabel>
                         <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
                     </FluentStack>
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-                                <FluentLabel Typo="Typography.Body" Class="stat-label">CPU</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="stat-label">@Localizer["CPU"]</FluentLabel>
                                 <FluentLabel Typo="Typography.Body" Class="stat-value-cyan">@systemInfo.Cpu.UsagePercent.ToString("F0")%</FluentLabel>
                             </FluentStack>
                             <FluentProgress Min="0" Max="100" Value="@((int)systemInfo.Cpu.UsagePercent)" Class="progress-bar-cyan" />
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="6">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-                                <FluentLabel Typo="Typography.Body" Class="stat-label">RAM</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Class="stat-label">@Localizer["Memory"]</FluentLabel>
                                 <FluentLabel Typo="Typography.Body" Class="stat-value-purple">@systemInfo.Memory.UsedGB</FluentLabel>
                             </FluentStack>
                             <FluentProgress Min="0" Max="100" Value="@((int)systemInfo.Memory.UsagePercent)" Class="progress-bar-purple" />
@@ -72,19 +75,19 @@
                 <div class="info-card-glow network-glow"></div>
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-                        <FluentLabel Typo="Typography.Body" Class="info-card-label">网络状态</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Class="info-card-label">@Localizer["NetworkStatus"]</FluentLabel>
                         <div class="network-indicator"></div>
                     </FluentStack>
                     <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="16">
                         <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="4" Class="network-stat-item">
                             <FluentIcon Value="@(new Icons.Regular.Size20.ArrowDownload())" Color="Color.Custom" CustomColor="#22c55e" />
-                            <FluentLabel Typo="Typography.Body">@downloadSpeed</FluentLabel>
-                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">MB/S</FluentLabel>
+                            <FluentLabel Typo="Typography.Body">@downloadSpeedDisplay</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">@downloadUnit</FluentLabel>
                         </FluentStack>
                         <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalGap="4" Class="network-stat-item">
                             <FluentIcon Value="@(new Icons.Regular.Size20.ArrowUpload())" Color="Color.Custom" CustomColor="#60a5fa" />
-                            <FluentLabel Typo="Typography.Body">@uploadSpeed</FluentLabel>
-                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">MB/S</FluentLabel>
+                            <FluentLabel Typo="Typography.Body">@uploadSpeedDisplay</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="network-stat-unit">@uploadUnit</FluentLabel>
                         </FluentStack>
                     </FluentStack>
                 </FluentStack>
@@ -94,8 +97,8 @@
 
     <FluentStack Orientation="Orientation.Vertical" VerticalGap="24" Class="home-applications">
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" Class="home-section-header">
-            <FluentLabel Typo="Typography.Header" Class="home-section-title">应用程序</FluentLabel>
-            <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">查看全部</FluentAnchor>
+            <FluentLabel Typo="Typography.Header" Class="home-section-title">@Localizer["Applications"]</FluentLabel>
+            <FluentAnchor Href="/app-management" Appearance="Appearance.Lightweight" Class="view-all-link">@Localizer["ViewAll"]</FluentAnchor>
         </FluentStack>
         <FluentGrid Spacing="10" class="app-grid" Style="width:100%;">
             @foreach (var app in visibleApplications)
@@ -128,7 +131,7 @@
                             <FluentIcon Value="@(new Icons.Regular.Size24.Add())" />
                         </div>
                         <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" Class="app-info">
-                            <FluentLabel Typo="Typography.Body" Class="app-title">添加</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Class="app-title">@Localizer["Add"]</FluentLabel>
                         </FluentStack>
                     </FluentStack>
                 </FluentCard>
@@ -160,13 +163,20 @@
 
 @code {
     private string TimeNow => DateTime.Now.ToString("HH:mm");
-    private string DateNow => DateTime.Now.ToString("yyyy年MM月dd日, 星期") + GetDayOfWeek();
+    private string DateNow => DateTime.Now.ToString(System.Globalization.CultureInfo.CurrentCulture.Name.StartsWith("zh") ? "yyyy年MM月dd日, 星期" : "MMMM dd, yyyy, ") + GetDayOfWeek();
     private SystemResourceInfo systemInfo = new();
     private List<Application> visibleApplications = new();
     private List<DockItem> dockItems = new();
     private System.Threading.Timer? updateTimer;
-    private int downloadSpeed = 24;
-    private int uploadSpeed = 12;
+
+    private long lastBytesReceived = 0;
+    private long lastBytesSent = 0;
+    private DateTime lastUpdateTime = DateTime.MinValue;
+    private string downloadSpeedDisplay = "0";
+    private string uploadSpeedDisplay = "0";
+    private string downloadUnit = "KB/S";
+    private string uploadUnit = "KB/S";
+
     private static readonly Random _random = new Random();
 
     protected override async Task OnInitializedAsync()
@@ -199,13 +209,34 @@
         {
             systemInfo = await SystemMonitorService.GetSystemResourceInfoAsync();
 
-            // TODO: Implement proper network speed calculation with delta between time intervals
-            // This is placeholder logic for demonstration purposes
             if (systemInfo.Networks.Any())
             {
                 var mainNetwork = systemInfo.Networks.First();
-                downloadSpeed = (int)(mainNetwork.BytesReceived / 1024.0 / 1024.0 % 100);
-                uploadSpeed = (int)(mainNetwork.BytesSent / 1024.0 / 1024.0 % 100);
+                var now = DateTime.Now;
+
+                if (lastUpdateTime != DateTime.MinValue)
+                {
+                    var elapsedSeconds = (now - lastUpdateTime).TotalSeconds;
+                    if (elapsedSeconds > 0)
+                    {
+                        var diffReceived = mainNetwork.BytesReceived - lastBytesReceived;
+                        var diffSent = mainNetwork.BytesSent - lastBytesSent;
+
+                        // Handle counter reset
+                        if (diffReceived < 0) diffReceived = 0;
+                        if (diffSent < 0) diffSent = 0;
+
+                        var downBps = diffReceived / elapsedSeconds;
+                        var upBps = diffSent / elapsedSeconds;
+
+                        (downloadSpeedDisplay, downloadUnit) = FormatSpeed(downBps);
+                        (uploadSpeedDisplay, uploadUnit) = FormatSpeed(upBps);
+                    }
+                }
+
+                lastBytesReceived = mainNetwork.BytesReceived;
+                lastBytesSent = mainNetwork.BytesSent;
+                lastUpdateTime = now;
             }
         }
         catch (Exception)
@@ -275,11 +306,41 @@
         return $"linear-gradient(135deg, {iconColor} 0%, {iconColor}dd 100%)";
     }
 
+    private (string Speed, string Unit) FormatSpeed(double bytesPerSecond)
+    {
+        if (bytesPerSecond < 1024)
+            return (bytesPerSecond.ToString("F0"), "B/S");
+        if (bytesPerSecond < 1024 * 1024)
+            return ((bytesPerSecond / 1024.0).ToString("F1"), "KB/S");
+        if (bytesPerSecond < 1024 * 1024 * 1024)
+            return ((bytesPerSecond / 1024.0 / 1024.0).ToString("F1"), "MB/S");
+
+        return ((bytesPerSecond / 1024.0 / 1024.0 / 1024.0).ToString("F1"), "GB/S");
+    }
+
     private Icon GetIcon(string iconName)
     {
-        // TODO: Implement icon mapping based on iconName parameter
-        // For now, return default icon - icon mapping can be added based on application requirements
-        return new Icons.Regular.Size24.Apps();
+        if (string.IsNullOrEmpty(iconName)) return new Icons.Regular.Size24.Apps();
+
+        return iconName.ToLowerInvariant() switch
+        {
+            "apps" => new Icons.Regular.Size24.Apps(),
+            "settings" => new Icons.Regular.Size24.Settings(),
+            "folder" => new Icons.Regular.Size24.Folder(),
+            "docker" or "box" => new Icons.Regular.Size24.Box(),
+            "server" => new Icons.Regular.Size24.Server(),
+            "harddrive" => new Icons.Regular.Size24.HardDrive(),
+            "network" or "wifi" => new Icons.Regular.Size24.Wifi1(),
+            "calendar" => new Icons.Regular.Size24.CalendarClock(),
+            "share" => new Icons.Regular.Size24.ShareAndroid(),
+            "people" or "users" => new Icons.Regular.Size24.People(),
+            "home" => new Icons.Regular.Size24.Home(),
+            "image" => new Icons.Regular.Size24.Image(),
+            "video" => new Icons.Regular.Size24.Video(),
+            "music" => new Icons.Regular.Size24.MusicNote2(),
+            "document" => new Icons.Regular.Size24.Document(),
+            _ => new Icons.Regular.Size24.Apps()
+        };
     }
 
     public void Dispose()

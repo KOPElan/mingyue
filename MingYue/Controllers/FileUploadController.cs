@@ -50,12 +50,10 @@ public class FileUploadController : ControllerBase
             if (!OperatingSystem.IsWindows())
             {
                 var forbiddenPaths = new[] { "/etc", "/var", "/bin", "/sbin", "/lib", "/root", "/proc", "/sys", "/dev" };
-                if (forbiddenPaths.Any(p => fullPath.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                if (forbiddenPaths.Any(p => fullPath.Equals(p, StringComparison.OrdinalIgnoreCase) ||
+                                          fullPath.StartsWith(p + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
                 {
-                    // Allow if it's explicitly under a permitted mount point like /var/lib/docker if needed,
-                    // but generally we want to be restrictive.
-                    // For now, let's just stick to the root check but exclude known sensitive ones if they are at the top level.
-                    if (fullPath == "/" || forbiddenPaths.Any(p => fullPath == p)) return false;
+                    return false;
                 }
             }
 

@@ -92,17 +92,17 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - DockerService ✅ (MingYue已有，需增强)
 
 待迁移服务:
-- AuthenticationService ❌
-- AuthenticationStateService ❌
-- ApplicationService ❌
-- DockItemService ❌
+- AuthenticationService ✅
+- AuthenticationStateService ✅
+- ApplicationService ✅
+- DockItemService ✅
 - SystemSettingService ✅ (Phase 3 完成, 2026-01-26)
-- LocalizationService ❌
-- NetworkManagementService ❌
+- LocalizationService ✅
+- NetworkManagementService ✅
 - AnydropService ✅ (Phase 3 完成, 2026-01-26)
 - FileIndexService ✅ (Phase 3 完成, 2026-01-26, 与ScheduledTask集成)
-- FileUploadService ❌
-- ThumbnailService ❌
+- FileUploadService ✅
+- ThumbnailService ✅
 - ScheduledTaskService ✅ (Phase 3 完成, 2026-01-26)
 - ScheduledTaskExecutionHistoryService ✅ (Phase 3 完成, 2026-01-26, 已集成到ScheduledTaskService)
 - ScheduledTaskExecutorService ✅ (Phase 3 完成, 2026-01-26, 含安全加固)
@@ -116,20 +116,18 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 - SystemMonitor.razor ✅ (基础版本)
 - Error.razor ✅
 - NotFound.razor ✅
-
-待迁移:
-- Login.razor ❌
-- InitialSetup.razor ❌
-- AppManagement.razor ❌
-- DockManagement.razor ❌
-- Docker.razor ❌ (需增强)
-- FileManager.razor ❌ (需完整UI)
-- DiskManagement.razor ❌ (需完整UI)
-- ShareManagement.razor ❌ (需完整UI)
+- Login.razor ✅
+- InitialSetup.razor ✅
+- AppManagement.razor ✅
+- DockManagement.razor ✅
+- Docker.razor ✅
+- FileManager.razor ✅
+- DiskManagement.razor ✅
+- ShareManagement.razor ✅
 - Anydrop.razor ✅ (Phase 3 完成, 2026-01-26, 含聊天式UI重新设计)
 - ScheduledTasks.razor ✅ (Phase 3 完成, 2026-01-26, 含5种任务类型)
 - Settings.razor ✅ (Phase 3 完成, 2026-01-26, 5个类别)
-- UserManagement.razor ❌
+- UserManagement.razor ✅
 - NotificationPanel.razor ✅ (Phase 3 完成, 2026-01-26, 集成到MainLayout)
 - NotificationTest.razor ✅ (Phase 3 完成, 2026-01-26, 测试页面)
 ```
@@ -137,9 +135,9 @@ QingFeng 是一款功能完善的家庭服务器主页，具备以下功能：
 **Endpoints (API 层)**:
 ```
 待迁移:
-- AuthenticationEndpoints ❌
-- ApplicationEndpoints ❌
-- DockItemEndpoints ❌
+- AuthenticationEndpoints ✅ (整合到 Service)
+- ApplicationEndpoints ✅ (整合到 Service)
+- DockItemEndpoints ✅ (整合到 Service)
 - AnydropEndpoints ✅ (Phase 3 完成, 2026-01-26, 使用Service直接调用)
 - ScheduledTaskEndpoints ✅ (Phase 3 完成, 2026-01-26, 使用Service直接调用)
 - SystemSettingEndpoints ✅ (Phase 3 完成, 2026-01-26, 使用Service直接调用)
@@ -406,7 +404,7 @@ public class DockItem
 
 **完成状态**: 🎉 所有 Phase 3 功能已实现并通过安全审查
 
-**实现详情**: 参见 [Phase 3 实现总结](../PHASE3_IMPLEMENTATION_SUMMARY.md)
+**实现详情**: 参见 [Phase 3 实现总结](./PHASE3_IMPLEMENTATION_SUMMARY.md)
 
 #### 3.1 Anydrop 文件传输 ✅
 **目标**: 实现跨设备文件和消息分享
@@ -1029,31 +1027,31 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - [x] 文档更新
 
 ### 9.3 Phase 3 检查清单
-- [ ] AnydropMessage 和 AnydropAttachment 数据模型
-- [ ] AnydropService
-- [ ] Anydrop.razor 页面
-- [ ] AnydropEndpoints API
-- [ ] ScheduledTask 和 ExecutionHistory 数据模型
-- [ ] ScheduledTaskService 和 ExecutorService
-- [ ] ScheduledTasks.razor 页面
-- [ ] Cron 表达式解析
-- [ ] SystemSetting 数据模型
-- [ ] SystemSettingService
-- [ ] Settings.razor 页面
-- [ ] Notification 数据模型
-- [ ] NotificationService
-- [ ] 通知面板组件
-- [ ] NotificationEndpoints API
-- [ ] 单元测试（Anydrop、任务、设置、通知服务）
-- [ ] 文档更新
+- [x] AnydropMessage 和 AnydropAttachment 数据模型
+- [x] AnydropService
+- [x] Anydrop.razor 页面
+- [x] AnydropEndpoints API (整合到 Service)
+- [x] ScheduledTask 和 ExecutionHistory 数据模型
+- [x] ScheduledTaskService 和 ExecutorService
+- [x] ScheduledTasks.razor 页面
+- [x] Cron 表达式解析
+- [x] SystemSetting 数据模型
+- [x] SystemSettingService
+- [x] Settings.razor 页面
+- [x] Notification 数据模型
+- [x] NotificationService
+- [x] 通知面板组件
+- [x] NotificationEndpoints API (整合到 Service)
+- [ ] 单元测试（Anydrop、任务、设置、通知服务）- 待加强
+- [x] 文档更新
 
 ### 9.4 Phase 4 检查清单
-- [ ] LocalizationService
-- [ ] 资源文件（中文、英文）
-- [ ] 所有页面本地化
-- [ ] 语言切换功能
-- [ ] NetworkManagementService
-- [ ] 网络设置页面
+- [x] LocalizationService
+- [x] 资源文件（中文、英文）
+- [x] 所有页面本地化 (MainLayout, Home, FileManager, AppManagement, UserManagement)
+- [x] 语言切换功能
+- [x] NetworkManagementService
+- [x] 网络设置页面
 - [ ] 数据库查询优化
 - [ ] 虚拟化长列表
 - [ ] 图片懒加载

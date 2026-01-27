@@ -459,12 +459,21 @@
             }
             else
             {
-                <FluentMessageBar Intent="MessageIntent.Info">Preview not available for this file type.</FluentMessageBar>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                    <img src="@GetFileIcon(previewFile!)" alt="File Icon" style="width: 128px; height: 128px;" />
+                    <FluentLabel Typo="Typography.Body">预览不可用。您可以下载该文件进行查看。</FluentLabel>
+                </div>
             }
         </div>
     </FluentDialogBody>
     <FluentDialogFooter>
-        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isPreviewDialogHidden = true)">Close</FluentButton>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="10">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DownloadFile(previewFile!))">
+                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" Slot="start" />
+                下载
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isPreviewDialogHidden = true)">关闭</FluentButton>
+        </FluentStack>
     </FluentDialogFooter>
 </FluentDialog>
 
@@ -853,13 +862,9 @@
         {
             await NavigateToPath(item.Path);
         }
-        else if (IsImageFile(item))
-        {
-            await PreviewFile(item);
-        }
         else
         {
-            await DownloadFile(item);
+            await PreviewFile(item);
         }
     }
 
@@ -1394,7 +1399,12 @@
     {
         if (file == null || file.IsDirectory) return false;
         var ext = file.Extension.ToLowerInvariant();
-        return ext is ".txt" or ".log" or ".json" or ".xml" or ".md" or ".cs" or ".js" or ".css";
+        var textExtensions = new[] {
+            ".txt", ".log", ".json", ".xml", ".md", ".cs", ".js", ".css",
+            ".html", ".htm", ".yaml", ".yml", ".ini", ".conf", ".sh", ".py",
+            ".java", ".c", ".cpp", ".h", ".hpp", ".sql", ".csproj", ".sln"
+        };
+        return textExtensions.Contains(ext);
     }
 
     private bool IsVideoFile(FileItemInfo? file)

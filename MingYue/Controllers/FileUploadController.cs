@@ -416,7 +416,9 @@ public class FileUploadController : ControllerBase
                 ".bmp" => "image/bmp",
                 ".webp" => "image/webp",
                 ".svg" => "image/svg+xml",
-                ".txt" or ".log" or ".json" or ".xml" or ".md" or ".cs" or ".js" or ".css" => "text/plain",
+                ".txt" or ".log" or ".json" or ".xml" or ".md" or ".cs" or ".js" or ".css" or
+                ".html" or ".htm" or ".yaml" or ".yml" or ".ini" or ".conf" or ".sh" or ".py" or
+                ".java" or ".c" or ".cpp" or ".h" or ".hpp" or ".sql" or ".csproj" or ".sln" => "text/plain",
                 ".mp4" => "video/mp4",
                 ".webm" => "video/webm",
                 ".mp3" => "audio/mpeg",

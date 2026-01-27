@@ -7,6 +7,8 @@
 @inject IFileManagementService FileService
 @inject IFileUploadService UploadService
 @inject IThumbnailService ThumbnailService
+@inject IFileIndexService FileIndexService
+@inject IScheduledTaskService ScheduledTaskService
 @inject IToastService ToastService
 @inject ILogger<FileManager> Logger
 @inject IJSRuntime JSRuntime
@@ -105,6 +107,9 @@
                     </FluentButton>
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenFavoritesDialog" Title="Manage Favorites">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Star())" />
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenBackgroundTaskDialog" Title="Create Background Tasks">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.TaskListSquareLtr())" />
                     </FluentButton>
                 </div>
             </div>
@@ -513,6 +518,58 @@
     </FluentDialogFooter>
 </FluentDialog>
 
+<!-- Background Task Creation Dialog -->
+<FluentDialog @ref="backgroundTaskDialog" @bind-Hidden="@isBackgroundTaskDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 500px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.TaskListSquareLtr())" />
+            <FluentLabel Typo="Typography.PaneHeader">Create Background Task</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentLabel Style="font-weight: 500;">Create scheduled tasks to generate thumbnails and build search indexes for the current directory.</FluentLabel>
+            
+            <FluentLabel>Directory: @currentPath</FluentLabel>
+            
+            <FluentCheckbox @bind-Value="@taskRecursive" Label="Include subdirectories (recursive)" />
+            
+            <FluentDivider />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                <FluentLabel Typo="Typography.Subject">Available Tasks:</FluentLabel>
+                
+                <FluentCheckbox @bind-Value="@createThumbnailTask" Label="Generate Thumbnails">
+                    Generate thumbnails for images and videos in this directory
+                </FluentCheckbox>
+                
+                <FluentCheckbox @bind-Value="@createIndexTask" Label="Build Search Index">
+                    Create a search index for fast file searching
+                </FluentCheckbox>
+            </FluentStack>
+            
+            <FluentDivider />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
+                <FluentLabel Typo="Typography.Subject">Schedule:</FluentLabel>
+                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-rest);">
+                    Tasks will run immediately and can be set to run periodically. Default: Run once now.
+                </FluentLabel>
+                <FluentTextField @bind-Value="@taskCronExpression" 
+                               Label="Cron Expression (optional)" 
+                               Placeholder="0 0 0 * * * (daily at midnight)"
+                               Style="width: 100%;" />
+            </FluentStack>
+        </FluentStack>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@CreateBackgroundTasks">
+            Create Tasks
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isBackgroundTaskDialogHidden = true)">Cancel</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
 @code {
     [Parameter]
     public string? InitialPath { get; set; }
@@ -520,6 +577,8 @@
     private enum ViewMode { List, Grid }
 
     private const string ParentDirectoryMarker = "..";
+    // Cron expression for one-time execution: Jan 1, 2099 (effectively never repeats)
+    private const string OneTimeTaskCronExpression = "0 0 0 1 1 ? 2099";
 
     private ViewMode viewMode = ViewMode.Grid;
     private string currentPath = "/";
@@ -542,6 +601,7 @@
     private FluentDialog? previewDialog;
     private FluentDialog? favoritesDialog;
     private FluentDialog? deleteDialog;
+    private FluentDialog? backgroundTaskDialog;
 
     private bool isCreateFolderDialogHidden = true;
     private bool isUploadDialogHidden = true;
@@ -550,6 +610,7 @@
     private bool isPreviewDialogHidden = true;
     private bool isFavoritesDialogHidden = true;
     private bool isDeleteDialogHidden = true;
+    private bool isBackgroundTaskDialogHidden = true;
 
     // Dialog data
     private string newFolderName = string.Empty;
@@ -560,6 +621,12 @@
     private bool isMoveOperation = false;
     private string previewImageData = string.Empty;
     private string previewFileName = string.Empty;
+
+    // Background task dialog
+    private bool taskRecursive = false;
+    private bool createThumbnailTask = true;
+    private bool createIndexTask = true;
+    private string taskCronExpression = string.Empty;
 
     // Upload
     private List<IBrowserFile> selectedFiles = new();
@@ -637,7 +704,7 @@
 
     private async Task LoadThumbnails()
     {
-        // Load thumbnails for image files in grid view
+        // Load thumbnails for image and video files in grid view
         if (viewMode != ViewMode.Grid)
         {
             // Clear thumbnail data when not in grid view to save memory
@@ -650,10 +717,10 @@
 
         try
         {
-            var imageFiles = fileItems.Where(f => !f.IsDirectory && IsImageFile(f)).ToList();
+            var mediaFiles = fileItems.Where(f => !f.IsDirectory && (IsImageFile(f) || IsVideoFile(f))).ToList();
 
             // Load thumbnails in parallel for better performance
-            var thumbnailTasks = imageFiles.Select(async item =>
+            var thumbnailTasks = mediaFiles.Select(async item =>
             {
                 try
                 {
@@ -1286,6 +1353,13 @@
         return ext is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg";
     }
 
+    private bool IsVideoFile(FileItemInfo file)
+    {
+        if (file.IsDirectory) return false;
+        var ext = file.Extension.ToLowerInvariant();
+        return ext is ".mp4" or ".avi" or ".mov" or ".mkv" or ".wmv" or ".flv" or ".webm" or ".m4v";
+    }
+
     private string GetMimeType(string extension)
     {
         return extension.ToLowerInvariant() switch
@@ -1314,7 +1388,31 @@
 
         try
         {
-            searchResults = await FileService.SearchFilesAsync(currentPath, searchQuery);
+            // Check if index exists for current directory or parent directories
+            var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
+            
+            if (!hasIndex)
+            {
+                // No index found, prompt user to create one
+                ToastService.ShowWarning("No search index found. Please create an index for this directory to enable search.");
+                searchResults.Clear();
+                return;
+            }
+
+            // Search using the index
+            var indexResults = await FileIndexService.SearchFilesInDirectoryAsync(currentPath, searchQuery);
+            
+            // Convert FileIndex to FileItemInfo
+            searchResults = indexResults.Select(fi => new FileItemInfo
+            {
+                Name = fi.FileName,
+                Path = fi.FilePath,
+                Size = fi.FileSize,
+                LastModified = fi.ModifiedAt,
+                IsDirectory = false,
+                Extension = fi.FileType
+            }).ToList();
+            
             ToastService.ShowInfo($"Found {searchResults.Count} items");
         }
         catch (Exception ex)
@@ -1366,6 +1464,100 @@
         {
             Logger.LogError(ex, "Error removing favorite folder: {Id}", id);
             ToastService.ShowError($"Failed to remove favorite: {ex.Message}");
+        }
+    }
+
+    #endregion
+
+    #region Background Tasks
+
+    private void OpenBackgroundTaskDialog()
+    {
+        // Reset dialog state
+        taskRecursive = false;
+        createThumbnailTask = true;
+        createIndexTask = true;
+        taskCronExpression = string.Empty;
+        
+        isBackgroundTaskDialogHidden = false;
+    }
+
+    private async Task CreateBackgroundTasks()
+    {
+        try
+        {
+            if (!createThumbnailTask && !createIndexTask)
+            {
+                ToastService.ShowWarning("Please select at least one task type");
+                return;
+            }
+
+            var tasksCreated = 0;
+
+            // Use a default cron expression if none provided (run immediately, don't repeat)
+            var cronExpr = string.IsNullOrWhiteSpace(taskCronExpression) ? OneTimeTaskCronExpression : taskCronExpression;
+
+            // Create thumbnail generation task
+            if (createThumbnailTask)
+            {
+                var folderName = Path.GetFileName(currentPath);
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = currentPath;
+                }
+                
+                var thumbnailTask = new ScheduledTask
+                {
+                    Name = $"Generate Thumbnails - {folderName}",
+                    Description = $"Generate thumbnails for {currentPath}" + (taskRecursive ? " (recursive)" : ""),
+                    TaskType = "ThumbnailGeneration",
+                    TaskData = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+                    {
+                        { "path", currentPath },
+                        { "recursive", taskRecursive.ToString().ToLower() }
+                    }),
+                    CronExpression = cronExpr,
+                    IsEnabled = true
+                };
+                
+                await ScheduledTaskService.CreateTaskAsync(thumbnailTask);
+                tasksCreated++;
+            }
+
+            // Create indexing task
+            if (createIndexTask)
+            {
+                var folderName = Path.GetFileName(currentPath);
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = currentPath;
+                }
+                
+                var indexTask = new ScheduledTask
+                {
+                    Name = $"Build Search Index - {folderName}",
+                    Description = $"Build search index for {currentPath}" + (taskRecursive ? " (recursive)" : ""),
+                    TaskType = "FileIndex",
+                    TaskData = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+                    {
+                        { "path", currentPath },
+                        { "recursive", taskRecursive.ToString().ToLower() }
+                    }),
+                    CronExpression = cronExpr,
+                    IsEnabled = true
+                };
+                
+                await ScheduledTaskService.CreateTaskAsync(indexTask);
+                tasksCreated++;
+            }
+
+            isBackgroundTaskDialogHidden = true;
+            ToastService.ShowSuccess($"Created {tasksCreated} background task(s). Tasks will run shortly.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error creating background tasks");
+            ToastService.ShowError($"Failed to create tasks: {ex.Message}");
         }
     }
 

@@ -6,16 +6,16 @@ namespace MingYue.Services
     /// <summary>
     /// Service for managing localization and language settings
     /// </summary>
-    public class LocalizationService : ILocalizationService
+    public class LocalizationService : ILocalizationService, IDisposable
     {
         private readonly IStringLocalizer<SharedResources> _localizer;
         private readonly ISystemSettingService _systemSettingService;
         private readonly ILogger<LocalizationService> _logger;
-        private string _currentCulture = "zh-CN"; // Default to Chinese
+        private volatile string _currentCulture = "zh-CN"; // Default to Chinese, volatile for thread-safe reads
 
         public event EventHandler? CultureChanged;
 
-        private bool _initialized = false;
+        private int _initialized = 0; // Use int for Interlocked operations
         private readonly SemaphoreSlim _initSemaphore = new(1, 1);
 
         public LocalizationService(
@@ -31,12 +31,12 @@ namespace MingYue.Services
         // Lazy initialization to load saved culture
         private async Task InitializeAsync()
         {
-            if (_initialized) return;
+            if (Interlocked.CompareExchange(ref _initialized, 0, 0) == 1) return;
 
             await _initSemaphore.WaitAsync();
             try
             {
-                if (_initialized) return; // Double-check after acquiring lock
+                if (Interlocked.CompareExchange(ref _initialized, 0, 0) == 1) return; // Double-check after acquiring lock
 
                 var savedCulture = await _systemSettingService.GetSettingValueAsync("Language");
                 if (!string.IsNullOrEmpty(savedCulture))
@@ -44,7 +44,7 @@ namespace MingYue.Services
                     _currentCulture = savedCulture;
                     SetThreadCulture(_currentCulture);
                 }
-                _initialized = true;
+                Interlocked.Exchange(ref _initialized, 1);
             }
             finally
             {
@@ -55,9 +55,9 @@ namespace MingYue.Services
         public string GetCurrentCulture()
         {
             // Trigger initialization on first access if needed
-            if (!_initialized)
+            if (Interlocked.CompareExchange(ref _initialized, 0, 0) == 0)
             {
-                Task.Run(async () => await InitializeAsync()).Wait();
+                InitializeAsync().GetAwaiter().GetResult();
             }
             return _currentCulture;
         }
@@ -151,6 +151,11 @@ namespace MingYue.Services
             {
                 _logger.LogError(ex, "Error setting thread culture to: {Culture}", culture);
             }
+        }
+
+        public void Dispose()
+        {
+            _initSemaphore?.Dispose();
         }
     }
 

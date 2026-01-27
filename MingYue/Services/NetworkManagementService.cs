@@ -73,23 +73,20 @@ namespace MingYue.Services
         {
             var stats = new NetworkStatistics
             {
-                CollectedAt = DateTime.Now
+                CollectedAt = DateTime.UtcNow
             };
 
             try
             {
                 var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
 
-                foreach (var ni in networkInterfaces)
+                foreach (var ni in networkInterfaces.Where(n => n.OperationalStatus == OperationalStatus.Up))
                 {
-                    if (ni.OperationalStatus == OperationalStatus.Up)
-                    {
-                        var ipv4Stats = ni.GetIPv4Statistics();
-                        stats.TotalBytesReceived += ipv4Stats.BytesReceived;
-                        stats.TotalBytesSent += ipv4Stats.BytesSent;
-                        stats.TotalPacketsReceived += ipv4Stats.UnicastPacketsReceived;
-                        stats.TotalPacketsSent += ipv4Stats.UnicastPacketsSent;
-                    }
+                    var ipv4Stats = ni.GetIPv4Statistics();
+                    stats.TotalBytesReceived += ipv4Stats.BytesReceived;
+                    stats.TotalBytesSent += ipv4Stats.BytesSent;
+                    stats.TotalPacketsReceived += ipv4Stats.UnicastPacketsReceived;
+                    stats.TotalPacketsSent += ipv4Stats.UnicastPacketsSent;
                 }
             }
             catch (Exception ex)
@@ -117,7 +114,7 @@ namespace MingYue.Services
                     TotalBytesSent = ipv4Stats.BytesSent,
                     TotalPacketsReceived = ipv4Stats.UnicastPacketsReceived,
                     TotalPacketsSent = ipv4Stats.UnicastPacketsSent,
-                    CollectedAt = DateTime.Now
+                    CollectedAt = DateTime.UtcNow
                 });
             }
             catch (Exception ex)
@@ -161,7 +158,7 @@ namespace MingYue.Services
                     return false;
                 }
                 
-                var process = new System.Diagnostics.Process
+                using var process = new System.Diagnostics.Process
                 {
                     StartInfo = new System.Diagnostics.ProcessStartInfo
                     {
@@ -204,6 +201,12 @@ namespace MingYue.Services
 
         public async Task<bool> TestConnectivityAsync(string host, int timeout = 5000)
         {
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                _logger.LogWarning("Host parameter is null or empty");
+                return false;
+            }
+
             try
             {
                 using var ping = new Ping();

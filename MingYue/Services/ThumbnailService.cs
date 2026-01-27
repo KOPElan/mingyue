@@ -229,17 +229,25 @@ namespace MingYue.Services
                 
                 var files = Directory.GetFiles(directoryPath, "*.*", searchOption)
                     .Where(f => allExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
+                    .Where(f => !IsInThumbnailDirectory(f)) // Exclude files in .thumbnail directories
                     .ToList();
 
                 _logger.LogInformation("Generating thumbnails for {Count} files in {DirectoryPath}", files.Count, directoryPath);
 
                 foreach (var file in files)
                 {
-                    // Skip if thumbnail already exists
                     var thumbnailPath = GetThumbnailPath(file);
+                    
+                    // Skip if thumbnail already exists and is newer than source file
                     if (File.Exists(thumbnailPath))
                     {
-                        continue;
+                        var sourceModified = File.GetLastWriteTimeUtc(file);
+                        var thumbnailModified = File.GetLastWriteTimeUtc(thumbnailPath);
+                        
+                        if (thumbnailModified >= sourceModified)
+                        {
+                            continue; // Thumbnail is up to date
+                        }
                     }
 
                     await GenerateThumbnailAsync(file);
@@ -251,6 +259,15 @@ namespace MingYue.Services
             {
                 _logger.LogError(ex, "Error generating thumbnails for directory {DirectoryPath}", directoryPath);
             }
+        }
+
+        /// <summary>
+        /// Checks if a file path is within a .thumbnail directory
+        /// </summary>
+        private bool IsInThumbnailDirectory(string filePath)
+        {
+            var thumbnailDirPath = Path.Combine(Path.DirectorySeparatorChar.ToString(), ThumbnailDirName, Path.DirectorySeparatorChar.ToString());
+            return filePath.Contains(thumbnailDirPath);
         }
     }
 }

@@ -359,15 +359,9 @@ namespace MingYue.Services
                 //     return (false, "", $"Path is not within allowed directories: {path}");
                 // }
 
-                bool recursive;
-                if (taskData.TryGetValue("recursive", out var recursiveValue))
-                {
-                    recursive = recursiveValue.Equals("true", StringComparison.OrdinalIgnoreCase);
-                }
-                else
-                {
-                    recursive = false;
-                }
+                bool recursive = taskData.TryGetValue("recursive", out var recursiveValue)
+                    ? recursiveValue.Equals("true", StringComparison.OrdinalIgnoreCase)
+                    : false;
 
                 // Get FileIndexService from service provider
                 using var scope = _serviceProvider.CreateScope();
@@ -527,15 +521,9 @@ namespace MingYue.Services
                     return (false, "", $"Directory does not exist: {path}");
                 }
 
-                bool recursive;
-                if (taskData.TryGetValue("recursive", out var recursiveValue))
-                {
-                    recursive = recursiveValue.Equals("true", StringComparison.OrdinalIgnoreCase);
-                }
-                else
-                {
-                    recursive = false;
-                }
+                bool recursive = taskData.TryGetValue("recursive", out var recursiveValue)
+                    ? recursiveValue.Equals("true", StringComparison.OrdinalIgnoreCase)
+                    : false;
 
                 // Get ThumbnailService from service provider
                 using var scope = _serviceProvider.CreateScope();

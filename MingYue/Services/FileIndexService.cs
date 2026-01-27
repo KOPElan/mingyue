@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using MingYue.Data;
 using MingYue.Models;
 using System.Text.Json;
 
@@ -8,13 +6,11 @@ namespace MingYue.Services
     public class FileIndexService : IFileIndexService
     {
         private readonly ILogger<FileIndexService> _logger;
-        private readonly IDbContextFactory<MingYueDbContext> _dbContextFactory;
         private const string IndexFileName = ".fileindex.json";
 
-        public FileIndexService(ILogger<FileIndexService> logger, IDbContextFactory<MingYueDbContext> dbContextFactory)
+        public FileIndexService(ILogger<FileIndexService> logger)
         {
             _logger = logger;
-            _dbContextFactory = dbContextFactory;
         }
 
         /// <summary>
@@ -145,8 +141,8 @@ namespace MingYue.Services
                     IndexedAt = DateTime.UtcNow
                 };
 
-                var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                var files = Directory.GetFiles(directoryPath, "*", searchOption)
+                // Always use TopDirectoryOnly - we'll recurse manually if needed
+                var files = Directory.GetFiles(directoryPath, "*", SearchOption.TopDirectoryOnly)
                     .Where(f => !IsSpecialFile(f)) // Exclude .thumbnail and .fileindex.json
                     .ToList();
 
@@ -156,18 +152,14 @@ namespace MingYue.Services
                     {
                         var fileInfo = new FileInfo(file);
                         
-                        // For recursive indexing, only add files in the current directory to this index
-                        if (!recursive || Path.GetDirectoryName(file) == directoryPath)
+                        index.Files.Add(new FileIndexEntry
                         {
-                            index.Files.Add(new FileIndexEntry
-                            {
-                                FileName = fileInfo.Name,
-                                FileSize = fileInfo.Length,
-                                ModifiedAt = fileInfo.LastWriteTimeUtc,
-                                FileType = Path.GetExtension(file),
-                                IndexedAt = DateTime.UtcNow
-                            });
-                        }
+                            FileName = fileInfo.Name,
+                            FileSize = fileInfo.Length,
+                            ModifiedAt = fileInfo.LastWriteTimeUtc,
+                            FileType = Path.GetExtension(file),
+                            IndexedAt = DateTime.UtcNow
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -277,17 +269,19 @@ namespace MingYue.Services
                 return results;
             }
 
-            // Simple wildcard matching
-            var pattern = searchPattern.Replace("*", ".*").Replace("?", ".");
-            var regex = new System.Text.RegularExpressions.Regex(pattern, 
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            // Simple wildcard matching: escape input first, then reintroduce wildcard semantics
+            var escapedPattern = System.Text.RegularExpressions.Regex.Escape(searchPattern);
+            var pattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
+            var regex = new System.Text.RegularExpressions.Regex(
+                pattern, 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                System.TimeSpan.FromSeconds(1));
 
-            foreach (var entry in index.Files)
+            var matchingFiles = index.Files.Where(entry => regex.IsMatch(entry.FileName));
+            
+            foreach (var entry in matchingFiles)
             {
-                if (regex.IsMatch(entry.FileName))
-                {
-                    results.Add(ConvertToFileIndex(entry, basePath));
-                }
+                results.Add(ConvertToFileIndex(entry, basePath));
             }
 
             return results;

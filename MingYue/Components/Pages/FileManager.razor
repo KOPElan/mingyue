@@ -557,7 +557,7 @@
                 </FluentLabel>
                 <FluentTextField @bind-Value="@taskCronExpression" 
                                Label="Cron Expression (optional)" 
-                               Placeholder="0 0 * * * (daily at midnight)"
+                               Placeholder="0 0 0 * * * (daily at midnight)"
                                Style="width: 100%;" />
             </FluentStack>
         </FluentStack>
@@ -1500,9 +1500,15 @@
             // Create thumbnail generation task
             if (createThumbnailTask)
             {
+                var folderName = Path.GetFileName(currentPath);
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = currentPath;
+                }
+                
                 var thumbnailTask = new ScheduledTask
                 {
-                    Name = $"Generate Thumbnails - {Path.GetFileName(currentPath) ?? currentPath}",
+                    Name = $"Generate Thumbnails - {folderName}",
                     Description = $"Generate thumbnails for {currentPath}" + (taskRecursive ? " (recursive)" : ""),
                     TaskType = "ThumbnailGeneration",
                     TaskData = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
@@ -1521,9 +1527,15 @@
             // Create indexing task
             if (createIndexTask)
             {
+                var folderName = Path.GetFileName(currentPath);
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    folderName = currentPath;
+                }
+                
                 var indexTask = new ScheduledTask
                 {
-                    Name = $"Build Search Index - {Path.GetFileName(currentPath) ?? currentPath}",
+                    Name = $"Build Search Index - {folderName}",
                     Description = $"Build search index for {currentPath}" + (taskRecursive ? " (recursive)" : ""),
                     TaskType = "FileIndex",
                     TaskData = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>

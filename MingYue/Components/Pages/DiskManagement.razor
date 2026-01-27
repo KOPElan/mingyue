@@ -815,13 +815,26 @@
             }
             else
             {
-                ToastService.ShowError(result.Message);
+                // Log error details for debugging
+                if (!string.IsNullOrEmpty(result.ErrorDetails))
+                {
+                    Logger.LogError("Network disk mount/unmount failed. Message: {Message}, ErrorDetails: {ErrorDetails}", 
+                        result.Message, result.ErrorDetails);
+                }
+                
+                // Show error message with details if available
+                var errorMessage = result.Message;
+                if (!string.IsNullOrEmpty(result.ErrorDetails))
+                {
+                    errorMessage += $": {result.ErrorDetails}";
+                }
+                ToastService.ShowError(errorMessage);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error toggling network disk mount");
-            ToastService.ShowError("Failed to toggle network disk mount");
+            ToastService.ShowError($"Failed to toggle network disk mount: {ex.Message}");
         }
     }
 
@@ -945,13 +958,26 @@
             }
             else
             {
-                ToastService.ShowError(result.Message);
+                // Log error details for debugging
+                if (!string.IsNullOrEmpty(result.ErrorDetails))
+                {
+                    Logger.LogError("Network disk mount failed. Message: {Message}, ErrorDetails: {ErrorDetails}", 
+                        result.Message, result.ErrorDetails);
+                }
+                
+                // Show error message with details if available
+                var errorMessage = result.Message;
+                if (!string.IsNullOrEmpty(result.ErrorDetails))
+                {
+                    errorMessage += $": {result.ErrorDetails}";
+                }
+                ToastService.ShowError(errorMessage);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error mounting network disk");
-            ToastService.ShowError("Failed to mount network disk");
+            ToastService.ShowError($"Failed to mount network disk: {ex.Message}");
         }
     }
 

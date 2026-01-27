@@ -1493,11 +1493,20 @@ namespace MingYue.Services
                         await process.WaitForExitAsync();
                         var error = await process.StandardError.ReadToEndAsync();
 
-                        return process.ExitCode == 0
-                            ? DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint}")
-                            : DiskOperationResult.Failed("挂载失败", error);
+                        if (process.ExitCode == 0)
+                        {
+                            return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint}");
+                        }
+                        else
+                        {
+                            // Log the error details to help with debugging
+                            _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}", 
+                                device, mountPoint, diskType, process.ExitCode, error);
+                            return DiskOperationResult.Failed("挂载失败", error);
+                        }
                     }
 
+                    _logger.LogError("Failed to start mount process for device: {Device}, MountPoint: {MountPoint}", device, mountPoint);
                     return DiskOperationResult.Failed("无法启动挂载进程");
                 }
                 finally
@@ -1518,6 +1527,8 @@ namespace MingYue.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error mounting network disk. Server: {Server}, SharePath: {SharePath}, MountPoint: {MountPoint}, DiskType: {DiskType}", 
+                    server, sharePath, mountPoint, diskType);
                 return DiskOperationResult.Failed("挂载网络磁盘时出错", ex.Message);
             }
         }

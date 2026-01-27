@@ -32,8 +32,7 @@
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
                 <h3 style="margin: 0;">SMB Users</h3>
                 <FluentSpacer />
-                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddUserDialog">
-                    <FluentIcon Value="@(new Icons.Regular.Size16.Add())" />
+                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddUserDialog" IconStart="@(new Icons.Regular.Size16.Add())">
                     Add User
                 </FluentButton>
             </FluentStack>
@@ -46,11 +45,11 @@
             }
             else
             {
-                <FluentGrid Spacing="16" Style="width: 100%;">
+                <FluentGrid Spacing="16">
                     @foreach (var user in sambaUsers)
                     {
                         <FluentGridItem xs="12" sm="6" md="3">
-                            <FluentCard Style="height: 100%;">
+                            <FluentCard>
                                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
                                         <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
@@ -88,15 +87,13 @@
         <!-- Samba Shares Section -->
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                <h3 style="margin: 0;">Samba Shares</h3>
+                <FluentLabel Typo="Typography.H3">Samba Shares</FluentLabel>
                 <FluentSpacer />
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                    <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService">
-                        <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSync())" />
+                    <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
                         Restart Service
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.CIFS))">
-                        <FluentIcon Value="@(new Icons.Regular.Size16.Add())" />
+                    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.CIFS))" IconStart="@(new Icons.Regular.Size16.Add())">                        
                         Add
                     </FluentButton>
                 </FluentStack>
@@ -110,11 +107,11 @@
             }
             else
             {
-                <FluentGrid Spacing="16" Style="width: 100%;">
+                <FluentGrid Spacing="16">
                     @foreach (var share in sambaShares)
                     {
                         <FluentGridItem xs="12" sm="6" md="4">
-                            <FluentCard Style="height: 100%;">
+                            <FluentCard>
                                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                                     <!-- Header with Name and Actions -->
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
@@ -179,15 +176,13 @@
         <!-- NFS Shares Section -->
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                <h3 style="margin: 0;">NFS Shares</h3>
+                <FluentLabel Typo="Typography.H3">NFS Shares</FluentLabel>
                 <FluentSpacer />
                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                    <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService">
-                        <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSync())" />
+                    <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
                         Restart Service
                     </FluentButton>
-                    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.NFS))">
-                        <FluentIcon Value="@(new Icons.Regular.Size16.Add())" />
+                    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.NFS))" IconStart="@(new Icons.Regular.Size16.Add())">
                         Add
                     </FluentButton>
                 </FluentStack>
@@ -201,11 +196,11 @@
             }
             else
             {
-                <FluentGrid Spacing="16" Style="width: 100%;">
+                <FluentGrid Spacing="16">
                     @foreach (var share in nfsShares)
                     {
                         <FluentGridItem xs="12" sm="6" md="4">
-                            <FluentCard Style="height: 100%;">
+                            <FluentCard>
                                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
                                     <!-- Header with Name and Actions -->
                                     <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">

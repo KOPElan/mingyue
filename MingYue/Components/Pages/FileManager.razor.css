@@ -1,4 +1,9 @@
 /* FileManager Component Styles */
+::deep > fluent-dialog::part(control) {
+    --dialog-width: 100vh;
+    --dialog-height: unset;
+    padding: 2rem!important;
+}
 
 .file-manager-container {
     display: flex;

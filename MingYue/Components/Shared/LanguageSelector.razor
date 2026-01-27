@@ -1,0 +1,48 @@
+@using MingYue.Services
+@inject ILocalizationService LocalizationService
+@inject NavigationManager NavigationManager
+@implements IDisposable
+
+<FluentSelect 
+    Items="@_availableCultures"
+    OptionText="@(c => c.DisplayName)"
+    OptionValue="@(c => c.Code)"
+    Value="@_selectedCultureCode"
+    ValueChanged="@OnCultureCodeChanged"
+    Width="150px"
+    Style="margin-left: 8px;">
+</FluentSelect>
+
+@code {
+    private List<MingYue.Services.CultureInfo> _availableCultures = new();
+    private string _selectedCultureCode = "zh-CN";
+
+    protected override void OnInitialized()
+    {
+        _availableCultures = LocalizationService.GetAvailableCultures();
+        _selectedCultureCode = LocalizationService.GetCurrentCulture();
+        
+        LocalizationService.CultureChanged += OnCultureChangedEvent;
+    }
+
+    private async Task OnCultureCodeChanged(string newCultureCode)
+    {
+        if (string.IsNullOrEmpty(newCultureCode)) return;
+
+        _selectedCultureCode = newCultureCode;
+        await LocalizationService.SetCultureAsync(newCultureCode);
+        
+        // Reload the page to apply language changes
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+
+    private void OnCultureChangedEvent(object? sender, EventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        LocalizationService.CultureChanged -= OnCultureChangedEvent;
+    }
+}

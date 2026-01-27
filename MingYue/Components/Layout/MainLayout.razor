@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @using MingYue.Components.Dialog
+@using MingYue.Components.Shared
 @using MingYue.Models
 @using MingYue.Services
 @inject IDialogService DialogService
@@ -39,6 +40,9 @@
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/anydrop"))" Title="Anydrop">
                     <FluentIcon Value="@(new Icons.Regular.Size20.ShareAndroid())"></FluentIcon>
                 </FluentButton>
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/network"))" Title="网络管理">
+                    <FluentIcon Value="@(new Icons.Regular.Size20.Wifi1())"></FluentIcon>
+                </FluentButton>
                 <!-- Notification Button with Badge -->
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="OpenNotificationPanel" Title="通知" Style="position: relative;">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" />
@@ -51,7 +55,9 @@
                 </FluentButton>
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="系统设置">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
-                </FluentButton>                                
+                </FluentButton>
+                <!-- Language Selector -->
+                <LanguageSelector />
                 @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
                 {
                     <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>

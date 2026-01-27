@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Network Traffic Chart Preview</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .stat-card {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0078d4;
+        }
+        .chart-label {
+            font-size: 14px;
+            margin: 16px 0 8px 0;
+            color: #333;
+        }
+        canvas {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            width: 100% !important;
+            height: 300px !important;
+        }
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 16px 0;
+        }
+        .timestamp {
+            font-size: 12px;
+            color: #888;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>网络统计</h3>
+        <div class="divider"></div>
+        
+        <div class="chart-label">实时流量趋势 (每5秒更新)</div>
+        <canvas id="chart"></canvas>
+        
+        <div class="divider"></div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">总接收流量</div>
+                <div class="stat-value">1.2 GB</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总发送流量</div>
+                <div class="stat-value">856 MB</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总接收包数</div>
+                <div class="stat-value">982,456</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总发送包数</div>
+                <div class="stat-value">754,321</div>
+            </div>
+        </div>
+        <div class="timestamp">统计时间: 2026-01-27 02:55:30</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('chart');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        canvas.width = 1100;
+        canvas.height = 300;
+        
+        const width = canvas.width;
+        const height = canvas.height;
+        const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
+        
+        // Sample data
+        const dataPoints = 30;
+        const labels = Array.from({length: dataPoints}, (_, i) => {
+            const time = new Date(Date.now() - (dataPoints - i) * 5000);
+            return time.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+        });
+        
+        const receivedData = Array.from({length: dataPoints}, (_, i) => {
+            return 50000 + Math.random() * 100000 + Math.sin(i / 3) * 50000;
+        });
+        
+        const sentData = Array.from({length: dataPoints}, (_, i) => {
+            return 30000 + Math.random() * 60000 + Math.cos(i / 4) * 30000;
+        });
+        
+        const maxValue = Math.max(...receivedData, ...sentData) * 1.1;
+        
+        // Colors
+        const gridColor = '#e0e0e0';
+        const textColor = '#333';
+        const receivedColor = '#0078d4';
+        const sentColor = '#00cc6a';
+        
+        // Fill background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw grid
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 5; i++) {
+            const y = margin.top + (chartHeight * i / 5);
+            ctx.beginPath();
+            ctx.moveTo(margin.left, y);
+            ctx.lineTo(width - margin.right, y);
+            ctx.stroke();
+            
+            const value = maxValue * (1 - i / 5);
+            ctx.fillStyle = textColor;
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            const kb = value / 1024;
+            ctx.fillText(kb.toFixed(1) + 'KB/s', margin.left - 5, y + 4);
+        }
+        
+        // Draw axes
+        ctx.strokeStyle = gridColor;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, height - margin.bottom);
+        ctx.lineTo(width - margin.right, height - margin.bottom);
+        ctx.moveTo(margin.left, margin.top);
+        ctx.lineTo(margin.left, height - margin.bottom);
+        ctx.stroke();
+        
+        // Draw data line with fill
+        function drawLine(data, color) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < data.length; i++) {
+                const x = margin.left + (chartWidth * i / (data.length - 1));
+                const y = height - margin.bottom - (chartHeight * data[i] / maxValue);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // Fill area
+            ctx.lineTo(margin.left + chartWidth, height - margin.bottom);
+            ctx.lineTo(margin.left, height - margin.bottom);
+            ctx.closePath();
+            ctx.fillStyle = color + '20';
+            ctx.fill();
+        }
+        
+        drawLine(receivedData, receivedColor);
+        drawLine(sentData, sentColor);
+        
+        // Draw X-axis labels
+        ctx.fillStyle = textColor;
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        for (let i = 0; i < labels.length; i += 5) {
+            const x = margin.left + (chartWidth * i / (labels.length - 1));
+            ctx.fillText(labels[i], x, height - margin.bottom + 15);
+        }
+        
+        // Draw legend
+        const legendY = margin.top - 5;
+        const legendX = width - margin.right - 200;
+        
+        ctx.fillStyle = receivedColor;
+        ctx.fillRect(legendX, legendY, 15, 10);
+        ctx.fillStyle = textColor;
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('接收速率', legendX + 20, legendY + 9);
+        
+        ctx.fillStyle = sentColor;
+        ctx.fillRect(legendX + 90, legendY, 15, 10);
+        ctx.fillStyle = textColor;
+        ctx.fillText('发送速率', legendX + 110, legendY + 9);
+        
+        // Axis labels
+        ctx.fillStyle = textColor;
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('时间', width / 2, height - 5);
+        
+        ctx.save();
+        ctx.translate(15, height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('流量速率 (字节/秒)', 0, 0);
+        ctx.restore();
+    </script>
+</body>
+</html>

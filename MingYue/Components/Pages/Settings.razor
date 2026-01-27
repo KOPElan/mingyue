@@ -3,6 +3,7 @@
 @using MingYue.Services
 @using System.Text.Json
 @inject ISystemSettingService SettingService
+@inject ILocalizationService LocalizationService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<Settings> Logger
@@ -51,13 +52,16 @@
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                             <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">语言</FluentLabel>
                             <FluentSelect 
-                                TOption="string"
-                                @bind-Value="@generalSettings.Language"
-                                @bind-Value:after="@(() => SaveSettingAsync("system.language", generalSettings.Language, "常规设置", "系统界面语言"))"
-                                Items="@languageOptions"
-                                OptionValue="@(i => i)"
-                                OptionText="@(i => i == "zh-CN" ? "中文" : "English")"
+                                TOption="MingYue.Services.CultureInfo"
+                                Items="@availableCultures"
+                                @bind-SelectedOption="@selectedCulture"
+                                @bind-SelectedOption:after="@OnLanguageChanged"
+                                OptionValue="@(c => c.Code)"
+                                OptionText="@(c => c.DisplayName)"
                                 Style="width: 100%; max-width: 300px;" />
+                            <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">
+                                更改语言后，页面将自动刷新以应用新语言
+                            </FluentLabel>
                         </FluentStack>
                     </FluentCard>
 
@@ -378,8 +382,11 @@
     private FileSettings fileSettings = new();
     private DockerSettings dockerSettings = new();
 
+    // Localization
+    private List<MingYue.Services.CultureInfo> availableCultures = new();
+    private MingYue.Services.CultureInfo? selectedCulture;
+
     // Options for select dropdowns
-    private List<string> languageOptions = new() { "zh-CN", "en-US" };
     private List<string> themeModeOptions = new() { "light", "dark", "auto" };
 
     protected override async Task OnInitializedAsync()
@@ -393,6 +400,12 @@
         }
 
         isAuthorized = true;
+        
+        // Load available cultures
+        availableCultures = LocalizationService.GetAvailableCultures();
+        var currentCulture = LocalizationService.GetCurrentCulture();
+        selectedCulture = availableCultures.FirstOrDefault(c => c.Code == currentCulture);
+        
         await LoadAllSettings();
     }
 
@@ -402,7 +415,6 @@
         try
         {
             // Load general settings
-            generalSettings.Language = await SettingService.GetSettingValueAsync("system.language", "zh-CN") ?? "zh-CN";
             generalSettings.TimeZone = await SettingService.GetSettingValueAsync("system.timezone", "Asia/Shanghai") ?? "Asia/Shanghai";
             generalSettings.SystemName = await SettingService.GetSettingValueAsync("system.name", "MingYue") ?? "MingYue";
 
@@ -468,6 +480,26 @@
         {
             Logger.LogError(ex, "Error saving setting {Key}", key);
             ToastService.ShowError($"保存设置失败: {key}");
+        }
+    }
+
+    private async Task OnLanguageChanged()
+    {
+        if (selectedCulture == null) return;
+        
+        try
+        {
+            await LocalizationService.SetCultureAsync(selectedCulture.Code);
+            ToastService.ShowSuccess("语言设置已保存，页面即将刷新");
+            
+            // Wait a moment for the toast to show, then reload
+            await Task.Delay(1000);
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error changing language");
+            ToastService.ShowError("更改语言失败");
         }
     }
 
@@ -567,7 +599,6 @@
     // Settings classes
     private class GeneralSettings
     {
-        public string Language { get; set; } = "zh-CN";
         public string TimeZone { get; set; } = "Asia/Shanghai";
         public string SystemName { get; set; } = "MingYue";
     }

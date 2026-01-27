@@ -283,11 +283,29 @@ namespace MingYue.Services
         {
             try
             {
+                // Validate role
+                if (newRole != "Admin" && newRole != "User")
+                {
+                    _logger.LogWarning("Invalid role assignment attempted: {Role}", newRole);
+                    return false;
+                }
+
                 await using var context = await _dbFactory.CreateDbContextAsync();
                 var user = await context.Users.FindAsync(userId);
 
                 if (user == null)
                     return false;
+
+                // Prevent demoting the last admin
+                if (user.Role == "Admin" && newRole != "Admin")
+                {
+                    var adminCount = await context.Users.CountAsync(u => u.Role == "Admin");
+                    if (adminCount <= 1)
+                    {
+                        _logger.LogWarning("Attempted to demote the last admin user {UserId}", userId);
+                        return false;
+                    }
+                }
 
                 user.Role = newRole;
                 await context.SaveChangesAsync();
@@ -312,6 +330,17 @@ namespace MingYue.Services
 
                 if (user == null)
                     return false;
+
+                // Prevent deleting the last admin
+                if (user.Role == "Admin")
+                {
+                    var adminCount = await context.Users.CountAsync(u => u.Role == "Admin");
+                    if (adminCount <= 1)
+                    {
+                        _logger.LogWarning("Attempted to delete the last admin user {UserId}", userId);
+                        return false;
+                    }
+                }
 
                 context.Users.Remove(user);
                 await context.SaveChangesAsync();

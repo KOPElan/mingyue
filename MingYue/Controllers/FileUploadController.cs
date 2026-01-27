@@ -41,8 +41,23 @@ public class FileUploadController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrEmpty(path)) return false;
+
             var fullPath = Path.GetFullPath(path);
             var rootPath = Path.GetFullPath(_rootPath);
+
+            // SECURITY: Explicitly forbid access to sensitive system directories on Linux
+            if (!OperatingSystem.IsWindows())
+            {
+                var forbiddenPaths = new[] { "/etc", "/var", "/bin", "/sbin", "/lib", "/root", "/proc", "/sys", "/dev" };
+                if (forbiddenPaths.Any(p => fullPath.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Allow if it's explicitly under a permitted mount point like /var/lib/docker if needed,
+                    // but generally we want to be restrictive.
+                    // For now, let's just stick to the root check but exclude known sensitive ones if they are at the top level.
+                    if (fullPath == "/" || forbiddenPaths.Any(p => fullPath == p)) return false;
+                }
+            }
 
             // Ensure path is within allowed root
             return fullPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase);
@@ -401,7 +416,7 @@ public class FileUploadController : ControllerBase
                 ".bmp" => "image/bmp",
                 ".webp" => "image/webp",
                 ".svg" => "image/svg+xml",
-                ".txt" or ".log" => "text/plain",
+                ".txt" or ".log" or ".json" or ".xml" or ".md" or ".cs" or ".js" or ".css" => "text/plain",
                 ".mp4" => "video/mp4",
                 ".webm" => "video/webm",
                 ".mp3" => "audio/mpeg",

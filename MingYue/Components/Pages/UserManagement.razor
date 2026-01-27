@@ -92,7 +92,7 @@
     private List<UserDto> users = new();
     private UserDto? selectedUser;
     private string newRole = "User";
-    private List<string> roles = new() { "Admin", "User" };
+    private readonly List<string> roles = new() { "Admin", "User" };
     private FluentDialog? dialog;
     private bool isLoading = true;
     private bool isAuthorized = false;

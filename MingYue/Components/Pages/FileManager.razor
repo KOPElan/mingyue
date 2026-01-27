@@ -1348,6 +1348,14 @@
         {
             if (IsTextFile(file))
             {
+                const long maxPreviewSizeBytes = 5 * 1024 * 1024; // 5 MB for text
+                if (file.Size > maxPreviewSizeBytes)
+                {
+                    ToastService.ShowWarning("The file is too large to preview. Please download it instead.");
+                    isPreviewDialogHidden = true;
+                    return;
+                }
+
                 var content = await FileService.DownloadFileAsync(file.Path);
                 previewTextContent = System.Text.Encoding.UTF8.GetString(content);
             }

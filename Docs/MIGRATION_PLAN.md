@@ -997,9 +997,10 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - [x] AuthenticationService 实现
 - [x] Login.razor 页面
 - [x] InitialSetup.razor 页面
-- [x] UserManagement.razor 页面
+- [x] UserManagement.razor 页面 (含角色保护)
 - [x] AuthenticationEndpoints API (通过 Service 整合)
 - [x] 密码安全测试（哈希、盐值）
+- [x] 最后管理员保护逻辑
 - [x] Application 和 DockItem 数据模型
 - [x] ApplicationService 和 DockItemService
 - [x] AppManagement.razor 和 DockManagement.razor
@@ -1015,8 +1016,8 @@ public async Task<OperationResult<Application>> CreateApplicationAsync(Applicati
 - [x] FileUploadService 和 ThumbnailService
 - [x] FileIndexService
 - [x] FileManager.razor 完整UI
-- [x] 文件预览组件（图片、文本、PDF）
-- [x] 文件上传组件（拖拽、多文件、进度、分块）
+- [x] 文件预览组件 (支持图片/PDF/文本，含大小限制)
+- [x] 文件上传组件 (支持拖拽、多文件、进度、分块)
 - [x] 缩略图生成和缓存
 - [x] DockerService 增强
 - [x] Docker.razor 完整UI

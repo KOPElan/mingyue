@@ -224,10 +224,10 @@
                                                   Title="Download">
                                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" />
                                     </FluentButton>
-                                    @if (IsImageFile(item))
+                                    @if (IsPreviewableFile(item))
                                     {
                                         <FluentButton Appearance="Appearance.Lightweight"
-                                                      OnClick="@(() => PreviewImage(item))"
+                                                      OnClick="@(() => PreviewFile(item))"
                                                       Title="Preview">
                                             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Eye())" />
                                         </FluentButton>
@@ -431,23 +431,37 @@
     </FluentDialogFooter>
 </FluentDialog>
 
-<!-- Image Preview Dialog -->
-<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="max-width: 90vw; max-height: 90vh;">
+<!-- File Preview Dialog -->
+<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 80vw; min-height: 80vh;">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Image())" />
+            <FluentIcon Value="@GetPreviewIcon()" />
             <FluentLabel Typo="Typography.PaneHeader">@previewFileName</FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
     <FluentDialogBody>
-        @if (!string.IsNullOrEmpty(previewImageData))
-        {
-            <img src="@previewImageData" alt="Preview" style="max-width: 100%; max-height: 70vh; object-fit: contain;" />
-        }
-        else
-        {
-            <FluentProgressRing />
-        }
+        <div style="width: 100%; height: 70vh; display: flex; justify-content: center; align-items: center; overflow: auto;">
+            @if (isPreviewLoading)
+            {
+                <FluentProgressRing />
+            }
+            else if (IsImageFile(previewFile))
+            {
+                <img src="@previewUrl" alt="Preview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            }
+            else if (IsPdfFile(previewFile))
+            {
+                <iframe src="@previewUrl" style="width: 100%; height: 100%; border: none;"></iframe>
+            }
+            else if (IsTextFile(previewFile))
+            {
+                <pre style="width: 100%; height: 100%; padding: 20px; background: #f5f5f5; border: 1px solid #ddd; overflow: auto; white-space: pre-wrap;">@previewTextContent</pre>
+            }
+            else
+            {
+                <FluentMessageBar Intent="MessageIntent.Info">Preview not available for this file type.</FluentMessageBar>
+            }
+        </div>
     </FluentDialogBody>
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isPreviewDialogHidden = true)">Close</FluentButton>
@@ -619,8 +633,11 @@
     private FileItemInfo? selectedItem;
     private FileItemInfo? itemToDelete;
     private bool isMoveOperation = false;
-    private string previewImageData = string.Empty;
+    private string previewUrl = string.Empty;
+    private string previewTextContent = string.Empty;
     private string previewFileName = string.Empty;
+    private FileItemInfo? previewFile;
+    private bool isPreviewLoading = false;
 
     // Background task dialog
     private bool taskRecursive = false;
@@ -838,7 +855,7 @@
         }
         else if (IsImageFile(item))
         {
-            await PreviewImage(item);
+            await PreviewFile(item);
         }
         else
         {
@@ -1318,60 +1335,73 @@
 
     #region Preview
 
-    private async Task PreviewImage(FileItemInfo file)
+    private async Task PreviewFile(FileItemInfo file)
     {
+        previewFile = file;
         previewFileName = file.Name;
-        previewImageData = string.Empty;
+        previewUrl = $"/api/files/content?path={Uri.EscapeDataString(file.Path)}";
+        previewTextContent = string.Empty;
+        isPreviewLoading = true;
         isPreviewDialogHidden = false;
 
         try
         {
-            // Check file size before loading (e.g., warn if > 10MB)
-            var fileInfo = new System.IO.FileInfo(file.Path);
-            if (fileInfo.Length > 10 * 1024 * 1024) // 10MB limit for preview
+            if (IsTextFile(file))
             {
-                ToastService.ShowWarning($"File is large ({fileInfo.Length / 1024 / 1024}MB). Preview may be slow.");
+                var content = await FileService.DownloadFileAsync(file.Path);
+                previewTextContent = System.Text.Encoding.UTF8.GetString(content);
             }
-
-            var imageData = await FileService.DownloadFileAsync(file.Path);
-            var base64 = Convert.ToBase64String(imageData);
-            var mimeType = GetMimeType(file.Extension);
-            previewImageData = $"data:{mimeType};base64,{base64}";
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading image preview: {Path}", file.Path);
+            Logger.LogError(ex, "Error loading file preview: {Path}", file.Path);
             ToastService.ShowError($"Failed to load preview: {ex.Message}");
-            isPreviewDialogHidden = true;
+        }
+        finally
+        {
+            isPreviewLoading = false;
         }
     }
 
-    private bool IsImageFile(FileItemInfo file)
+    private bool IsPreviewableFile(FileItemInfo? file)
     {
-        if (file.IsDirectory) return false;
+        if (file == null || file.IsDirectory) return false;
+        return IsImageFile(file) || IsPdfFile(file) || IsTextFile(file);
+    }
+
+    private bool IsImageFile(FileItemInfo? file)
+    {
+        if (file == null || file.IsDirectory) return false;
         var ext = file.Extension.ToLowerInvariant();
         return ext is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg";
     }
 
-    private bool IsVideoFile(FileItemInfo file)
+    private bool IsPdfFile(FileItemInfo? file)
     {
-        if (file.IsDirectory) return false;
+        if (file == null || file.IsDirectory) return false;
+        return file.Extension.ToLowerInvariant() == ".pdf";
+    }
+
+    private bool IsTextFile(FileItemInfo? file)
+    {
+        if (file == null || file.IsDirectory) return false;
+        var ext = file.Extension.ToLowerInvariant();
+        return ext is ".txt" or ".log" or ".json" or ".xml" or ".md" or ".cs" or ".js" or ".css";
+    }
+
+    private bool IsVideoFile(FileItemInfo? file)
+    {
+        if (file == null || file.IsDirectory) return false;
         var ext = file.Extension.ToLowerInvariant();
         return ext is ".mp4" or ".avi" or ".mov" or ".mkv" or ".wmv" or ".flv" or ".webm" or ".m4v";
     }
 
-    private string GetMimeType(string extension)
+    private Icon GetPreviewIcon()
     {
-        return extension.ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".bmp" => "image/bmp",
-            ".webp" => "image/webp",
-            ".svg" => "image/svg+xml",
-            _ => "application/octet-stream"
-        };
+        if (IsImageFile(previewFile)) return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Image();
+        if (IsPdfFile(previewFile)) return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentPdf();
+        if (IsTextFile(previewFile)) return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText();
+        return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Eye();
     }
 
     #endregion

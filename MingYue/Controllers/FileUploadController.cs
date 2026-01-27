@@ -375,4 +375,46 @@ public class FileUploadController : ControllerBase
             }
         }
     }
+
+    [HttpGet("content")]
+    public async Task<IActionResult> GetFileContent([FromQuery] string path)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(path) || !IsPathAllowed(path))
+            {
+                return BadRequest("Invalid or unauthorized path");
+            }
+
+            if (!System.IO.File.Exists(path))
+            {
+                return NotFound("File not found");
+            }
+
+            var extension = Path.GetExtension(path).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".webp" => "image/webp",
+                ".svg" => "image/svg+xml",
+                ".txt" or ".log" => "text/plain",
+                ".mp4" => "video/mp4",
+                ".webm" => "video/webm",
+                ".mp3" => "audio/mpeg",
+                _ => "application/octet-stream"
+            };
+
+            var fileStream = System.IO.File.OpenRead(path);
+            return File(fileStream, contentType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error serving file content: {Path}", path);
+            return StatusCode(500, "Internal server error");
+        }
+    }
 }

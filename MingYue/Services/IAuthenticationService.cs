@@ -47,5 +47,26 @@ namespace MingYue.Services
         /// <param name="userId">The user's unique identifier</param>
         /// <returns>True if the update was successful; otherwise, false</returns>
         Task<bool> UpdateLastLoginAsync(int userId);
+
+        /// <summary>
+        /// Retrieves all users in the system
+        /// </summary>
+        /// <returns>A list of all users as DTOs</returns>
+        Task<List<UserDto>> GetAllUsersAsync();
+
+        /// <summary>
+        /// Updates a user's role
+        /// </summary>
+        /// <param name="userId">The user's unique identifier</param>
+        /// <param name="newRole">The new role to assign (e.g., "Admin", "User")</param>
+        /// <returns>True if the update was successful; otherwise, false</returns>
+        Task<bool> UpdateUserRoleAsync(int userId, string newRole);
+
+        /// <summary>
+        /// Deletes a user by their unique identifier
+        /// </summary>
+        /// <param name="userId">The user's unique identifier</param>
+        /// <returns>True if the deletion was successful; otherwise, false</returns>
+        Task<bool> DeleteUserAsync(int userId);
     }
 }

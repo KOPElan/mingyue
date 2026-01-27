@@ -1,0 +1,197 @@
+@page "/user-management"
+@using MingYue.Models
+@using MingYue.Services
+@inject IAuthenticationService AuthService
+@inject AuthenticationStateService AuthStateService
+@inject NavigationManager Navigation
+@inject ILogger<UserManagement> Logger
+@inject IToastService ToastService
+
+<PageTitle>用户管理 - MingYue</PageTitle>
+
+@if (!isAuthorized)
+{
+    <FluentMessageBar Intent="MessageIntent.Error">
+        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+    </FluentMessageBar>
+    return;
+}
+
+<FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
+    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+        <h2 style="margin: 0;">用户管理</h2>
+        <FluentSpacer />
+    </FluentStack>
+
+    @if (isLoading)
+    {
+        <FluentProgressRing />
+    }
+    else if (users.Count == 0)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info">
+            未发现用户。
+        </FluentMessageBar>
+    }
+    else
+    {
+        <FluentDataGrid Items="@users.AsQueryable()" GridTemplateColumns="1fr 1fr 1.5fr 1.5fr 1fr">
+            <PropertyColumn Property="@(u => u.Username)" Title="用户名" Sortable="true" />
+            <TemplateColumn Title="角色" Sortable="true">
+                <FluentBadge Fill="User" BackgroundColor="@(context.Role == "Admin" ? "green" : "blue")" Color="white">
+                    @context.Role
+                </FluentBadge>
+            </TemplateColumn>
+            <PropertyColumn Property="@(u => u.CreatedAt)" Title="创建时间" Sortable="true" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="@(u => u.LastLoginAt)" Title="最后登录" Sortable="true" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="操作">
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))" Title="修改角色">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.PersonEdit())" />
+                </FluentButton>
+                @if (AuthStateService.CurrentUser?.Id != context.Id)
+                {
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteUser(context))" Title="删除用户">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                    </FluentButton>
+                }
+            </TemplateColumn>
+        </FluentDataGrid>
+    }
+</FluentStack>
+
+<FluentDialog @ref="dialog" @bind-Hidden="@isDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Person())" />
+            <FluentLabel Typo="Typography.PaneHeader">修改用户角色</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentLabel>用户: <b>@selectedUser?.Username</b></FluentLabel>
+
+            <FluentSelect TOption="string"
+                          Label="角色"
+                          @bind-Value="@newRole"
+                          Items="@roles" />
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveUserRole">
+            保存
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDialog">
+            取消
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    private List<UserDto> users = new();
+    private UserDto? selectedUser;
+    private string newRole = "User";
+    private List<string> roles = new() { "Admin", "User" };
+    private FluentDialog? dialog;
+    private bool isLoading = true;
+    private bool isAuthorized = false;
+    private bool isDialogHidden = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthStateService.IsAdmin)
+        {
+            isAuthorized = false;
+            Logger.LogWarning("Non-admin user {Username} attempted to access user management",
+                AuthStateService.CurrentUser?.Username);
+            return;
+        }
+
+        isAuthorized = true;
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+        try
+        {
+            users = await AuthService.GetAllUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading users");
+            ToastService.ShowError("加载用户失败");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenEditDialog(UserDto user)
+    {
+        selectedUser = user;
+        newRole = user.Role;
+        isDialogHidden = false;
+    }
+
+    private async Task SaveUserRole()
+    {
+        if (selectedUser == null) return;
+
+        try
+        {
+            var success = await AuthService.UpdateUserRoleAsync(selectedUser.Id, newRole);
+            if (success)
+            {
+                ToastService.ShowSuccess("用户角色更新成功");
+                await LoadUsers();
+                CloseDialog();
+            }
+            else
+            {
+                ToastService.ShowError("更新用户角色失败");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving user role");
+            ToastService.ShowError("更新用户角色时发生错误");
+        }
+    }
+
+    private async Task DeleteUser(UserDto user)
+    {
+        if (AuthStateService.CurrentUser?.Id == user.Id)
+        {
+            ToastService.ShowWarning("不能删除当前登录的用户");
+            return;
+        }
+
+        try
+        {
+            var success = await AuthService.DeleteUserAsync(user.Id);
+            if (success)
+            {
+                ToastService.ShowSuccess("用户删除成功");
+                await LoadUsers();
+            }
+            else
+            {
+                ToastService.ShowError("删除用户失败");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting user");
+            ToastService.ShowError("删除用户时发生错误");
+        }
+    }
+
+    private void CloseDialog()
+    {
+        isDialogHidden = true;
+    }
+}

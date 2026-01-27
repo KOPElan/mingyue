@@ -24,16 +24,51 @@
         <div class="home-header">
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
-                <div class="home-logo">
+                <div class="home-logo" @onclick="@(() => Navigation.NavigateTo("/"))" style="cursor: pointer;">
                     <FluentIcon Value="@(new Icons.Regular.Size24.GridDots())" Color="Color.Accent" />
                 </div>
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0" @onclick="@(() => Navigation.NavigateTo("/"))" style="cursor: pointer;">
                     <FluentLabel Typo="Typography.Body" Class="home-title-main">MingYue</FluentLabel>
                     <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
                 </FluentStack>
             
             <FluentSpacer></FluentSpacer>
-            
+
+                <!-- Management Menu -->
+                <FluentMenuButton Text="管理" Appearance="Appearance.Lightweight">
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/file-manager"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Slot="start" />
+                        文件管理
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/docker"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Box())" Slot="start" />
+                        Docker 管理
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/disk-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.HardDrive())" Slot="start" />
+                        磁盘管理
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/share-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Share())" Slot="start" />
+                        共享管理
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/app-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Apps())" Slot="start" />
+                        应用管理
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/dock-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Apps())" Slot="start" />
+                        Dock 管理
+                    </FluentMenuItem>
+                    @if (AuthStateService.IsAdmin)
+                    {
+                        <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/user-management"))">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.People())" Slot="start" />
+                            用户管理
+                        </FluentMenuItem>
+                    }
+                </FluentMenuButton>
+
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/scheduled-tasks"))" Title="计划任务">
                     <FluentIcon Value="@(new Icons.Regular.Size20.CalendarClock())"></FluentIcon>
                 </FluentButton>

@@ -1,11 +1,12 @@
 @page "/network"
 @using MingYue.Services
+@using ApexCharts
+@using FluentOrientation = Microsoft.FluentUI.AspNetCore.Components.Orientation
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject INetworkManagementService NetworkService
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 @inject AuthenticationStateService AuthStateService
-@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <PageTitle>网络管理 - MingYue</PageTitle>
@@ -23,9 +24,9 @@
 else
 {
     <div style="padding: 24px;">
-        <FluentStack Orientation="Orientation.Vertical" VerticalGap="24">
+        <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="24">
             <!-- Header -->
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
+            <FluentStack Orientation="FluentOrientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
                 <FluentLabel Typo="Typography.H3">网络管理</FluentLabel>
                 <FluentButton Appearance="Appearance.Accent" OnClick="RefreshData">
                     <FluentIcon Value="@(new Icons.Regular.Size20.ArrowClockwise())" Slot="start" />
@@ -43,31 +44,52 @@ else
                     <!-- Real-time Traffic Chart -->
                     <div style="margin: 16px 0;">
                         <FluentLabel Typo="Typography.Body" Style="margin-bottom: 8px; display: block;">实时流量趋势 (每5秒更新)</FluentLabel>
-                        <canvas id="networkTrafficChart" style="width: 100%; height: 300px; background-color: var(--neutral-layer-1);"></canvas>
+                        <ApexChart TItem="ChartDataPoint"
+                                   Title="网络流量监控"
+                                   @ref="chart"
+                                   Height="300"
+                                   Options="chartOptions">
+                            <ApexPointSeries TItem="ChartDataPoint"
+                                           Items="receivedDataPoints"
+                                           Name="接收速率"
+                                           SeriesType="SeriesType.Line"
+                                           XValue="@(e => e.X)"
+                                           YValue="@(e => e.Y)"
+                                           OrderByDescending="e => e.X"
+                                           Color="#0078d4" />
+                            <ApexPointSeries TItem="ChartDataPoint"
+                                           Items="sentDataPoints"
+                                           Name="发送速率"
+                                           SeriesType="SeriesType.Line"
+                                           XValue="@(e => e.X)"
+                                           YValue="@(e => e.Y)"
+                                           OrderByDescending="e => e.X"
+                                           Color="#00cc6a" />
+                        </ApexChart>
                     </div>
                     
                     <FluentDivider Style="margin: 16px 0;" />
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="4">
                             <FluentLabel Typo="Typography.Body">总接收流量</FluentLabel>
                             <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
                                 @FormatBytes(statistics.TotalBytesReceived)
                             </FluentLabel>
                         </FluentStack>
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="4">
                             <FluentLabel Typo="Typography.Body">总发送流量</FluentLabel>
                             <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
                                 @FormatBytes(statistics.TotalBytesSent)
                             </FluentLabel>
                         </FluentStack>
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="4">
                             <FluentLabel Typo="Typography.Body">总接收包数</FluentLabel>
                             <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
                                 @statistics.TotalPacketsReceived.ToString("N0")
                             </FluentLabel>
                         </FluentStack>
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                        <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="4">
                             <FluentLabel Typo="Typography.Body">总发送包数</FluentLabel>
                             <FluentLabel Typo="Typography.H6" Style="color: var(--accent-fill-rest);">
                                 @statistics.TotalPacketsSent.ToString("N0")
@@ -140,7 +162,7 @@ else
             <FluentCard>
                 <FluentLabel Typo="Typography.H5">连接测试</FluentLabel>
                 <FluentDivider />
-                <FluentStack Orientation="Orientation.Horizontal" VerticalGap="16" Style="margin-top: 16px;">
+                <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="16" Style="margin-top: 16px;">
                     <FluentTextField @bind-Value="testHost" Placeholder="输入主机地址或IP" Style="flex: 1;">
                         <FluentIcon Value="@(new Icons.Regular.Size20.Globe())" Slot="start" />
                     </FluentTextField>
@@ -175,34 +197,34 @@ else
                 <FluentLabel Typo="Typography.H5">@selectedInterface.Name - 详细信息</FluentLabel>
             </FluentDialogHeader>
             <FluentDialogBody>
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="12">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">名称:</FluentLabel>
                         <FluentLabel>@selectedInterface.Name</FluentLabel>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">描述:</FluentLabel>
                         <FluentLabel>@selectedInterface.Description</FluentLabel>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">类型:</FluentLabel>
                         <FluentLabel>@selectedInterface.Type</FluentLabel>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">状态:</FluentLabel>
                         <FluentBadge Appearance="@(selectedInterface.IsUp ? Appearance.Accent : Appearance.Neutral)">
                             @selectedInterface.Status
                         </FluentBadge>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">MAC地址:</FluentLabel>
                         <FluentLabel>@selectedInterface.MacAddress</FluentLabel>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">速度:</FluentLabel>
                         <FluentLabel>@FormatSpeed(selectedInterface.Speed)</FluentLabel>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                    <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="4">
                         <FluentLabel Style="font-weight: bold;">IP地址:</FluentLabel>
                         @foreach (var ip in selectedInterface.IpAddresses)
                         {
@@ -210,11 +232,11 @@ else
                         }
                     </FluentStack>
                     <FluentDivider />
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">接收流量:</FluentLabel>
                         <FluentLabel>@FormatBytes(selectedInterface.BytesReceived)</FluentLabel>
                     </FluentStack>
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalGap="8">
+                    <FluentStack Orientation="FluentOrientation.Horizontal" VerticalGap="8">
                         <FluentLabel Style="font-weight: bold; min-width: 120px;">发送流量:</FluentLabel>
                         <FluentLabel>@FormatBytes(selectedInterface.BytesSent)</FluentLabel>
                     </FluentStack>
@@ -242,18 +264,75 @@ else
     private MessageIntent connectivityResultType = MessageIntent.Info;
 
     // Chart data
+    private ApexChart<ChartDataPoint>? chart;
+    private ApexChartOptions<ChartDataPoint> chartOptions = new();
     private System.Timers.Timer? chartTimer;
-    private List<DateTime> chartTimes = new();
-    private List<double> chartBytesReceived = new();
-    private List<double> chartBytesSent = new();
+    private List<ChartDataPoint> receivedDataPoints = new();
+    private List<ChartDataPoint> sentDataPoints = new();
     private long lastBytesReceived = 0;
     private long lastBytesSent = 0;
     private const int MaxDataPoints = 60; // Keep 5 minutes of data (60 points * 5 seconds)
 
+    // Chart data model
+    public class ChartDataPoint
+    {
+        public object X { get; set; } = DateTime.Now;
+        public decimal Y { get; set; }
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        InitializeChartOptions();
         await LoadData();
         StartChartTimer();
+    }
+
+    private void InitializeChartOptions()
+    {
+        chartOptions = new ApexChartOptions<ChartDataPoint>
+        {
+            Chart = new Chart
+            {
+                Toolbar = new Toolbar { Show = false },
+                Animations = new Animations { Enabled = true, Easing = Easing.Linear, Speed = 500 }
+            },
+            Xaxis = new XAxis
+            {
+                Type = XAxisType.Datetime,
+                Labels = new XAxisLabels
+                {
+                    Format = "HH:mm:ss",
+                    DatetimeUTC = false
+                }
+            },
+            Yaxis = new List<YAxis>
+            {
+                new YAxis
+                {
+                    Labels = new YAxisLabels
+                    {
+                        Formatter = "function(value) { if (value < 1024) return value.toFixed(0) + ' B/s'; if (value < 1048576) return (value / 1024).toFixed(1) + ' KB/s'; if (value < 1073741824) return (value / 1048576).toFixed(1) + ' MB/s'; return (value / 1073741824).toFixed(1) + ' GB/s'; }"
+                    },
+                    Title = new AxisTitle { Text = "流量速率" }
+                }
+            },
+            Stroke = new Stroke { Curve = Curve.Smooth, Width = 2 },
+            Fill = new Fill
+            {
+                Type = new List<FillType> { FillType.Gradient },
+                Gradient = new FillGradient
+                {
+                    ShadeIntensity = 1,
+                    OpacityFrom = 0.4,
+                    OpacityTo = 0.1
+                }
+            },
+            Tooltip = new Tooltip
+            {
+                X = new TooltipX { Format = "HH:mm:ss" }
+            },
+            Legend = new Legend { Position = LegendPosition.Top }
+        };
     }
 
     private void StartChartTimer()
@@ -287,59 +366,33 @@ else
             lastBytesReceived = newStats.TotalBytesReceived;
             lastBytesSent = newStats.TotalBytesSent;
             
-            // Add new data point
-            chartTimes.Add(DateTime.Now);
-            chartBytesReceived.Add(receivedRate);
-            chartBytesSent.Add(sentRate);
+            // Add new data points
+            var currentTime = DateTime.Now;
+            receivedDataPoints.Add(new ChartDataPoint { X = currentTime, Y = (decimal)receivedRate });
+            sentDataPoints.Add(new ChartDataPoint { X = currentTime, Y = (decimal)sentRate });
             
             // Keep only last MaxDataPoints
-            if (chartTimes.Count > MaxDataPoints)
+            if (receivedDataPoints.Count > MaxDataPoints)
             {
-                chartTimes.RemoveAt(0);
-                chartBytesReceived.RemoveAt(0);
-                chartBytesSent.RemoveAt(0);
+                receivedDataPoints.RemoveAt(0);
+                sentDataPoints.RemoveAt(0);
             }
             
             // Update statistics
             statistics = newStats;
             
-            await InvokeAsync(StateHasChanged);
-            await UpdateChart();
+            await InvokeAsync(async () =>
+            {
+                StateHasChanged();
+                if (chart != null)
+                {
+                    await chart.UpdateSeriesAsync(true);
+                }
+            });
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error updating chart data: {ex.Message}");
-        }
-    }
-
-    private async Task UpdateChart()
-    {
-        try
-        {
-            var labels = chartTimes.Select(t => t.ToString("HH:mm:ss")).ToArray();
-            var received = chartBytesReceived.ToArray();
-            var sent = chartBytesSent.ToArray();
-            
-            await JSRuntime.InvokeVoidAsync("updateNetworkChart", labels, received, sent);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error updating chart: {ex.Message}");
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("initNetworkChart");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error initializing chart: {ex.Message}");
-            }
         }
     }
 

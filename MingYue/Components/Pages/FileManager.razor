@@ -432,7 +432,7 @@
 </FluentDialog>
 
 <!-- File Preview Dialog -->
-<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 80vw; min-height: 80vh;">
+<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="--dialog-width: 80vw;min-width: 80vw; min-height: 80vh;">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@GetPreviewIcon()" />

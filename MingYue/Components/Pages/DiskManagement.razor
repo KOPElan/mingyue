@@ -815,20 +815,7 @@
             }
             else
             {
-                // Log error details for debugging
-                if (!string.IsNullOrEmpty(result.ErrorDetails))
-                {
-                    Logger.LogError("Network disk mount/unmount failed. Message: {Message}, ErrorDetails: {ErrorDetails}", 
-                        result.Message, result.ErrorDetails);
-                }
-                
-                // Show error message with details if available
-                var errorMessage = result.Message;
-                if (!string.IsNullOrEmpty(result.ErrorDetails))
-                {
-                    errorMessage += $": {result.ErrorDetails}";
-                }
-                ToastService.ShowError(errorMessage);
+                HandleDiskOperationResult(result, "Network disk toggle operation");
             }
         }
         catch (Exception ex)
@@ -958,20 +945,7 @@
             }
             else
             {
-                // Log error details for debugging
-                if (!string.IsNullOrEmpty(result.ErrorDetails))
-                {
-                    Logger.LogError("Network disk mount failed. Message: {Message}, ErrorDetails: {ErrorDetails}", 
-                        result.Message, result.ErrorDetails);
-                }
-                
-                // Show error message with details if available
-                var errorMessage = result.Message;
-                if (!string.IsNullOrEmpty(result.ErrorDetails))
-                {
-                    errorMessage += $": {result.ErrorDetails}";
-                }
-                ToastService.ShowError(errorMessage);
+                HandleDiskOperationResult(result, "Network disk mount");
             }
         }
         catch (Exception ex)
@@ -1101,6 +1075,30 @@
     {
         isPowerDialogHidden = true;
         selectedDisk = null;
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Handle disk operation result, logging errors and displaying appropriate toast messages
+    /// </summary>
+    private void HandleDiskOperationResult(DiskOperationResult result, string operationName)
+    {
+        if (!string.IsNullOrEmpty(result.ErrorDetails))
+        {
+            Logger.LogError("{OperationName} failed. Message: {Message}, ErrorDetails: {ErrorDetails}", 
+                operationName, result.Message, result.ErrorDetails);
+        }
+        
+        // Show error message with details if available
+        var errorMessage = result.Message;
+        if (!string.IsNullOrEmpty(result.ErrorDetails))
+        {
+            errorMessage += $": {result.ErrorDetails}";
+        }
+        ToastService.ShowError(errorMessage);
     }
 
     #endregion

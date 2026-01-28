@@ -79,9 +79,9 @@ If you prefer to build from source:
      -o ./publish/linux-x64
    ```
 
-3. **Copy installation script**
+3. **Copy installation scripts**
    ```bash
-   cp install.sh ./publish/linux-x64/
+   cp install.sh uninstall.sh ./publish/linux-x64/
    cd ./publish/linux-x64/
    ```
 
@@ -131,6 +131,7 @@ sudo journalctl -u mingyue -f
 
 - **Installation**: `/opt/mingyue`
 - **Data**: `/var/lib/mingyue` (database, uploaded files, etc.)
+  - The SQLite database is configured to be stored at `/var/lib/mingyue/mingyue.db`
 - **Logs**: `/var/log/mingyue`
 
 ### Configuration

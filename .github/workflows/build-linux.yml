@@ -50,9 +50,11 @@ jobs:
         
     - name: Create release package
       run: |
-        cd publish/linux-x64
-        tar -czf ../mingyue-linux-x64-${{ inputs.version }}.tar.gz *
-        cd ../..
+        mkdir -p publish/mingyue-linux-x64-${{ inputs.version }}
+        cp -r publish/linux-x64/* publish/mingyue-linux-x64-${{ inputs.version }}/
+        cd publish
+        tar -czf mingyue-linux-x64-${{ inputs.version }}.tar.gz mingyue-linux-x64-${{ inputs.version }}
+        cd ..
         
     - name: Upload artifact
       uses: actions/upload-artifact@v4

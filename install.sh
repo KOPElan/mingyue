@@ -56,6 +56,9 @@ detect_distro() {
         DISTRO="unknown"
     fi
     
+    # Normalize DISTRO to lowercase for case-insensitive matching
+    DISTRO=$(echo "$DISTRO" | tr '[:upper:]' '[:lower:]')
+    
     print_info "Detected distribution: $DISTRO $DISTRO_VERSION"
 }
 
@@ -69,6 +72,7 @@ install_dependencies() {
             apt-get install -y \
                 util-linux \
                 hdparm \
+                smartmontools \
                 cifs-utils \
                 nfs-common \
                 samba \
@@ -88,6 +92,7 @@ install_dependencies() {
             $PKG_MGR install -y \
                 util-linux \
                 hdparm \
+                smartmontools \
                 cifs-utils \
                 nfs-utils \
                 samba \
@@ -97,11 +102,12 @@ install_dependencies() {
             ;;
             
         *)
-            print_warn "Unsupported distribution: $DISTRO"
+            print_error "Unsupported distribution: $DISTRO"
             print_warn "Please install dependencies manually:"
-            print_warn "- util-linux, hdparm"
+            print_warn "- util-linux, hdparm, smartmontools"
             print_warn "- cifs-utils, nfs-common/nfs-utils"
             print_warn "- samba, nfs-kernel-server/nfs-utils"
+            return 1
             ;;
     esac
     
@@ -126,9 +132,6 @@ create_user() {
         useradd --system --no-create-home --shell /bin/false --gid $APP_GROUP $APP_USER
         print_info "User $APP_USER created"
     fi
-    
-    # Add user to necessary groups for disk management
-    usermod -aG disk $APP_USER || true
 }
 
 # Create directories
@@ -182,14 +185,17 @@ install_app() {
 
 # Configure sudoers for required commands
 configure_sudoers() {
-    print_info "Configuring sudoers for $APP_USER..."
+    print_warn "Configuring sudoers for $APP_USER..."
+    print_warn "This grants significant elevated privileges. Review carefully!"
     
     SUDOERS_FILE="/etc/sudoers.d/mingyue"
+    SUDOERS_TEMP="/tmp/mingyue.sudoers.$$"
     
-    cat > "$SUDOERS_FILE" <<EOF
+    cat > "$SUDOERS_TEMP" <<EOF
 # MingYue service commands
 # WARNING: These permissions grant significant system access
 # Review and restrict based on your security requirements
+# Consider using wrapper scripts with input validation instead of direct sudo access
 $APP_USER ALL=(ALL) NOPASSWD: /bin/mount
 $APP_USER ALL=(ALL) NOPASSWD: /bin/umount
 $APP_USER ALL=(ALL) NOPASSWD: /usr/bin/hdparm
@@ -204,10 +210,21 @@ $APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs
 $APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs -ra
 EOF
     
-    chmod 440 "$SUDOERS_FILE"
+    # Validate sudoers syntax before installing
+    if visudo -c -f "$SUDOERS_TEMP" &>/dev/null; then
+        mv "$SUDOERS_TEMP" "$SUDOERS_FILE"
+        chmod 440 "$SUDOERS_FILE"
+        chown root:root "$SUDOERS_FILE"
+        print_info "Sudoers file validated and installed"
+    else
+        print_error "Sudoers validation failed! File not installed."
+        rm -f "$SUDOERS_TEMP"
+        return 1
+    fi
     
-    print_warn "Sudoers configured with elevated privileges"
+    print_warn "SECURITY WARNING: Sudoers grants broad root privileges to $APP_USER"
     print_warn "Review /etc/sudoers.d/mingyue and restrict as needed for your environment"
+    print_warn "Consider using wrapper scripts with input validation for production use"
 }
 
 # Create systemd service
@@ -238,6 +255,7 @@ SyslogIdentifier=mingyue
 Environment=DOTNET_ENVIRONMENT=Production
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=MINGYUE_DATA_DIR=$DATA_DIR
+Environment="ConnectionStrings__DefaultConnection=Data Source=$DATA_DIR/mingyue.db"
 
 # Security settings
 # Note: Some restrictions are relaxed due to application requirements

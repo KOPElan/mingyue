@@ -123,17 +123,25 @@ install_dependencies() {
 create_user() {
     print_info "Creating application user: $APP_USER"
     
+    # Create group first
+    if getent group "$APP_GROUP" &>/dev/null; then
+        print_warn "Group $APP_GROUP already exists, skipping..."
+    else
+        groupadd --system $APP_GROUP
+        print_info "Group $APP_GROUP created"
+    fi
+    
     if id "$APP_USER" &>/dev/null; then
         print_warn "User $APP_USER already exists, skipping..."
     else
-        useradd --system --no-create-home --shell /bin/false $APP_USER
+        useradd --system --no-create-home --shell /bin/false --gid $APP_GROUP $APP_USER
         print_info "User $APP_USER created"
     fi
     
     # Add user to docker group if docker is installed
     if command -v docker &> /dev/null; then
         usermod -aG docker $APP_USER || true
-        print_info "Added $APP_USER to docker group"
+        print_warn "Added $APP_USER to docker group (grants root-level privileges)"
     fi
     
     # Add user to necessary groups for disk management
@@ -168,8 +176,13 @@ install_app() {
     # Get the directory where the script is located
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     
-    # Copy all files from current directory to install directory
-    cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/" || cp -r ./* "$INSTALL_DIR/"
+    # Copy all files from script directory to install directory
+    if [ -d "$SCRIPT_DIR" ] && [ "$(ls -A "$SCRIPT_DIR")" ]; then
+        cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
+    else
+        print_error "Failed to locate source files"
+        exit 1
+    fi
     
     # Ensure the main executable is executable
     if [ -f "$INSTALL_DIR/MingYue" ]; then
@@ -192,6 +205,8 @@ configure_sudoers() {
     
     cat > "$SUDOERS_FILE" <<EOF
 # MingYue service commands
+# WARNING: These permissions grant significant system access
+# Review and restrict based on your security requirements
 $APP_USER ALL=(ALL) NOPASSWD: /bin/mount
 $APP_USER ALL=(ALL) NOPASSWD: /bin/umount
 $APP_USER ALL=(ALL) NOPASSWD: /usr/bin/hdparm
@@ -203,11 +218,13 @@ $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-server
 $APP_USER ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/samba/smb.conf
 $APP_USER ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/exports
 $APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs
+$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs -ra
 EOF
     
     chmod 440 "$SUDOERS_FILE"
     
-    print_info "Sudoers configured"
+    print_warn "Sudoers configured with elevated privileges"
+    print_warn "Review /etc/sudoers.d/mingyue and restrict as needed for your environment"
 }
 
 # Create systemd service
@@ -226,7 +243,7 @@ Description=MingYue Home Server Portal
 After=network.target docker.service
 
 [Service]
-Type=notify
+Type=simple
 User=$APP_USER
 Group=$APP_GROUP
 WorkingDirectory=$INSTALL_DIR
@@ -240,15 +257,16 @@ Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=MINGYUE_DATA_DIR=$DATA_DIR
 
 # Security settings
-NoNewPrivileges=false
+# Note: Some restrictions are relaxed due to application requirements
+# Review and tighten based on your security needs
+NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
+ProtectSystem=full
 ProtectHome=true
 ReadWritePaths=$DATA_DIR $LOG_DIR
 ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictRealtime=true
-RestrictNamespaces=false
 
 # Logging
 StandardOutput=journal
@@ -301,6 +319,11 @@ display_info() {
     echo ""
     echo "Access the application at: http://$(hostname -I | awk '{print $1}'):$DEFAULT_PORT"
     echo "or: http://localhost:$DEFAULT_PORT"
+    echo ""
+    echo "Note: You may need to open port $DEFAULT_PORT in your firewall:"
+    echo "  Ubuntu/Debian: sudo ufw allow $DEFAULT_PORT/tcp"
+    echo "  CentOS/RHEL:   sudo firewall-cmd --permanent --add-port=$DEFAULT_PORT/tcp"
+    echo "                 sudo firewall-cmd --reload"
     echo ""
     echo "Useful commands:"
     echo "  Start:   sudo systemctl start $SERVICE_NAME"

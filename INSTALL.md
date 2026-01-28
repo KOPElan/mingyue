@@ -92,6 +92,22 @@ If you prefer to build from source:
 
 ## Post-Installation
 
+### Firewall Configuration
+
+If you have a firewall enabled, you'll need to allow traffic on port 5000:
+
+**Ubuntu/Debian (ufw):**
+```bash
+sudo ufw allow 5000/tcp
+sudo ufw reload
+```
+
+**CentOS/RHEL/Fedora (firewalld):**
+```bash
+sudo firewall-cmd --permanent --add-port=5000/tcp
+sudo firewall-cmd --reload
+```
+
 ### Service Management
 
 ```bash
@@ -204,8 +220,12 @@ sudo systemctl restart mingyue
 - MingYue is designed for internal network use
 - For internet access, use a reverse proxy (Nginx/Apache) with HTTPS
 - Regularly update dependencies for security patches
-- Review and adjust sudoers permissions as needed
-- Configure firewall rules appropriately
+- **IMPORTANT**: The installation grants the `mingyue` user significant system privileges:
+  - Docker group membership (equivalent to root access)
+  - Sudo permissions for system commands (mount, systemctl, etc.)
+- Review and restrict `/etc/sudoers.d/mingyue` based on your security requirements
+- Configure firewall rules appropriately to limit access
+- Consider using SELinux or AppArmor for additional security layers
 
 ## Support
 

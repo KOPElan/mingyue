@@ -37,6 +37,23 @@ namespace MingYue.Services
 
         private static readonly Regex HdparmSettingRegex = new(@"^\s*([a-z_-]+)\s*=\s*(.+)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        /// <summary>
+        /// Check if an error indicates sudo permission issues and return appropriate error result
+        /// </summary>
+        private DiskOperationResult CheckSudoPermissionError(string error, string operation)
+        {
+            // Check for specific sudo permission errors
+            if (error.Contains("sudo: a password is required") || 
+                error.Contains("sudo: password is required") ||
+                (error.Contains("sudo") && error.Contains("not allowed to execute")))
+            {
+                _logger.LogError("{Operation} failed due to sudo permission issue. Error: {Error}", operation, error);
+                return DiskOperationResult.Failed($"{operation}失败：需要配置 sudo 权限", 
+                    "请配置 sudoers 文件允许无密码执行 mount/umount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
+            }
+            return null!; // Return null to indicate no sudo permission error detected
+        }
+
         public async Task<List<DiskInfo>> GetAllDisksAsync()
         {
             // On Linux, use GetAllBlockDevicesAsync for better device information and filtering
@@ -348,25 +365,32 @@ namespace MingYue.Services
                     Directory.CreateDirectory(mountPoint);
                 }
 
-                var arguments = devicePath + " " + mountPoint;
-                if (!string.IsNullOrEmpty(fileSystem))
-                {
-                    arguments = $"-t {fileSystem} {arguments}";
-                }
-                if (!string.IsNullOrEmpty(options))
-                {
-                    arguments = $"-o {options} {arguments}";
-                }
-
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "mount",
-                    Arguments = arguments,
+                    FileName = "sudo",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Build mount command arguments using ArgumentList for proper escaping
+                processInfo.ArgumentList.Add("mount");
+                
+                if (!string.IsNullOrEmpty(fileSystem))
+                {
+                    processInfo.ArgumentList.Add("-t");
+                    processInfo.ArgumentList.Add(fileSystem);
+                }
+                
+                if (!string.IsNullOrEmpty(options))
+                {
+                    processInfo.ArgumentList.Add("-o");
+                    processInfo.ArgumentList.Add(options);
+                }
+                
+                processInfo.ArgumentList.Add(devicePath);
+                processInfo.ArgumentList.Add(mountPoint);
 
                 using var process = Process.Start(processInfo);
                 if (process != null)
@@ -381,6 +405,12 @@ namespace MingYue.Services
                     }
                     else
                     {
+                        // Check if the error is due to sudo requiring a password
+                        var sudoError = CheckSudoPermissionError(error, "挂载");
+                        if (sudoError != null)
+                        {
+                            return sudoError;
+                        }
                         return DiskOperationResult.Failed($"挂载失败", error);
                     }
                 }
@@ -484,13 +514,16 @@ namespace MingYue.Services
             {
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "umount",
-                    Arguments = mountPoint,
+                    FileName = "sudo",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Build umount command arguments using ArgumentList for proper escaping
+                processInfo.ArgumentList.Add("umount");
+                processInfo.ArgumentList.Add(mountPoint);
 
                 using var process = Process.Start(processInfo);
                 if (process != null)
@@ -505,6 +538,12 @@ namespace MingYue.Services
                     }
                     else
                     {
+                        // Check if the error is due to sudo requiring a password
+                        var sudoError = CheckSudoPermissionError(error, "卸载");
+                        if (sudoError != null)
+                        {
+                            return sudoError;
+                        }
                         return DiskOperationResult.Failed($"卸载失败", error);
                     }
                 }
@@ -1386,12 +1425,15 @@ namespace MingYue.Services
 
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "mount",
+                    FileName = "sudo",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Add mount command as first argument to sudo
+                processInfo.ArgumentList.Add("mount");
 
                 if (diskType == NetworkDiskType.CIFS)
                 {
@@ -1485,6 +1527,20 @@ namespace MingYue.Services
                     processInfo.ArgumentList.Add(mountPoint);
                 }
 
+                // Log the mount command for debugging
+                var commandArgs = string.Join(" ", processInfo.ArgumentList.Select(arg =>
+                {
+                    // Mask credential file path but preserve other options
+                    if (arg.StartsWith("credentials="))
+                    {
+                        var parts = arg.Split(',');
+                        parts[0] = "credentials=***";
+                        return string.Join(",", parts);
+                    }
+                    return arg;
+                }));
+                _logger.LogInformation("Executing mount command: {FileName} {Arguments}", processInfo.FileName, commandArgs);
+
                 try
                 {
                     using var process = Process.Start(processInfo);
@@ -1493,11 +1549,27 @@ namespace MingYue.Services
                         await process.WaitForExitAsync();
                         var error = await process.StandardError.ReadToEndAsync();
 
-                        return process.ExitCode == 0
-                            ? DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint}")
-                            : DiskOperationResult.Failed("挂载失败", error);
+                        if (process.ExitCode == 0)
+                        {
+                            return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint}");
+                        }
+                        else
+                        {
+                            // Check if the error is due to sudo requiring a password
+                            var sudoError = CheckSudoPermissionError(error, "挂载");
+                            if (sudoError != null)
+                            {
+                                return sudoError;
+                            }
+                            
+                            // Log the error details to help with debugging
+                            _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}", 
+                                device, mountPoint, diskType, process.ExitCode, error);
+                            return DiskOperationResult.Failed("挂载失败", error);
+                        }
                     }
 
+                    _logger.LogError("Failed to start mount process for device: {Device}, MountPoint: {MountPoint}", device, mountPoint);
                     return DiskOperationResult.Failed("无法启动挂载进程");
                 }
                 finally
@@ -1518,6 +1590,8 @@ namespace MingYue.Services
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error mounting network disk. Server: {Server}, SharePath: {SharePath}, MountPoint: {MountPoint}, DiskType: {DiskType}", 
+                    server, sharePath, mountPoint, diskType);
                 return DiskOperationResult.Failed("挂载网络磁盘时出错", ex.Message);
             }
         }

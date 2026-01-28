@@ -205,6 +205,11 @@
             {
                 <div class="file-list-container">
                     <div class="file-list-header">
+                        <div class="file-list-checkbox-header">
+                            <FluentCheckbox @bind-Value="@isAllSelected"
+                                            @bind-Value:after="@OnSelectAllChanged"
+                                            Title="Select all" />
+                        </div>
                         <div>Name</div>
                         <div>Size</div>
                         <div>Modified</div>
@@ -212,16 +217,23 @@
                     </div>
                     @foreach (var item in DisplayedFiles)
                     {
-                        <div class="file-list-row">
-                            <div class="file-list-name">
+                        var isSelected = selectedItems.Contains(item);
+                        <div class="file-list-row @(isSelected ? "selected" : "")"
+                             @onclick="@((e) => OnListRowClick(item, e))">
+                            <div class="file-list-checkbox">
+                                <FluentCheckbox Value="@isSelected"
+                                                ValueChanged="@((bool value) => OnListItemCheckChanged(item, value))"
+                                                @onclick:stopPropagation="true" />
+                            </div>
+                            <div class="file-list-name" @ondblclick="@(() => OnItemClick(item))">
                                 <img src="@GetFileIcon(item)" alt="@item.Name" class="file-type-icon-small" />
-                                <span class="file-list-name-text" @onclick="@(() => OnItemClick(item))">
+                                <span class="file-list-name-text">
                                     @item.Name
                                 </span>
                             </div>
                             <div>@item.SizeDisplay</div>
                             <div>@item.LastModified.ToString("yyyy-MM-dd HH:mm")</div>
-                            <div class="file-list-actions">
+                            <div class="file-list-actions" @onclick:stopPropagation="true">
                                 @if (!item.IsDirectory)
                                 {
                                     <FluentButton Appearance="Appearance.Lightweight"
@@ -838,6 +850,79 @@
             selectedItems.Clear();
             selectedItems.Add(item);
         }
+    }
+
+    private void OnListRowClick(FileItemInfo item, Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        // Similar to OnCardClick but for list view
+        if (e.CtrlKey || e.MetaKey)
+        {
+            if (selectedItems.Contains(item))
+            {
+                selectedItems.Remove(item);
+            }
+            else
+            {
+                selectedItems.Add(item);
+            }
+        }
+        else if (e.ShiftKey && selectedItems.Any())
+        {
+            var lastSelected = selectedItems.Last();
+            var startIndex = DisplayedFiles.IndexOf(lastSelected);
+            var endIndex = DisplayedFiles.IndexOf(item);
+
+            if (startIndex >= 0 && endIndex >= 0)
+            {
+                var start = Math.Min(startIndex, endIndex);
+                var end = Math.Max(startIndex, endIndex);
+
+                for (int i = start; i <= end; i++)
+                {
+                    selectedItems.Add(DisplayedFiles[i]);
+                }
+            }
+        }
+        else
+        {
+            selectedItems.Clear();
+            selectedItems.Add(item);
+        }
+    }
+
+    private void OnListItemCheckChanged(FileItemInfo item, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedItems.Add(item);
+        }
+        else
+        {
+            selectedItems.Remove(item);
+        }
+        UpdateSelectAllState();
+    }
+
+    private bool isAllSelected = false;
+
+    private void OnSelectAllChanged()
+    {
+        if (isAllSelected)
+        {
+            foreach (var item in DisplayedFiles)
+            {
+                selectedItems.Add(item);
+            }
+        }
+        else
+        {
+            selectedItems.Clear();
+        }
+    }
+
+    private void UpdateSelectAllState()
+    {
+        isAllSelected = DisplayedFiles.Any() && DisplayedFiles.All(f => selectedItems.Contains(f));
     }
 
     private async Task LoadThumbnails()

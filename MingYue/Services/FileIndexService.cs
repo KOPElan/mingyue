@@ -418,6 +418,150 @@ namespace MingYue.Services
             _logger.LogInformation("ClearIndexAsync not applicable for file-based indexing");
             await Task.CompletedTask;
         }
+
+        /// <summary>
+        /// Advanced search that recursively searches files and directories from a starting directory
+        /// This bypasses the index and searches the actual file system for real-time results
+        /// </summary>
+        public async Task<List<FileIndex>> AdvancedSearchAsync(string startDirectory, string searchPattern, bool includeSubdirectories = true, bool includeDirectories = true)
+        {
+            return await Task.Run(() =>
+            {
+                var results = new List<FileIndex>();
+                
+                try
+                {
+                    if (!Directory.Exists(startDirectory))
+                    {
+                        _logger.LogWarning("Start directory not found for advanced search: {StartDirectory}", startDirectory);
+                        return results;
+                    }
+
+                    // Normalize the start directory path
+                    var normalizedStart = Path.GetFullPath(startDirectory);
+                    
+                    // Search recursively
+                    SearchFileSystemRecursive(normalizedStart, searchPattern, results, includeSubdirectories, includeDirectories, 0, 10);
+                    
+                    _logger.LogInformation("Advanced search completed: {Count} results for pattern '{Pattern}' in {Directory}", 
+                        results.Count, searchPattern, startDirectory);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during advanced search in {StartDirectory} with pattern {SearchPattern}", 
+                        startDirectory, searchPattern);
+                }
+                
+                return results.Take(MaxSearchResults).ToList();
+            });
+        }
+
+        /// <summary>
+        /// Recursively searches the file system for files and directories matching the pattern
+        /// </summary>
+        private void SearchFileSystemRecursive(string directory, string searchPattern, List<FileIndex> results, 
+            bool includeSubdirectories, bool includeDirectories, int currentDepth, int maxDepth)
+        {
+            if (currentDepth >= maxDepth || results.Count >= MaxSearchResults)
+            {
+                return;
+            }
+
+            try
+            {
+                var dirInfo = new DirectoryInfo(directory);
+                
+                // Create regex pattern from search pattern
+                var regex = CreateSearchRegex(searchPattern);
+                
+                // Search files in current directory
+                foreach (var file in dirInfo.EnumerateFiles())
+                {
+                    if (results.Count >= MaxSearchResults)
+                        break;
+                        
+                    if (regex.IsMatch(file.Name))
+                    {
+                        results.Add(new FileIndex
+                        {
+                            FilePath = file.FullName,
+                            FileName = file.Name,
+                            FileSize = file.Length,
+                            ModifiedAt = file.LastWriteTimeUtc,
+                            FileType = file.Extension,
+                            IndexedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                
+                // Search directories if requested
+                if (includeDirectories)
+                {
+                    foreach (var subdir in dirInfo.EnumerateDirectories())
+                    {
+                        if (results.Count >= MaxSearchResults)
+                            break;
+                            
+                        if (regex.IsMatch(subdir.Name))
+                        {
+                            results.Add(new FileIndex
+                            {
+                                FilePath = subdir.FullName,
+                                FileName = subdir.Name,
+                                FileSize = 0, // Directories don't have a size
+                                ModifiedAt = subdir.LastWriteTimeUtc,
+                                FileType = "directory",
+                                IndexedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+                }
+                
+                // Recurse into subdirectories if requested
+                if (includeSubdirectories)
+                {
+                    foreach (var subdir in dirInfo.EnumerateDirectories())
+                    {
+                        if (results.Count >= MaxSearchResults)
+                            break;
+                            
+                        SearchFileSystemRecursive(subdir.FullName, searchPattern, results, 
+                            includeSubdirectories, includeDirectories, currentDepth + 1, maxDepth);
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Skip directories we don't have permission to access
+                _logger.LogDebug("Access denied to directory: {Directory}", directory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error searching directory: {Directory}", directory);
+            }
+        }
+
+        /// <summary>
+        /// Creates a regex from a search pattern with wildcard support
+        /// </summary>
+        private System.Text.RegularExpressions.Regex CreateSearchRegex(string searchPattern)
+        {
+            if (string.IsNullOrWhiteSpace(searchPattern) || searchPattern == "*")
+            {
+                // Match everything
+                return new System.Text.RegularExpressions.Regex(".*", 
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            }
+            
+            // Escape special regex characters except * and ?
+            var escapedPattern = System.Text.RegularExpressions.Regex.Escape(searchPattern);
+            var pattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
+            
+            return new System.Text.RegularExpressions.Regex(
+                $"^{pattern}$", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                System.TimeSpan.FromSeconds(1));
+        }
     }
 
     /// <summary>

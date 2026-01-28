@@ -3,6 +3,8 @@
 @using MingYue.Models
 @using MingYue.Services
 @using MingYue.Utilities
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using Microsoft.AspNetCore.Components.Forms
 @inject IFileManagementService FileService
 @inject IFileUploadService UploadService
@@ -12,6 +14,7 @@
 @inject IToastService ToastService
 @inject ILogger<FileManager> Logger
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResources> Localizer
 
 <PageTitle>File Manager - MingYue</PageTitle>
 
@@ -19,9 +22,8 @@
     <!-- Left Sidebar -->
     <div class="file-manager-sidebar">
         <!-- Create Button -->
-        <FluentMenuButton class="sidebar-create-button" Text="Create"
-                          Appearance="Appearance.Accent"
-                          Style="width: 100%;">
+        <FluentMenuButton class="sidebar-create-button full-width" Text="Create"
+                          Appearance="Appearance.Accent">
             <FluentMenuItem OnClick="@OpenCreateFolderDialog">
                 <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.FolderAdd())" Slot="start" />
                 New Folder
@@ -56,9 +58,9 @@
                     var isActiveDisk = IsPathOnDisk(currentPath, drive.Path);
                     <div class="sidebar-nav-item @(isActiveDisk ? "active" : "")" @onclick="@(() => NavigateToPath(drive.Path))">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.HardDrive())" />
-                        <div style="flex: 1;">
+                        <div class="sidebar-nav-item-content">
                             <div>@drive.Name</div>
-                            <div style="font-size: 11px; color: var(--neutral-foreground-hint, #707070);">
+                            <div class="sidebar-nav-item-subtext">
                                 @drive.UsedSizeDisplay / @drive.TotalSizeDisplay
                             </div>
                         </div>
@@ -93,7 +95,7 @@
                 <FluentSearch @bind-Value="@searchQuery"
                               @bind-Value:after="@OnSearchChanged"
                               Placeholder="Search files..."
-                              Style="width: 400px;"
+                              Class="header-search"
                               Immediate="false"
                               ImmediateDelay="500" />
 
@@ -224,10 +226,10 @@
                                                   Title="Download">
                                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" />
                                     </FluentButton>
-                                    @if (IsImageFile(item))
+                                    @if (IsPreviewableFile(item))
                                     {
                                         <FluentButton Appearance="Appearance.Lightweight"
-                                                      OnClick="@(() => PreviewImage(item))"
+                                                      OnClick="@(() => PreviewFile(item))"
                                                       Title="Preview">
                                             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Eye())" />
                                         </FluentButton>
@@ -305,7 +307,7 @@
         <FluentTextField @bind-Value="newFolderName"
                          Label="Folder Name"
                          Required="true"
-                         Style="width: 100%;"
+                         Class="full-width"
                          @onkeydown="@(async (e) => { if (e.Key == "Enter") await CreateFolder(); })" />
     </FluentDialogBody>
     <FluentDialogFooter>
@@ -327,13 +329,13 @@
             <!-- Dropzone Area -->
             <div id="dropzone-upload" class="dropzone-container">
                 <div class="dz-message" data-dz-message>
-                    <div style="padding: 40px 20px;">
+                    <div class="dz-message-container">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.CloudArrowUp())"
-                                    Style="font-size: 48px; color: var(--accent-fill-rest); margin-bottom: 16px;" />
-                        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+                                    Class="dz-message-icon" />
+                        <div class="dz-message-title">
                             Drag files here or click to browse
                         </div>
-                        <div style="font-size: 13px; color: var(--neutral-foreground-hint);">
+                        <div class="dz-message-description">
                             Support for chunked upload of large files (up to 10GB)
                         </div>
                     </div>
@@ -344,15 +346,15 @@
             @if (uploadingFiles.Any())
             {
                 <div class="upload-progress-container">
-                    <FluentLabel Typo="Typography.Body" Style="font-weight: 600; margin-bottom: 8px;">
+                    <FluentLabel Typo="Typography.Body" Class="upload-progress-title">
                         Uploading @uploadingFiles.Count file(s)...
                     </FluentLabel>
                     @foreach (var file in uploadingFiles.Take(5))
                     {
                         <div class="upload-file-progress">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                <span style="font-size: 13px;">@file.Key</span>
-                                <span style="font-size: 13px; color: var(--accent-fill-rest);">@file.Value%</span>
+                            <div class="upload-file-info">
+                                <span class="upload-file-name">@file.Key</span>
+                                <span class="upload-file-percentage">@file.Value%</span>
                             </div>
                             <FluentProgress Min="0" Max="100" Value="@file.Value" />
                         </div>
@@ -398,7 +400,7 @@
         <FluentTextField @bind-Value="newItemName"
                          Label="New Name"
                          Required="true"
-                         Style="width: 100%;"
+                         Class="full-width"
                          @onkeydown="@(async (e) => { if (e.Key == "Enter") await RenameItem(); })" />
     </FluentDialogBody>
     <FluentDialogFooter>
@@ -420,7 +422,7 @@
                          Label="Destination Path"
                          Required="true"
                          Placeholder="@currentPath"
-                         Style="width: 100%;" />
+                         Class="full-width" />
         <FluentLabel Typo="Typography.Body">Current: @currentPath</FluentLabel>
     </FluentDialogBody>
     <FluentDialogFooter>
@@ -431,26 +433,55 @@
     </FluentDialogFooter>
 </FluentDialog>
 
-<!-- Image Preview Dialog -->
-<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="max-width: 90vw; max-height: 90vh;">
+<!-- File Preview Dialog -->
+<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 80vw; min-height: 80vh;">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
-            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Image())" />
+            <FluentIcon Value="@GetPreviewIcon()" />
             <FluentLabel Typo="Typography.PaneHeader">@previewFileName</FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
     <FluentDialogBody>
-        @if (!string.IsNullOrEmpty(previewImageData))
-        {
-            <img src="@previewImageData" alt="Preview" style="max-width: 100%; max-height: 70vh; object-fit: contain;" />
-        }
-        else
-        {
-            <FluentProgressRing />
-        }
+        <div class="preview-container">
+            @if (previewFile != null)
+            {
+                @if (isPreviewLoading)
+                {
+                    <FluentProgressRing />
+                }
+                else if (IsImageFile(previewFile))
+                {
+                    <img src="@previewUrl" alt="Preview" class="preview-image" />
+                }
+                else if (IsPdfFile(previewFile))
+                {
+                    <iframe src="@previewUrl" class="preview-iframe"></iframe>
+                }
+                else if (IsTextFile(previewFile))
+                {
+                    <pre class="preview-text">@previewTextContent</pre>
+                }
+                else
+                {
+                    <div class="preview-fallback">
+                        <img src="@GetFileIcon(previewFile)" alt="File Icon" class="preview-fallback-icon" />
+                        <FluentLabel Typo="Typography.Body">@Localizer["Preview"] @Localizer["NoData"]</FluentLabel>
+                    </div>
+                }
+            }
+        </div>
     </FluentDialogBody>
     <FluentDialogFooter>
-        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isPreviewDialogHidden = true)">Close</FluentButton>
+        <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="10">
+            @if (previewFile != null)
+            {
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DownloadFile(previewFile))">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" Slot="start" />
+                    @Localizer["Download"]
+                </FluentButton>
+            }
+            <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isPreviewDialogHidden = true)">@Localizer["Close"]</FluentButton>
+        </FluentStack>
     </FluentDialogFooter>
 </FluentDialog>
 
@@ -475,7 +506,7 @@
                 {
                     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
                         <FluentIcon Value="@(GetFavoriteIcon(favorite.Icon))" />
-                        <FluentLabel Style="flex: 1;">@favorite.Name</FluentLabel>
+                        <FluentLabel Class="flex-1">@favorite.Name</FluentLabel>
                         <FluentButton Appearance="Appearance.Lightweight"
                                       OnClick="@(() => RemoveFromFavorites(favorite.Id))">
                             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="Color.Error" />
@@ -501,7 +532,7 @@
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
             <FluentLabel>Are you sure you want to delete this @(itemToDelete?.IsDirectory == true ? "folder" : "file")?</FluentLabel>
-            <FluentLabel Style="font-weight: bold;">@itemToDelete?.Name</FluentLabel>
+            <FluentLabel Class="font-bold">@itemToDelete?.Name</FluentLabel>
             @if (itemToDelete?.IsDirectory == true)
             {
                 <FluentMessageBar Intent="MessageIntent.Warning">
@@ -511,7 +542,7 @@
         </FluentStack>
     </FluentDialogBody>
     <FluentDialogFooter>
-        <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDelete" Style="background-color: var(--error);">
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDelete" Class="btn-error">
             Delete
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isDeleteDialogHidden = true)">Cancel</FluentButton>
@@ -528,7 +559,7 @@
     </FluentDialogHeader>
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-            <FluentLabel Style="font-weight: 500;">Create scheduled tasks to generate thumbnails and build search indexes for the current directory.</FluentLabel>
+            <FluentLabel Class="font-500">Create scheduled tasks to generate thumbnails and build search indexes for the current directory.</FluentLabel>
             
             <FluentLabel>Directory: @currentPath</FluentLabel>
             
@@ -552,13 +583,13 @@
             
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
                 <FluentLabel Typo="Typography.Subject">Schedule:</FluentLabel>
-                <FluentLabel Style="font-size: 12px; color: var(--neutral-foreground-rest);">
+                <FluentLabel Class="text-small-hint">
                     Tasks will run immediately and can be set to run periodically. Default: Run once now.
                 </FluentLabel>
                 <FluentTextField @bind-Value="@taskCronExpression" 
                                Label="Cron Expression (optional)" 
                                Placeholder="0 0 0 * * * (daily at midnight)"
-                               Style="width: 100%;" />
+                               Class="full-width" />
             </FluentStack>
         </FluentStack>
     </FluentDialogBody>
@@ -619,8 +650,11 @@
     private FileItemInfo? selectedItem;
     private FileItemInfo? itemToDelete;
     private bool isMoveOperation = false;
-    private string previewImageData = string.Empty;
+    private string previewUrl = string.Empty;
+    private string previewTextContent = string.Empty;
     private string previewFileName = string.Empty;
+    private FileItemInfo? previewFile;
+    private bool isPreviewLoading = false;
 
     // Background task dialog
     private bool taskRecursive = false;
@@ -836,13 +870,9 @@
         {
             await NavigateToPath(item.Path);
         }
-        else if (IsImageFile(item))
-        {
-            await PreviewImage(item);
-        }
         else
         {
-            await DownloadFile(item);
+            await PreviewFile(item);
         }
     }
 
@@ -1318,60 +1348,86 @@
 
     #region Preview
 
-    private async Task PreviewImage(FileItemInfo file)
+    private async Task PreviewFile(FileItemInfo file)
     {
+        previewFile = file;
         previewFileName = file.Name;
-        previewImageData = string.Empty;
+        previewUrl = $"/api/files/content?path={Uri.EscapeDataString(file.Path)}";
+        previewTextContent = string.Empty;
+        isPreviewLoading = true;
         isPreviewDialogHidden = false;
 
         try
         {
-            // Check file size before loading (e.g., warn if > 10MB)
-            var fileInfo = new System.IO.FileInfo(file.Path);
-            if (fileInfo.Length > 10 * 1024 * 1024) // 10MB limit for preview
+            if (IsTextFile(file))
             {
-                ToastService.ShowWarning($"File is large ({fileInfo.Length / 1024 / 1024}MB). Preview may be slow.");
-            }
+                const long maxPreviewSizeBytes = 5 * 1024 * 1024; // 5 MB for text
+                if (file.Size > maxPreviewSizeBytes)
+                {
+                    ToastService.ShowWarning("The file is too large to preview. Please download it instead.");
+                    isPreviewDialogHidden = true;
+                    return;
+                }
 
-            var imageData = await FileService.DownloadFileAsync(file.Path);
-            var base64 = Convert.ToBase64String(imageData);
-            var mimeType = GetMimeType(file.Extension);
-            previewImageData = $"data:{mimeType};base64,{base64}";
+                var content = await FileService.DownloadFileAsync(file.Path);
+                previewTextContent = System.Text.Encoding.UTF8.GetString(content);
+            }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading image preview: {Path}", file.Path);
+            Logger.LogError(ex, "Error loading file preview: {Path}", file.Path);
             ToastService.ShowError($"Failed to load preview: {ex.Message}");
-            isPreviewDialogHidden = true;
+        }
+        finally
+        {
+            isPreviewLoading = false;
         }
     }
 
-    private bool IsImageFile(FileItemInfo file)
+    private bool IsPreviewableFile(FileItemInfo? file)
     {
-        if (file.IsDirectory) return false;
+        if (file == null || file.IsDirectory) return false;
+        return IsImageFile(file) || IsPdfFile(file) || IsTextFile(file);
+    }
+
+    private bool IsImageFile(FileItemInfo? file)
+    {
+        if (file == null || file.IsDirectory) return false;
         var ext = file.Extension.ToLowerInvariant();
         return ext is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg";
     }
 
-    private bool IsVideoFile(FileItemInfo file)
+    private bool IsPdfFile(FileItemInfo? file)
     {
-        if (file.IsDirectory) return false;
+        if (file == null || file.IsDirectory) return false;
+        return file.Extension.ToLowerInvariant() == ".pdf";
+    }
+
+    private bool IsTextFile(FileItemInfo? file)
+    {
+        if (file == null || file.IsDirectory) return false;
+        var ext = file.Extension.ToLowerInvariant();
+        var textExtensions = new[] {
+            ".txt", ".log", ".json", ".xml", ".md", ".cs", ".js", ".css",
+            ".html", ".htm", ".yaml", ".yml", ".ini", ".conf", ".sh", ".py",
+            ".java", ".c", ".cpp", ".h", ".hpp", ".sql", ".csproj", ".sln"
+        };
+        return textExtensions.Contains(ext);
+    }
+
+    private bool IsVideoFile(FileItemInfo? file)
+    {
+        if (file == null || file.IsDirectory) return false;
         var ext = file.Extension.ToLowerInvariant();
         return ext is ".mp4" or ".avi" or ".mov" or ".mkv" or ".wmv" or ".flv" or ".webm" or ".m4v";
     }
 
-    private string GetMimeType(string extension)
+    private Icon GetPreviewIcon()
     {
-        return extension.ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".gif" => "image/gif",
-            ".bmp" => "image/bmp",
-            ".webp" => "image/webp",
-            ".svg" => "image/svg+xml",
-            _ => "application/octet-stream"
-        };
+        if (IsImageFile(previewFile)) return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Image();
+        if (IsPdfFile(previewFile)) return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentPdf();
+        if (IsTextFile(previewFile)) return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText();
+        return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Eye();
     }
 
     #endregion

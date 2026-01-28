@@ -41,8 +41,21 @@ public class FileUploadController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrEmpty(path)) return false;
+
             var fullPath = Path.GetFullPath(path);
             var rootPath = Path.GetFullPath(_rootPath);
+
+            // SECURITY: Explicitly forbid access to sensitive system directories on Linux
+            if (!OperatingSystem.IsWindows())
+            {
+                var forbiddenPaths = new[] { "/etc", "/var", "/bin", "/sbin", "/lib", "/root", "/proc", "/sys", "/dev" };
+                if (forbiddenPaths.Any(p => fullPath.Equals(p, StringComparison.OrdinalIgnoreCase) ||
+                                          fullPath.StartsWith(p + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return false;
+                }
+            }
 
             // Ensure path is within allowed root
             return fullPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase);
@@ -373,6 +386,50 @@ public class FileUploadController : ControllerBase
                     _logger.LogWarning(ex, "Failed to add file to ZIP: {Path}", file.Path);
                 }
             }
+        }
+    }
+
+    [HttpGet("content")]
+    public async Task<IActionResult> GetFileContent([FromQuery] string path)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(path) || !IsPathAllowed(path))
+            {
+                return BadRequest("Invalid or unauthorized path");
+            }
+
+            if (!System.IO.File.Exists(path))
+            {
+                return NotFound("File not found");
+            }
+
+            var extension = Path.GetExtension(path).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".webp" => "image/webp",
+                ".svg" => "image/svg+xml",
+                ".txt" or ".log" or ".json" or ".xml" or ".md" or ".cs" or ".js" or ".css" or
+                ".html" or ".htm" or ".yaml" or ".yml" or ".ini" or ".conf" or ".sh" or ".py" or
+                ".java" or ".c" or ".cpp" or ".h" or ".hpp" or ".sql" or ".csproj" or ".sln" => "text/plain",
+                ".mp4" => "video/mp4",
+                ".webm" => "video/webm",
+                ".mp3" => "audio/mpeg",
+                _ => "application/octet-stream"
+            };
+
+            var fileStream = System.IO.File.OpenRead(path);
+            return File(fileStream, contentType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error serving file content: {Path}", path);
+            return StatusCode(500, "Internal server error");
         }
     }
 }

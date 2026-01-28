@@ -247,5 +247,110 @@ namespace MingYue.Services
                 return false;
             }
         }
+
+        /// <summary>
+        /// Retrieves all users in the system
+        /// </summary>
+        public async Task<List<UserDto>> GetAllUsersAsync()
+        {
+            try
+            {
+                await using var context = await _dbFactory.CreateDbContextAsync();
+                return await context.Users
+                    .AsNoTracking()
+                    .OrderByDescending(u => u.CreatedAt)
+                    .Select(u => new UserDto
+                    {
+                        Id = u.Id,
+                        Username = u.Username,
+                        Role = u.Role,
+                        CreatedAt = u.CreatedAt,
+                        LastLoginAt = u.LastLoginAt
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all users");
+                return new List<UserDto>();
+            }
+        }
+
+        /// <summary>
+        /// Updates a user's role
+        /// </summary>
+        public async Task<bool> UpdateUserRoleAsync(int userId, string newRole)
+        {
+            try
+            {
+                // Validate role
+                if (newRole != "Admin" && newRole != "User")
+                {
+                    _logger.LogWarning("Invalid role assignment attempted: {Role}", newRole);
+                    return false;
+                }
+
+                await using var context = await _dbFactory.CreateDbContextAsync();
+                var user = await context.Users.FindAsync(userId);
+
+                if (user == null)
+                    return false;
+
+                // Prevent demoting the last admin
+                if (user.Role == "Admin" && newRole != "Admin")
+                {
+                    var adminCount = await context.Users.CountAsync(u => u.Role == "Admin");
+                    if (adminCount <= 1)
+                    {
+                        _logger.LogWarning("Attempted to demote the last admin user {UserId}", userId);
+                        return false;
+                    }
+                }
+
+                user.Role = newRole;
+                await context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating role for user {UserId}", userId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Deletes a user by their unique identifier
+        /// </summary>
+        public async Task<bool> DeleteUserAsync(int userId)
+        {
+            try
+            {
+                await using var context = await _dbFactory.CreateDbContextAsync();
+                var user = await context.Users.FindAsync(userId);
+
+                if (user == null)
+                    return false;
+
+                // Prevent deleting the last admin
+                if (user.Role == "Admin")
+                {
+                    var adminCount = await context.Users.CountAsync(u => u.Role == "Admin");
+                    if (adminCount <= 1)
+                    {
+                        _logger.LogWarning("Attempted to delete the last admin user {UserId}", userId);
+                        return false;
+                    }
+                }
+
+                context.Users.Remove(user);
+                await context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting user {UserId}", userId);
+                return false;
+            }
+        }
     }
 }

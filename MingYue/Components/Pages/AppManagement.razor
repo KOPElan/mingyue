@@ -1,29 +1,32 @@
 @page "/app-management"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IApplicationService AppService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<AppManagement> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>Application Management - MingYue</PageTitle>
+<PageTitle>@Localizer["ApplicationManagement"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>Access denied. You must be an administrator to access this page.</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">Application Management</h2>
+        <h2 style="margin: 0;">@Localizer["ApplicationManagement"]</h2>
         <FluentSpacer />
         <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
-            Add Application
+            @Localizer["Add"]
         </FluentButton>
     </FluentStack>
 
@@ -34,27 +37,27 @@
     else if (applications.Count == 0)
     {
         <FluentMessageBar Intent="MessageIntent.Info">
-            No applications found. Click "Add Application" to create your first one.
+            @Localizer["NoData"]
         </FluentMessageBar>
     }
     else
     {
         <FluentDataGrid Items="@applications.AsQueryable()" GridTemplateColumns="0.5fr 1.5fr 2fr 1fr 1fr 0.8fr">
-            <PropertyColumn Property="@(a => a.Order)" Title="Order" Sortable="true" />
-            <PropertyColumn Property="@(a => a.Title)" Title="Title" Sortable="true" />
+            <PropertyColumn Property="@(a => a.Order)" Title="@Localizer["Name"]" Sortable="true" />
+            <PropertyColumn Property="@(a => a.Title)" Title="@Localizer["Name"]" Sortable="true" />
             <PropertyColumn Property="@(a => a.Url)" Title="URL" Sortable="true" />
-            <PropertyColumn Property="@(a => a.Category)" Title="Category" Sortable="true" />
-            <TemplateColumn Title="Visible" Sortable="true">
+            <PropertyColumn Property="@(a => a.Category)" Title="@Localizer["Info"]" Sortable="true" />
+            <TemplateColumn Title="@Localizer["Running"]" Sortable="true">
                 @if (context.IsVisible)
                 {
-                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Yes</FluentBadge>
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">@Localizer["Yes"]</FluentBadge>
                 }
                 else
                 {
-                    <FluentBadge Fill="neutral">No</FluentBadge>
+                    <FluentBadge Fill="neutral">@Localizer["No"]</FluentBadge>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="Actions">
+            <TemplateColumn Title="@Localizer["Actions"]">
                 <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
                     <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Edit())" />
                 </FluentButton>

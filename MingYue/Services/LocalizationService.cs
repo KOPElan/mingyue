@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Localization;
 using System.Globalization;
 
+using MingYue.Resources;
+
 namespace MingYue.Services
 {
     /// <summary>
@@ -8,7 +10,7 @@ namespace MingYue.Services
     /// </summary>
     public class LocalizationService : ILocalizationService, IDisposable
     {
-        private readonly IStringLocalizer<SharedResources> _localizer;
+        private readonly IStringLocalizer<Resources.SharedResources> _localizer;
         private readonly ISystemSettingService _systemSettingService;
         private readonly ILogger<LocalizationService> _logger;
         private volatile string _currentCulture = "zh-CN"; // Default to Chinese, volatile for thread-safe reads
@@ -19,7 +21,7 @@ namespace MingYue.Services
         private readonly SemaphoreSlim _initSemaphore = new(1, 1);
 
         public LocalizationService(
-            IStringLocalizer<SharedResources> localizer,
+            IStringLocalizer<Resources.SharedResources> localizer,
             ISystemSettingService systemSettingService,
             ILogger<LocalizationService> logger)
         {
@@ -159,10 +161,4 @@ namespace MingYue.Services
         }
     }
 
-    /// <summary>
-    /// Shared resources class for localization
-    /// </summary>
-    public class SharedResources
-    {
-    }
 }

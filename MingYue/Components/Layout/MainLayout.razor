@@ -4,10 +4,13 @@
 @using MingYue.Components.Shared
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IDialogService DialogService
 @inject AuthenticationStateService AuthStateService
 @inject INotificationService NotificationService
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResources> Localizer
 @implements IDisposable
 
 <FluentDesignTheme @bind-Mode="@Settings.Mode" @bind-OfficeColor="@Settings.OfficeColor" StorageName="theme" />
@@ -24,27 +27,62 @@
         <div class="home-header">
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
-                <div class="home-logo">
+                <div class="home-logo" @onclick="@(() => Navigation.NavigateTo("/"))" style="cursor: pointer;">
                     <FluentIcon Value="@(new Icons.Regular.Size24.GridDots())" Color="Color.Accent" />
                 </div>
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0">
+                <FluentStack Orientation="Orientation.Vertical" VerticalGap="0" @onclick="@(() => Navigation.NavigateTo("/"))" style="cursor: pointer;">
                     <FluentLabel Typo="Typography.Body" Class="home-title-main">MingYue</FluentLabel>
                     <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
                 </FluentStack>
             
             <FluentSpacer></FluentSpacer>
-            
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/scheduled-tasks"))" Title="计划任务">
+
+                <!-- Management Menu -->
+                <FluentMenuButton Text="@Localizer["Management"]" Appearance="Appearance.Lightweight">
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/file-manager"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Folder())" Slot="start" />
+                        @Localizer["FileManager"]
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/docker"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Box())" Slot="start" />
+                        @Localizer["DockerManagement"]
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/disk-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.HardDrive())" Slot="start" />
+                        @Localizer["DiskManagement"]
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/share-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Share())" Slot="start" />
+                        @Localizer["ShareManagement"]
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/app-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Apps())" Slot="start" />
+                        @Localizer["ApplicationManagement"]
+                    </FluentMenuItem>
+                    <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/dock-management"))">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Box())" Slot="start" />
+                        @Localizer["DockManagement"]
+                    </FluentMenuItem>
+                    @if (AuthStateService.IsAdmin)
+                    {
+                        <FluentMenuItem OnClick="@(() => Navigation.NavigateTo("/user-management"))">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.People())" Slot="start" />
+                            @Localizer["UserManagement"]
+                        </FluentMenuItem>
+                    }
+                </FluentMenuButton>
+
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/scheduled-tasks"))" Title="@Localizer["ScheduledTasks"]">
                     <FluentIcon Value="@(new Icons.Regular.Size20.CalendarClock())"></FluentIcon>
                 </FluentButton>
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/anydrop"))" Title="Anydrop">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/anydrop"))" Title="@Localizer["Anydrop"]">
                     <FluentIcon Value="@(new Icons.Regular.Size20.ShareAndroid())"></FluentIcon>
                 </FluentButton>
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/network"))" Title="网络管理">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/network"))" Title="@Localizer["Network"]">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Wifi1())"></FluentIcon>
                 </FluentButton>
                 <!-- Notification Button with Badge -->
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="OpenNotificationPanel" Title="通知" Style="position: relative;">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="OpenNotificationPanel" Title="@Localizer["Notifications"]" Style="position: relative;">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" />
                     @if (unreadCount > 0)
                     {
@@ -53,7 +91,7 @@
                         </FluentBadge>
                     }
                 </FluentButton>
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="系统设置">
+                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="@Localizer["Settings"]">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
                 </FluentButton>
                 <!-- Language Selector -->
@@ -139,7 +177,7 @@
         var dialog = await DialogService.ShowPanelAsync<NotificationPanel>(new DialogParameters()
         {
             Alignment = HorizontalAlignment.Right,
-            Title = "通知中心",
+            Title = Localizer["Notifications"],
             PrimaryAction = null,
             SecondaryAction = null,
         });

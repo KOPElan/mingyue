@@ -1670,9 +1670,18 @@
                 System.TimeSpan.FromSeconds(1));
         }
         
+        // Check if pattern contains wildcards
+        bool hasWildcards = pattern.Contains('*') || pattern.Contains('?');
+        
         // Escape special regex characters except * and ?
         var escapedPattern = System.Text.RegularExpressions.Regex.Escape(pattern);
         var regexPattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
+        
+        // If no wildcards, use fuzzy matching (contains) instead of exact match
+        if (!hasWildcards)
+        {
+            regexPattern = $".*{regexPattern}.*";
+        }
         
         return new System.Text.RegularExpressions.Regex(
             $"^{regexPattern}$", 

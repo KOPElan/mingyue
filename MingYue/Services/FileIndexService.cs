@@ -623,6 +623,7 @@ namespace MingYue.Services
         /// <summary>
         /// Creates a regex from a search pattern with wildcard support.
         /// Supports * (matches any characters) and ? (matches single character).
+        /// If pattern doesn't contain wildcards, performs fuzzy matching (contains).
         /// </summary>
         /// <param name="searchPattern">The search pattern with optional wildcards</param>
         /// <returns>Compiled regex with case-insensitive matching and 1-second timeout</returns>
@@ -637,9 +638,18 @@ namespace MingYue.Services
                     System.TimeSpan.FromSeconds(1));
             }
             
+            // Check if pattern contains wildcards
+            bool hasWildcards = searchPattern.Contains('*') || searchPattern.Contains('?');
+            
             // Escape special regex characters except * and ?
             var escapedPattern = System.Text.RegularExpressions.Regex.Escape(searchPattern);
             var pattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
+            
+            // If no wildcards, use fuzzy matching (contains) instead of exact match
+            if (!hasWildcards)
+            {
+                pattern = $".*{pattern}.*";
+            }
             
             return new System.Text.RegularExpressions.Regex(
                 $"^{pattern}$", 

@@ -10,6 +10,14 @@ namespace MingYue.Services
         private readonly string _cacheDirectory;
         private const int MaxSearchResults = 100;
         private const int MaxRecursionDepth = 10;
+        
+        // Common system and development directories to exclude from indexing
+        private static readonly HashSet<string> ExcludedDirectoryNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "node_modules", ".git", ".svn", ".hg", "bin", "obj", 
+            ".vs", ".vscode", ".idea", "packages", "__pycache__",
+            ".next", ".nuxt", "dist", "build", "target"
+        };
 
         public FileIndexService(ILogger<FileIndexService> logger, IConfiguration configuration)
         {
@@ -609,14 +617,7 @@ namespace MingYue.Services
                 return true;
             
             // Exclude common system and development directories
-            var excludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "node_modules", ".git", ".svn", ".hg", "bin", "obj", 
-                ".vs", ".vscode", ".idea", "packages", "__pycache__",
-                ".next", ".nuxt", "dist", "build", "target"
-            };
-            
-            return excludedNames.Contains(dirInfo.Name);
+            return ExcludedDirectoryNames.Contains(dirInfo.Name);
         }
 
         /// <summary>

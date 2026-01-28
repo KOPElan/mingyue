@@ -942,6 +942,11 @@
         searchQuery = string.Empty;
         searchResults.Clear();
         selectedItems.Clear(); // Clear selection when navigating
+        
+        // Clear advanced search results when path changes to avoid stale data
+        advancedSearchResults.Clear();
+        hasPerformedAdvancedSearch = false;
+        
         await LoadFiles();
     }
 
@@ -1515,10 +1520,8 @@
 
     #region Search
 
-    private async Task OnSearchChanged()
+    private void OnSearchChanged()
     {
-        await Task.CompletedTask; // Make it async for consistency
-        
         if (string.IsNullOrWhiteSpace(searchQuery))
         {
             searchResults.Clear();
@@ -1534,9 +1537,15 @@
                 .Where(item => pattern.IsMatch(item.Name))
                 .ToList();
         }
+        catch (System.Text.RegularExpressions.RegexMatchTimeoutException)
+        {
+            Logger.LogWarning("Regex match timeout for pattern: {Query}", searchQuery);
+            searchResults.Clear();
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error filtering files: {Query}", searchQuery);
+            searchResults.Clear();
         }
     }
 
@@ -1556,6 +1565,7 @@
         try
         {
             hasPerformedAdvancedSearch = true;
+            advancedSearchResults.Clear(); // Clear previous results before search
             
             // Check if index exists
             var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
@@ -1563,7 +1573,6 @@
             if (!hasIndex)
             {
                 ToastService.ShowWarning("No search index found. Please create an index for this directory to enable advanced search.");
-                advancedSearchResults.Clear();
                 return;
             }
             
@@ -1581,6 +1590,7 @@
         {
             Logger.LogError(ex, "Error performing advanced search: {Query}", advancedSearchQuery);
             ToastService.ShowError($"Search failed: {ex.Message}");
+            advancedSearchResults.Clear(); // Clear results on error
         }
     }
 
@@ -1596,8 +1606,11 @@
                 return;
             }
 
-            // Navigate to the directory
+            // Navigate to the directory and wait for files to load
             await NavigateToPath(directory);
+            
+            // Wait a moment for the file list to be populated
+            await Task.Delay(100);
             
             // Select the item
             selectedItems.Clear();

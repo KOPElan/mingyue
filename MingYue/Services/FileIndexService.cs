@@ -6,19 +6,49 @@ namespace MingYue.Services
     public class FileIndexService : IFileIndexService
     {
         private readonly ILogger<FileIndexService> _logger;
-        private const string IndexFileName = ".fileindex.json";
+        private readonly IConfiguration _configuration;
+        private readonly string _cacheDirectory;
 
-        public FileIndexService(ILogger<FileIndexService> logger)
+        public FileIndexService(ILogger<FileIndexService> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _configuration = configuration;
+            
+            // Get cache directory from configuration, default to .mingyue-cache in user's home
+            var configuredCache = _configuration["Storage:CacheDirectory"] ?? ".mingyue-cache";
+            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _cacheDirectory = Path.Combine(homeDir, configuredCache);
+            
+            // Ensure cache directory exists
+            if (!Directory.Exists(_cacheDirectory))
+            {
+                Directory.CreateDirectory(_cacheDirectory);
+            }
         }
 
         /// <summary>
         /// Gets the path to the index file for a directory
+        /// Index files are stored in a centralized cache directory with a structure based on the directory path hash
         /// </summary>
         private string GetIndexFilePath(string directoryPath)
         {
-            return Path.Combine(directoryPath, IndexFileName);
+            // Compute hash of the full directory path to create a unique identifier
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(directoryPath));
+            var pathHash = Convert.ToHexString(hashBytes).ToLowerInvariant();
+            
+            // Use first 2 characters of hash for subdirectory to avoid too many files in one directory
+            var subDir = pathHash.Substring(0, 2);
+            var indexDir = Path.Combine(_cacheDirectory, "indexes", subDir);
+            
+            // Ensure directory exists
+            if (!Directory.Exists(indexDir))
+            {
+                Directory.CreateDirectory(indexDir);
+            }
+            
+            var indexFileName = $"{pathHash}.json";
+            return Path.Combine(indexDir, indexFileName);
         }
 
         /// <summary>
@@ -57,13 +87,6 @@ namespace MingYue.Services
                     WriteIndented = true 
                 });
                 await File.WriteAllTextAsync(indexPath, json);
-                
-                // Set file as hidden on Windows
-                if (OperatingSystem.IsWindows() && File.Exists(indexPath))
-                {
-                    var fileInfo = new FileInfo(indexPath);
-                    fileInfo.Attributes |= FileAttributes.Hidden;
-                }
             }
             catch (Exception ex)
             {
@@ -143,7 +166,6 @@ namespace MingYue.Services
 
                 // Always use TopDirectoryOnly - we'll recurse manually if needed
                 var files = Directory.GetFiles(directoryPath, "*", SearchOption.TopDirectoryOnly)
-                    .Where(f => !IsSpecialFile(f)) // Exclude .thumbnail and .fileindex.json
                     .ToList();
 
                 foreach (var file in files)
@@ -173,7 +195,6 @@ namespace MingYue.Services
                 if (recursive)
                 {
                     var subdirs = Directory.GetDirectories(directoryPath)
-                        .Where(d => !IsSpecialDirectory(d))
                         .ToList();
                     
                     foreach (var subdir in subdirs)
@@ -189,21 +210,6 @@ namespace MingYue.Services
             {
                 _logger.LogError(ex, "Error indexing directory {DirectoryPath}", directoryPath);
             }
-        }
-
-        private bool IsSpecialFile(string filePath)
-        {
-            var fileName = Path.GetFileName(filePath);
-            // Check if file is the index file or in a .thumbnail directory
-            var pathParts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            return fileName == IndexFileName || 
-                   pathParts.Contains(".thumbnail", StringComparer.OrdinalIgnoreCase);
-        }
-
-        private bool IsSpecialDirectory(string directoryPath)
-        {
-            var dirName = Path.GetFileName(directoryPath);
-            return dirName == ".thumbnail";
         }
 
         public async Task<List<FileIndex>> SearchFilesAsync(string searchPattern)

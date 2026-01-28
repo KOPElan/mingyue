@@ -9,7 +9,6 @@ namespace MingYue.Services
         private readonly IConfiguration _configuration;
         private readonly string _cacheDirectory;
         private const int MaxSearchResults = 100;
-        private const int MaxRecursionDepth = 10;
         
         // Common system and development directories to exclude from indexing
         private static readonly HashSet<string> ExcludedDirectoryNames = new(StringComparer.OrdinalIgnoreCase)
@@ -66,12 +65,6 @@ namespace MingYue.Services
             var subDir = pathHash.Length >= 2 ? pathHash.Substring(0, 2) : pathHash;
             var indexDir = Path.Combine(_cacheDirectory, "indexes", subDir);
             
-            // Ensure directory exists
-            if (!Directory.Exists(indexDir))
-            {
-                Directory.CreateDirectory(indexDir);
-            }
-            
             var indexFileName = $"{pathHash}.json";
             return Path.Combine(indexDir, indexFileName);
         }
@@ -107,6 +100,14 @@ namespace MingYue.Services
             try
             {
                 var indexPath = GetIndexFilePath(directoryPath);
+                
+                // Ensure directory exists before writing
+                var indexDir = Path.GetDirectoryName(indexPath);
+                if (!string.IsNullOrEmpty(indexDir) && !Directory.Exists(indexDir))
+                {
+                    Directory.CreateDirectory(indexDir);
+                }
+                
                 var json = JsonSerializer.Serialize(index, new JsonSerializerOptions 
                 { 
                     WriteIndented = true 
@@ -271,6 +272,12 @@ namespace MingYue.Services
                 
                 foreach (var indexFile in indexFiles)
                 {
+                    // Early exit if we have enough results
+                    if (results.Count >= MaxSearchResults)
+                    {
+                        break;
+                    }
+                    
                     try
                     {
                         var json = await File.ReadAllTextAsync(indexFile);
@@ -344,13 +351,8 @@ namespace MingYue.Services
                 return results;
             }
 
-            // Simple wildcard matching: escape input first, then reintroduce wildcard semantics
-            var escapedPattern = System.Text.RegularExpressions.Regex.Escape(searchPattern);
-            var pattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
-            var regex = new System.Text.RegularExpressions.Regex(
-                pattern, 
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
-                System.TimeSpan.FromSeconds(1));
+            // Use CreateSearchRegex for consistent fuzzy/wildcard matching behavior
+            var regex = CreateSearchRegex(searchPattern);
 
             var matchingFiles = index.Files.Where(entry => regex.IsMatch(entry.FileName));
             
@@ -614,6 +616,10 @@ namespace MingYue.Services
                 return true;
             
             if ((dirInfo.Attributes & FileAttributes.System) == FileAttributes.System)
+                return true;
+            
+            // Exclude the cache directory itself to prevent self-referential indexing
+            if (dirInfo.FullName.StartsWith(_cacheDirectory, StringComparison.OrdinalIgnoreCase))
                 return true;
             
             // Exclude common system and development directories

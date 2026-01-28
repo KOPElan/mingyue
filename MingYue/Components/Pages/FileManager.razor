@@ -1020,6 +1020,7 @@
         searchQuery = string.Empty;
         searchResults.Clear();
         selectedItems.Clear(); // Clear selection when navigating
+        UpdateSelectAllState(); // Sync the "Select All" checkbox state
         
         // Clear advanced search results when path changes to avoid stale data
         advancedSearchResults.Clear();

@@ -189,7 +189,8 @@ configure_sudoers() {
     print_warn "This grants significant elevated privileges. Review carefully!"
     
     SUDOERS_FILE="/etc/sudoers.d/mingyue"
-    SUDOERS_TEMP="/tmp/mingyue.sudoers.$$"
+    SUDOERS_TEMP=$(mktemp /tmp/mingyue.sudoers.XXXXXX)
+    chmod 600 "$SUDOERS_TEMP"
     
     cat > "$SUDOERS_TEMP" <<EOF
 # MingYue service commands

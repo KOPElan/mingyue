@@ -38,6 +38,20 @@ namespace MingYue.Services
             }
             var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             _cacheDirectory = Path.Combine(homeDir, configuredCache);
+            
+            // Ensure base cache directory exists - fail fast if there are permission issues
+            try
+            {
+                if (!Directory.Exists(_cacheDirectory))
+                {
+                    Directory.CreateDirectory(_cacheDirectory);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create cache directory at {CacheDirectory}", _cacheDirectory);
+                throw;
+            }
         }
 
         public async Task<byte[]?> GetThumbnailAsync(string filePath)

@@ -229,11 +229,50 @@ namespace MingYue.Services
 
         public async Task<List<FileIndex>> SearchFilesAsync(string searchPattern)
         {
-            return await SearchFilesInDirectoryAsync(null, searchPattern);
+            try
+            {
+                var results = new List<FileIndex>();
+                var indexCacheDir = Path.Combine(_cacheDirectory, "indexes");
+                
+                // If no indexes exist yet, return empty
+                if (!Directory.Exists(indexCacheDir))
+                {
+                    return results;
+                }
+                
+                // Search through all index files in the cache
+                var indexFiles = Directory.GetFiles(indexCacheDir, "*.json", SearchOption.AllDirectories);
+                
+                foreach (var indexFile in indexFiles)
+                {
+                    try
+                    {
+                        var json = await File.ReadAllTextAsync(indexFile);
+                        var index = JsonSerializer.Deserialize<DirectoryIndex>(json);
+                        
+                        if (index != null)
+                        {
+                            var matchingFiles = SearchInIndex(index, searchPattern, index.DirectoryPath);
+                            results.AddRange(matchingFiles);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error loading index file {IndexFile}", indexFile);
+                    }
+                }
+                
+                return results.Take(100).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching files with pattern {SearchPattern}", searchPattern);
+                return new List<FileIndex>();
+            }
         }
 
         /// <summary>
-        /// Search files in directory hierarchy, checking parent directories if needed
+        /// Search files in a specific directory's index
         /// </summary>
         public async Task<List<FileIndex>> SearchFilesInDirectoryAsync(string? directoryPath, string searchPattern)
         {
@@ -241,30 +280,18 @@ namespace MingYue.Services
             {
                 if (string.IsNullOrEmpty(directoryPath))
                 {
-                    // No directory specified, can't search
-                    return new List<FileIndex>();
+                    // No directory specified, search all indexes
+                    return await SearchFilesAsync(searchPattern);
                 }
 
                 var results = new List<FileIndex>();
-                var currentDir = directoryPath;
-
-                // Search up the directory tree
-                while (!string.IsNullOrEmpty(currentDir))
+                
+                // Load the index for this specific directory from centralized cache
+                var index = await LoadIndexAsync(directoryPath);
+                if (index != null)
                 {
-                    var index = await LoadIndexAsync(currentDir);
-                    if (index != null)
-                    {
-                        // Found an index, search it
-                        var matchingFiles = SearchInIndex(index, searchPattern, currentDir);
-                        results.AddRange(matchingFiles);
-                        
-                        // Stop searching parent directories once we found an index
-                        break;
-                    }
-
-                    // Move to parent directory
-                    var parent = Directory.GetParent(currentDir);
-                    currentDir = parent?.FullName;
+                    var matchingFiles = SearchInIndex(index, searchPattern, directoryPath);
+                    results.AddRange(matchingFiles);
                 }
 
                 return results.Take(100).ToList();

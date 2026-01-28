@@ -67,6 +67,49 @@ using (var scope = app.Services.CreateScope())
     await context.Database.MigrateAsync();
 }
 
+// Check sudo permissions for mount/umount commands on Linux
+if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+{
+    using var scope = app.Services.CreateScope();
+    var diskService = scope.ServiceProvider.GetRequiredService<IDiskManagementService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        // Check if mount command can be run with sudo without password
+        var mountCheckInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "sudo",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        mountCheckInfo.ArgumentList.Add("-n");
+        mountCheckInfo.ArgumentList.Add("mount");
+        mountCheckInfo.ArgumentList.Add("--version");
+        
+        using var mountCheckProcess = System.Diagnostics.Process.Start(mountCheckInfo);
+        if (mountCheckProcess != null)
+        {
+            await mountCheckProcess.WaitForExitAsync();
+            if (mountCheckProcess.ExitCode != 0)
+            {
+                logger.LogWarning("Sudo permissions not configured for mount command. Mount operations will fail. Please configure /etc/sudoers.d/mingyue with: {User} ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount", 
+                    Environment.UserName);
+            }
+            else
+            {
+                logger.LogInformation("Sudo permissions for mount/umount commands verified successfully");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Could not verify sudo permissions for mount/umount commands. This may cause mount operations to fail.");
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

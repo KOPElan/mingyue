@@ -37,6 +37,40 @@ namespace MingYue.Services
 
         private static readonly Regex HdparmSettingRegex = new(@"^\s*([a-z_-]+)\s*=\s*(.+)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+        /// <summary>
+        /// Check if sudo is properly configured for mount/umount commands
+        /// </summary>
+        private async Task<bool> CheckSudoPermissionsAsync(string command)
+        {
+            try
+            {
+                var processInfo = new ProcessStartInfo
+                {
+                    FileName = "sudo",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                processInfo.ArgumentList.Add("-n"); // Non-interactive mode
+                processInfo.ArgumentList.Add(command);
+                processInfo.ArgumentList.Add("--version"); // Harmless test command
+
+                using var process = Process.Start(processInfo);
+                if (process != null)
+                {
+                    await process.WaitForExitAsync();
+                    return process.ExitCode == 0;
+                }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public async Task<List<DiskInfo>> GetAllDisksAsync()
         {
             // On Linux, use GetAllBlockDevicesAsync for better device information and filtering
@@ -388,6 +422,13 @@ namespace MingYue.Services
                     }
                     else
                     {
+                        // Check if the error is due to sudo requiring a password
+                        if (error.Contains("sudo") && (error.Contains("password") || error.Contains("a password is required")))
+                        {
+                            _logger.LogError("Mount failed due to sudo permission issue. Error: {Error}", error);
+                            return DiskOperationResult.Failed("挂载失败：需要配置 sudo 权限", 
+                                "请配置 sudoers 文件允许无密码执行 mount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
+                        }
                         return DiskOperationResult.Failed($"挂载失败", error);
                     }
                 }
@@ -515,6 +556,13 @@ namespace MingYue.Services
                     }
                     else
                     {
+                        // Check if the error is due to sudo requiring a password
+                        if (error.Contains("sudo") && (error.Contains("password") || error.Contains("a password is required")))
+                        {
+                            _logger.LogError("Umount failed due to sudo permission issue. Error: {Error}", error);
+                            return DiskOperationResult.Failed("卸载失败：需要配置 sudo 权限", 
+                                "请配置 sudoers 文件允许无密码执行 umount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
+                        }
                         return DiskOperationResult.Failed($"卸载失败", error);
                     }
                 }
@@ -1499,8 +1547,17 @@ namespace MingYue.Services
                 }
 
                 // Log the mount command for debugging
-                var commandArgs = string.Join(" ", processInfo.ArgumentList.Select(arg => 
-                    arg.StartsWith("credentials=") ? "credentials=***" : arg));
+                var commandArgs = string.Join(" ", processInfo.ArgumentList.Select(arg =>
+                {
+                    // Mask credential file path but preserve other options
+                    if (arg.StartsWith("credentials="))
+                    {
+                        var parts = arg.Split(',');
+                        parts[0] = "credentials=***";
+                        return string.Join(",", parts);
+                    }
+                    return arg;
+                }));
                 _logger.LogInformation("Executing mount command: {FileName} {Arguments}", processInfo.FileName, commandArgs);
 
                 try
@@ -1517,6 +1574,15 @@ namespace MingYue.Services
                         }
                         else
                         {
+                            // Check if the error is due to sudo requiring a password
+                            if (error.Contains("sudo") && (error.Contains("password") || error.Contains("a password is required")))
+                            {
+                                _logger.LogError("Network disk mount failed due to sudo permission issue. Device: {Device}, MountPoint: {MountPoint}, Error: {Error}", 
+                                    device, mountPoint, error);
+                                return DiskOperationResult.Failed("挂载失败：需要配置 sudo 权限", 
+                                    "请配置 sudoers 文件允许无密码执行 mount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
+                            }
+                            
                             // Log the error details to help with debugging
                             _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}", 
                                 device, mountPoint, diskType, process.ExitCode, error);

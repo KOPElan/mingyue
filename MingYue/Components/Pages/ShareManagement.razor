@@ -682,7 +682,7 @@
             sambaUsers.Select(u => u.Username),
             StringComparer.OrdinalIgnoreCase);
 
-        var missingUsers = new List<string>();
+        var missingUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         if (!string.IsNullOrEmpty(share.ValidUsers))
         {
@@ -721,11 +721,7 @@
                 }
                 else
                 {
-                    // Avoid duplicating missing usernames
-                    if (!missingUsers.Contains(user, StringComparer.OrdinalIgnoreCase))
-                    {
-                        missingUsers.Add(user);
-                    }
+                    missingUsers.Add(user);
                 }
             }
         }
@@ -820,8 +816,7 @@
                     
                     if (currentShare.ReadOnly)
                     {
-                        // Ensure write permissions are cleared when the share is read-only
-                        selectedWriteUsers.Clear();
+                        // Ensure write permissions list is cleared when the share is read-only
                         currentShare.WriteList = string.Empty;
                     }
                     else
@@ -1111,7 +1106,7 @@
             
             if (referencingShares.Count > 0)
             {
-                ToastService.ShowWarning($"User '{userToDelete.Username}' is referenced in {referencingShares.Count} share(s): {string.Join(", ", referencingShares)}. Please update those shares first or the user will be removed from their access lists.");
+                ToastService.ShowWarning($"User '{userToDelete.Username}' is referenced in {referencingShares.Count} share(s): {string.Join(", ", referencingShares)}. The user will be removed from their access lists.");
             }
             
             var result = await ShareService.RemoveSambaUserAsync(userToDelete.Username);

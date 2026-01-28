@@ -31,15 +31,13 @@ namespace MingYue.Services
             _configuration = configuration;
             
             // Get cache directory from configuration, default to .mingyue-cache in user's home
-            var configuredCache = _configuration["Storage:CacheDirectory"] ?? ".mingyue-cache";
+            var configuredCache = _configuration["Storage:CacheDirectory"];
+            if (string.IsNullOrWhiteSpace(configuredCache))
+            {
+                configuredCache = ".mingyue-cache";
+            }
             var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             _cacheDirectory = Path.Combine(homeDir, configuredCache);
-            
-            // Ensure cache directory exists
-            if (!Directory.Exists(_cacheDirectory))
-            {
-                Directory.CreateDirectory(_cacheDirectory);
-            }
         }
 
         public async Task<byte[]?> GetThumbnailAsync(string filePath)
@@ -70,11 +68,14 @@ namespace MingYue.Services
         /// </summary>
         private string GetThumbnailPath(string filePath)
         {
+            // Normalize path to ensure consistent hashing
+            var normalizedPath = Path.GetFullPath(filePath);
+            
             // Compute hash of the full file path to create a unique identifier
-            var pathHash = ComputeFileHash(filePath);
+            var pathHash = ComputeFileHash(normalizedPath);
             
             // Use first 2 characters of hash for subdirectory to avoid too many files in one directory
-            var subDir = pathHash.Substring(0, 2);
+            var subDir = pathHash.Length >= 2 ? pathHash.Substring(0, 2) : pathHash;
             var thumbnailDir = Path.Combine(_cacheDirectory, "thumbnails", subDir);
             
             // Ensure directory exists
@@ -189,13 +190,6 @@ namespace MingYue.Services
         private async Task SaveThumbnailToFileAsync(string filePath, byte[] thumbnailData)
         {
             var thumbnailPath = GetThumbnailPath(filePath);
-            var thumbnailDir = Path.GetDirectoryName(thumbnailPath);
-            
-            if (!string.IsNullOrEmpty(thumbnailDir) && !Directory.Exists(thumbnailDir))
-            {
-                Directory.CreateDirectory(thumbnailDir);
-            }
-            
             await File.WriteAllBytesAsync(thumbnailPath, thumbnailData);
         }
 

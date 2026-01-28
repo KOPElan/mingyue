@@ -15,15 +15,13 @@ namespace MingYue.Services
             _configuration = configuration;
             
             // Get cache directory from configuration, default to .mingyue-cache in user's home
-            var configuredCache = _configuration["Storage:CacheDirectory"] ?? ".mingyue-cache";
+            var configuredCache = _configuration["Storage:CacheDirectory"];
+            if (string.IsNullOrWhiteSpace(configuredCache))
+            {
+                configuredCache = ".mingyue-cache";
+            }
             var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             _cacheDirectory = Path.Combine(homeDir, configuredCache);
-            
-            // Ensure cache directory exists
-            if (!Directory.Exists(_cacheDirectory))
-            {
-                Directory.CreateDirectory(_cacheDirectory);
-            }
         }
 
         /// <summary>
@@ -32,13 +30,16 @@ namespace MingYue.Services
         /// </summary>
         private string GetIndexFilePath(string directoryPath)
         {
+            // Normalize path to ensure consistent hashing
+            var normalizedPath = Path.GetFullPath(directoryPath);
+            
             // Compute hash of the full directory path to create a unique identifier
             using var sha256 = System.Security.Cryptography.SHA256.Create();
-            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(directoryPath));
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(normalizedPath));
             var pathHash = Convert.ToHexString(hashBytes).ToLowerInvariant();
             
             // Use first 2 characters of hash for subdirectory to avoid too many files in one directory
-            var subDir = pathHash.Substring(0, 2);
+            var subDir = pathHash.Length >= 2 ? pathHash.Substring(0, 2) : pathHash;
             var indexDir = Path.Combine(_cacheDirectory, "indexes", subDir);
             
             // Ensure directory exists

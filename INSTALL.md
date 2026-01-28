@@ -1,0 +1,213 @@
+# MingYue Installation Guide
+
+This guide explains how to manually build and install MingYue on Linux systems.
+
+## Using GitHub Actions (Recommended)
+
+The easiest way to get a Linux release build is through GitHub Actions:
+
+1. Go to the [Actions tab](https://github.com/KOPElan/mingyue/actions) in the repository
+2. Select "Build Linux Release" workflow
+3. Click "Run workflow"
+4. Enter a version number (e.g., `1.0.0`) or use the default
+5. Download the generated artifact `mingyue-linux-x64-*.tar.gz`
+
+## Manual Installation from Release Package
+
+### Prerequisites
+
+- Linux operating system (Ubuntu/Debian/CentOS/RHEL/Fedora)
+- Root/sudo access
+- Internet connection for downloading dependencies
+
+### Installation Steps
+
+1. **Download the release package** (from GitHub Actions artifacts)
+
+2. **Extract the package**
+   ```bash
+   tar -xzf mingyue-linux-x64-1.0.0.tar.gz
+   cd mingyue-linux-x64-1.0.0
+   ```
+
+3. **Run the installation script**
+   ```bash
+   sudo ./install.sh
+   ```
+
+The installation script will:
+- Install required system dependencies (Docker, Samba, NFS, disk utilities)
+- Create a dedicated `mingyue` user
+- Set up directories (`/opt/mingyue`, `/var/lib/mingyue`, `/var/log/mingyue`)
+- Configure sudo permissions for necessary system commands
+- Create and enable a systemd service
+- Start the application automatically
+
+4. **Access the application**
+   ```
+   http://localhost:5000
+   ```
+   or
+   ```
+   http://<your-server-ip>:5000
+   ```
+
+## Manual Build from Source
+
+If you prefer to build from source:
+
+### Prerequisites
+
+- .NET SDK 10.0 or higher
+- Git
+
+### Build Steps
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/KOPElan/mingyue.git
+   cd mingyue
+   ```
+
+2. **Build for Linux**
+   ```bash
+   dotnet publish MingYue/MingYue.csproj \
+     -c Release \
+     -r linux-x64 \
+     --self-contained true \
+     -p:PublishSingleFile=true \
+     -o ./publish/linux-x64
+   ```
+
+3. **Copy installation script**
+   ```bash
+   cp install.sh ./publish/linux-x64/
+   cd ./publish/linux-x64/
+   ```
+
+4. **Run installation**
+   ```bash
+   sudo ./install.sh
+   ```
+
+## Post-Installation
+
+### Service Management
+
+```bash
+# Check service status
+sudo systemctl status mingyue
+
+# Start service
+sudo systemctl start mingyue
+
+# Stop service
+sudo systemctl stop mingyue
+
+# Restart service
+sudo systemctl restart mingyue
+
+# View logs
+sudo journalctl -u mingyue -f
+```
+
+### Directories
+
+- **Installation**: `/opt/mingyue`
+- **Data**: `/var/lib/mingyue` (database, uploaded files, etc.)
+- **Logs**: `/var/log/mingyue`
+
+### Configuration
+
+Edit the systemd service file to customize settings:
+```bash
+sudo nano /etc/systemd/system/mingyue.service
+```
+
+After making changes, reload and restart:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart mingyue
+```
+
+### Port Configuration
+
+By default, MingYue runs on port 5000. To change it:
+
+1. Edit `/etc/systemd/system/mingyue.service`
+2. Modify the `ExecStart` line:
+   ```
+   ExecStart=/opt/mingyue/MingYue --urls "http://0.0.0.0:YOUR_PORT"
+   ```
+3. Reload and restart:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart mingyue
+   ```
+
+## Uninstallation
+
+To remove MingYue:
+
+```bash
+# Stop and disable service
+sudo systemctl stop mingyue
+sudo systemctl disable mingyue
+
+# Remove service file
+sudo rm /etc/systemd/system/mingyue.service
+sudo systemctl daemon-reload
+
+# Remove application files
+sudo rm -rf /opt/mingyue
+sudo rm -rf /var/lib/mingyue
+sudo rm -rf /var/log/mingyue
+
+# Remove sudoers configuration
+sudo rm /etc/sudoers.d/mingyue
+
+# (Optional) Remove user
+sudo userdel mingyue
+```
+
+## Troubleshooting
+
+### Service fails to start
+
+Check logs:
+```bash
+sudo journalctl -u mingyue -n 50
+```
+
+### Permission issues
+
+Ensure the mingyue user has proper permissions:
+```bash
+sudo chown -R mingyue:mingyue /opt/mingyue
+sudo chown -R mingyue:mingyue /var/lib/mingyue
+```
+
+### Port already in use
+
+Change the port in the systemd service file (see Port Configuration above).
+
+### Docker commands not working
+
+Add mingyue user to docker group:
+```bash
+sudo usermod -aG docker mingyue
+sudo systemctl restart mingyue
+```
+
+## Security Considerations
+
+- MingYue is designed for internal network use
+- For internet access, use a reverse proxy (Nginx/Apache) with HTTPS
+- Regularly update dependencies for security patches
+- Review and adjust sudoers permissions as needed
+- Configure firewall rules appropriately
+
+## Support
+
+- Issues: [GitHub Issues](https://github.com/KOPElan/mingyue/issues)
+- Discussions: [GitHub Discussions](https://github.com/KOPElan/mingyue/discussions)

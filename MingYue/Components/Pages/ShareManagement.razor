@@ -19,14 +19,7 @@
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">Share Management</h2>
-        <FluentSpacer />
-        <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(currentTabType))">
-            <FluentIcon Value="@(new Icons.Regular.Size20.Add())" />
-            Add @(currentTabType == ShareType.CIFS ? "Samba" : "NFS") Share
-        </FluentButton>
-    </FluentStack>
+    <h2 style="margin: 0;">Share Management</h2>
 
     @if (isLoading)
     {
@@ -34,116 +27,236 @@
     }
     else
     {
-        <FluentTabs @bind-ActiveTabId="@activeTabId" OnTabChange="@OnTabChanged">
-            <FluentTab Id="samba" Label="Samba Shares">
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 20px;">
-                    <!-- Service Status -->
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                        <FluentLabel Typo="Typography.Body">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
-                            Samba Service
-                        </FluentLabel>
-                        <FluentSpacer />
-                        <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService">
-                            <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSync())" />
-                            Restart Service
-                        </FluentButton>
-                    </FluentStack>
+        <!-- SMB Users Section -->
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                <FluentLabel Typo="Typography.H3">SMB Users</FluentLabel>
+                <FluentSpacer />
+                <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddUserDialog" IconStart="@(new Icons.Regular.Size16.Add())">
+                    Add User
+                </FluentButton>
+            </FluentStack>
 
-                    @if (sambaShares.Count == 0)
+            @if (sambaUsers.Count == 0)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info">
+                    No SMB users configured. Click "Add User" to create one.
+                </FluentMessageBar>
+            }
+            else
+            {
+                <FluentGrid Spacing="16" Style="width:100%;">
+                    @foreach (var user in sambaUsers)
                     {
-                        <FluentMessageBar Intent="MessageIntent.Info">
-                            No Samba shares configured. Click "Add Samba Share" to create one.
-                        </FluentMessageBar>
+                        <FluentGridItem xs="12" sm="6" md="3">
+                            <FluentCard>
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                            <FluentIcon Value="@(new Icons.Regular.Size24.Person())" Color="Color.Accent" />
+                                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@user.Username</FluentLabel>
+                                        </FluentStack>
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditUserDialog(user))" title="Change Password">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                            </FluentButton>
+                                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteUser(user))" title="Delete">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                            </FluentButton>
+                                        </FluentStack>
+                                    </FluentStack>
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
+                                        <FluentBadge Fill="info" BackgroundColor="blue" Color="white">UID: @user.Uid</FluentBadge>
+                                        @if (user.HasSambaPassword)
+                                        {
+                                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Password Set</FluentBadge>
+                                        }
+                                        else
+                                        {
+                                            <FluentBadge Fill="neutral">No Password</FluentBadge>
+                                        }
+                                    </FluentStack>
+                                </FluentStack>
+                            </FluentCard>
+                        </FluentGridItem>
                     }
-                    else
-                    {
-                        <FluentDataGrid Items="@sambaShares.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1fr 1fr">
-                            <PropertyColumn Property="@(s => s.Name)" Title="Share Name" Sortable="true" />
-                            <PropertyColumn Property="@(s => s.Path)" Title="Path" Sortable="true" />
-                            <TemplateColumn Title="Read-Only" Sortable="true">
-                                @if (context.ReadOnly)
-                                {
-                                    <FluentBadge Fill="neutral">Yes</FluentBadge>
-                                }
-                                else
-                                {
-                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">No</FluentBadge>
-                                }
-                            </TemplateColumn>
-                            <TemplateColumn Title="Guest Access" Sortable="true">
-                                @if (context.GuestOk)
-                                {
-                                    <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Enabled</FluentBadge>
-                                }
-                                else
-                                {
-                                    <FluentBadge Fill="neutral">Disabled</FluentBadge>
-                                }
-                            </TemplateColumn>
-                            <TemplateColumn Title="Actions">
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
-                                </FluentButton>
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                </FluentButton>
-                            </TemplateColumn>
-                        </FluentDataGrid>
-                    }
+                </FluentGrid>
+            }
+        </FluentStack>
+
+        <!-- Samba Shares Section -->
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                <FluentLabel Typo="Typography.H3">Samba Shares</FluentLabel>
+                <FluentSpacer />
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                    <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
+                        Restart Service
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.CIFS))" IconStart="@(new Icons.Regular.Size16.Add())">                        
+                        Add
+                    </FluentButton>
                 </FluentStack>
-            </FluentTab>
+            </FluentStack>
 
-            <FluentTab Id="nfs" Label="NFS Shares">
-                <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 20px;">
-                    <!-- Service Status -->
-                    <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                        <FluentLabel Typo="Typography.Body">
-                            <FluentIcon Value="@(new Icons.Regular.Size20.Server())" />
-                            NFS Service
-                        </FluentLabel>
-                        <FluentSpacer />
-                        <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService">
-                            <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSync())" />
-                            Restart Service
-                        </FluentButton>
-                    </FluentStack>
+            @if (sambaShares.Count == 0)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info">
+                    No Samba shares configured. Click "Add" to create one.
+                </FluentMessageBar>
+            }
+            else
+            {
+                <FluentGrid Spacing="16" Style="width:100%;">
+                    @foreach (var share in sambaShares)
+                    {
+                        <FluentGridItem xs="12" sm="6" md="4">
+                            <FluentCard>
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                    <!-- Header with Name and Actions -->
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                            <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
+                                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
+                                        </FluentStack>
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                            </FluentButton>
+                                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                            </FluentButton>
+                                        </FluentStack>
+                                    </FluentStack>
 
-                    @if (nfsShares.Count == 0)
-                    {
-                        <FluentMessageBar Intent="MessageIntent.Info">
-                            No NFS shares configured. Click "Add NFS Share" to create one.
-                        </FluentMessageBar>
+                                    <!-- Path -->
+                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
+                                        <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                                    </FluentStack>
+
+                                    <!-- Badges -->
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
+                                        @if (share.ReadOnly)
+                                        {
+                                            <FluentBadge Fill="neutral">Read-Only</FluentBadge>
+                                        }
+                                        else
+                                        {
+                                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
+                                        }
+                                        
+                                        @if (share.GuestOk)
+                                        {
+                                            <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Guest Access</FluentBadge>
+                                        }
+                                        
+                                        @if (share.Browseable)
+                                        {
+                                            <FluentBadge Fill="info" BackgroundColor="blue" Color="white">Browseable</FluentBadge>
+                                        }
+                                    </FluentStack>
+
+                                    <!-- Description -->
+                                    @if (!string.IsNullOrEmpty(share.Comment))
+                                    {
+                                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
+                                            <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
+                                        </FluentStack>
+                                    }
+                                </FluentStack>
+                            </FluentCard>
+                        </FluentGridItem>
                     }
-                    else
-                    {
-                        <FluentDataGrid Items="@nfsShares.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1.5fr 1fr">
-                            <PropertyColumn Property="@(s => s.Name)" Title="Export Name" Sortable="true" />
-                            <PropertyColumn Property="@(s => s.Path)" Title="Path" Sortable="true" />
-                            <TemplateColumn Title="Read-Only" Sortable="true">
-                                @if (context.ReadOnly)
-                                {
-                                    <FluentBadge Fill="neutral">Yes</FluentBadge>
-                                }
-                                else
-                                {
-                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">No</FluentBadge>
-                                }
-                            </TemplateColumn>
-                            <PropertyColumn Property="@(s => s.AllowedHosts)" Title="Allowed Hosts" Sortable="true" />
-                            <TemplateColumn Title="Actions">
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
-                                </FluentButton>
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(context))">
-                                    <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                </FluentButton>
-                            </TemplateColumn>
-                        </FluentDataGrid>
-                    }
+                </FluentGrid>
+            }
+        </FluentStack>
+
+        <!-- NFS Shares Section -->
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
+                <FluentLabel Typo="Typography.H3">NFS Shares</FluentLabel>
+                <FluentSpacer />
+                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
+                    <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
+                        Restart Service
+                    </FluentButton>
+                    <FluentButton Appearance="Appearance.Accent" OnClick="@(() => OpenAddDialog(ShareType.NFS))" IconStart="@(new Icons.Regular.Size16.Add())">
+                        Add
+                    </FluentButton>
                 </FluentStack>
-            </FluentTab>
-        </FluentTabs>
+            </FluentStack>
+
+            @if (nfsShares.Count == 0)
+            {
+                <FluentMessageBar Intent="MessageIntent.Info">
+                    No NFS shares configured. Click "Add" to create one.
+                </FluentMessageBar>
+            }
+            else
+            {
+                <FluentGrid Spacing="16" Style="width:100%;">
+                    @foreach (var share in nfsShares)
+                    {
+                        <FluentGridItem xs="12" sm="6" md="4">
+                            <FluentCard>
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                                    <!-- Header with Name and Actions -->
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                            <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
+                                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
+                                        </FluentStack>
+                                        <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                            </FluentButton>
+                                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                            </FluentButton>
+                                        </FluentStack>
+                                    </FluentStack>
+
+                                    <!-- Path -->
+                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
+                                        <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                                    </FluentStack>
+
+                                    <!-- Allowed Hosts -->
+                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Allowed Hosts</FluentLabel>
+                                        <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.AllowedHosts</FluentLabel>
+                                    </FluentStack>
+
+                                    <!-- Badges -->
+                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
+                                        @if (share.ReadOnly)
+                                        {
+                                            <FluentBadge Fill="neutral">Read-Only</FluentBadge>
+                                        }
+                                        else
+                                        {
+                                            <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
+                                        }
+                                    </FluentStack>
+
+                                    <!-- Description -->
+                                    @if (!string.IsNullOrEmpty(share.Comment))
+                                    {
+                                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
+                                            <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
+                                        </FluentStack>
+                                    }
+                                </FluentStack>
+                            </FluentCard>
+                        </FluentGridItem>
+                    }
+                </FluentGrid>
+            }
+        </FluentStack>
     }
 </FluentStack>
 
@@ -198,21 +311,46 @@
                         @bind-Value="currentShare.Browseable"
                         Label="Browseable" />
                     
-                    <FluentTextField 
-                        @bind-Value="currentShare.ValidUsers"
-                        Label="Valid Users (optional)"
-                        Placeholder="user1, user2, group"
-                        Style="width: 100%;">
-                        <FluentLabel Slot="help-text">Comma-separated list of users or groups (prefix groups with at symbol)</FluentLabel>
-                    </FluentTextField>
-                    
-                    <FluentTextField 
-                        @bind-Value="currentShare.WriteList"
-                        Label="Write List (optional)"
-                        Placeholder="user1, user2, group"
-                        Style="width: 100%;">
-                        <FluentLabel Slot="help-text">Users who can write (if read-only is enabled)</FluentLabel>
-                    </FluentTextField>
+                    <!-- User Selection -->
+                    @if (!currentShare.GuestOk && sambaUsers.Count > 0)
+                    {
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                            <FluentLabel Weight="FontWeight.Bold">Valid Users</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Select users who can access this share</FluentLabel>
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" Style="max-height: 200px; overflow-y: auto; padding: 10px; border: 1px solid var(--neutral-stroke-rest); border-radius: 4px;">
+                                @foreach (var user in sambaUsers)
+                                {
+                                    <FluentCheckbox 
+                                        Value="@selectedValidUsers.Contains(user.Username)"
+                                        ValueChanged="@((bool isChecked) => OnValidUserChanged(user.Username, isChecked))"
+                                        Label="@user.Username" />
+                                }
+                            </FluentStack>
+                        </FluentStack>
+
+                        @if (!currentShare.ReadOnly)
+                        {
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
+                                <FluentLabel Weight="FontWeight.Bold">Write Permissions</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Select users who can write to this share</FluentLabel>
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" Style="max-height: 200px; overflow-y: auto; padding: 10px; border: 1px solid var(--neutral-stroke-rest); border-radius: 4px;">
+                                    @foreach (var user in sambaUsers.Where(u => selectedValidUsers.Contains(u.Username)))
+                                    {
+                                        <FluentCheckbox 
+                                            Value="@selectedWriteUsers.Contains(user.Username)"
+                                            ValueChanged="@((bool isChecked) => OnWriteUserChanged(user.Username, isChecked))"
+                                            Label="@user.Username" />
+                                    }
+                                </FluentStack>
+                            </FluentStack>
+                        }
+                    }
+                    else if (!currentShare.GuestOk && sambaUsers.Count == 0)
+                    {
+                        <FluentMessageBar Intent="MessageIntent.Warning">
+                            No SMB users configured. Please add SMB users first or enable guest access.
+                        </FluentMessageBar>
+                    }
                     
                     <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10">
                         <FluentTextField 
@@ -292,23 +430,117 @@
     </FluentDialogFooter>
 </FluentDialog>
 
+<!-- Add/Edit User Dialog -->
+<FluentDialog @ref="userDialog" @bind-Hidden="@isUserDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 500px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Person())" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                @(editingUser == null ? "Add" : "Edit") SMB User
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentTextField 
+                @bind-Value="currentUser.Username"
+                Label="Username"
+                Required="true"
+                Placeholder="Enter username"
+                Disabled="@(editingUser != null)"
+                Style="width: 100%;">
+                <FluentLabel Slot="help-text">@(editingUser == null ? "Username must exist as a system user" : "Username cannot be changed")</FluentLabel>
+            </FluentTextField>
+            
+            <FluentTextField 
+                @bind-Value="currentUser.Password"
+                Label="@(editingUser == null ? "Password" : "New Password")"
+                TextFieldType="TextFieldType.Password"
+                Required="true"
+                Placeholder="Enter password"
+                Style="width: 100%;">
+                <FluentLabel Slot="help-text">Set the Samba password for this user</FluentLabel>
+            </FluentTextField>
+
+            <FluentTextField 
+                @bind-Value="confirmPassword"
+                Label="Confirm Password"
+                TextFieldType="TextFieldType.Password"
+                Required="true"
+                Placeholder="Re-enter password"
+                Style="width: 100%;" />
+        </FluentStack>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@SaveUser">
+            Save
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseUserDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Delete User Confirmation Dialog -->
+<FluentDialog @ref="deleteUserDialog" @bind-Hidden="@isDeleteUserDialogHidden" TrapFocus="true" Modal="true">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Icons.Regular.Size24.Warning())" Color="@Color.Error" />
+            <FluentLabel Typo="Typography.PaneHeader">
+                Confirm Delete User
+            </FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+
+    <FluentDialogBody>
+        <FluentLabel Typo="Typography.Body">
+            Are you sure you want to delete the SMB user "@userToDelete?.Username"?
+        </FluentLabel>
+        <FluentMessageBar Intent="MessageIntent.Warning" Style="margin-top: 15px;">
+            This will remove the user's Samba password. The system user account will not be deleted.
+        </FluentMessageBar>
+    </FluentDialogBody>
+
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDeleteUser">
+            Delete
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDeleteUserDialog">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
 @code {
     private List<ShareInfo> sambaShares = new();
     private List<ShareInfo> nfsShares = new();
+    private List<SambaUser> sambaUsers = new();
     
     private FluentDialog? shareDialog;
     private FluentDialog? deleteDialog;
+    private FluentDialog? userDialog;
+    private FluentDialog? deleteUserDialog;
     private bool isLoading = true;
     private bool isAuthorized = false;
     private bool isShareDialogHidden = true;
     private bool isDeleteDialogHidden = true;
-    
-    private string activeTabId = "samba";
-    private ShareType currentTabType = ShareType.CIFS;
+    private bool isUserDialogHidden = true;
+    private bool isDeleteUserDialogHidden = true;
     
     private ShareInfo? editingShare;
     private ShareRequest currentShare = new();
     private ShareInfo? shareToDelete;
+    
+    private SambaUser? editingUser;
+    private SambaUserRequest currentUser = new();
+    private SambaUser? userToDelete;
+    private string confirmPassword = string.Empty;
+    
+    // User selection for shares
+    private HashSet<string> selectedValidUsers = new();
+    private HashSet<string> selectedWriteUsers = new();
 
     /// <summary>
     /// Initialize the page
@@ -326,7 +558,36 @@
         }
 
         isAuthorized = true;
-        await LoadShares();
+        await LoadData();
+    }
+
+    /// <summary>
+    /// Load all data (shares and users)
+    /// </summary>
+    private async Task LoadData()
+    {
+        isLoading = true;
+        try
+        {
+            var cifsTask = ShareService.GetCifsSharesAsync();
+            var nfsTask = ShareService.GetNfsSharesAsync();
+            var usersTask = ShareService.GetSambaUsersAsync();
+
+            await Task.WhenAll(cifsTask, nfsTask, usersTask);
+
+            sambaShares = cifsTask.Result;
+            nfsShares = nfsTask.Result;
+            sambaUsers = usersTask.Result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading data");
+            ToastService.ShowError("Failed to load data");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     /// <summary>
@@ -334,7 +595,6 @@
     /// </summary>
     private async Task LoadShares()
     {
-        isLoading = true;
         try
         {
             var cifsTask = ShareService.GetCifsSharesAsync();
@@ -350,18 +610,22 @@
             Logger.LogError(ex, "Error loading shares");
             ToastService.ShowError("Failed to load shares");
         }
-        finally
-        {
-            isLoading = false;
-        }
     }
 
     /// <summary>
-    /// Handle tab change
+    /// Load Samba users
     /// </summary>
-    private void OnTabChanged(FluentTab tab)
+    private async Task LoadUsers()
     {
-        currentTabType = tab.Id == "samba" ? ShareType.CIFS : ShareType.NFS;
+        try
+        {
+            sambaUsers = await ShareService.GetSambaUsersAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading users");
+            ToastService.ShowError("Failed to load users");
+        }
     }
 
     #region Share Management
@@ -381,6 +645,8 @@
             AllowedHosts = "*",
             NfsOptions = "rw,sync,no_subtree_check"
         };
+        selectedValidUsers.Clear();
+        selectedWriteUsers.Clear();
         isShareDialogHidden = false;
     }
 
@@ -406,7 +672,99 @@
             AllowedHosts = share.AllowedHosts,
             NfsOptions = share.NfsOptions
         };
+        
+        // Parse existing users into selection sets, filtering out groups and non-existent users
+        selectedValidUsers.Clear();
+        selectedWriteUsers.Clear();
+
+        // Build a lookup of existing Samba usernames
+        var existingUsernames = new HashSet<string>(
+            sambaUsers.Select(u => u.Username),
+            StringComparer.OrdinalIgnoreCase);
+
+        var missingUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrEmpty(share.ValidUsers))
+        {
+            foreach (var user in share.ValidUsers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                // Skip Samba group entries (start with '@')
+                if (user.StartsWith("@", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                
+                if (existingUsernames.Contains(user))
+                {
+                    selectedValidUsers.Add(user);
+                }
+                else
+                {
+                    missingUsers.Add(user);
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(share.WriteList))
+        {
+            foreach (var user in share.WriteList.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                // Skip Samba group entries (start with '@')
+                if (user.StartsWith("@", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                
+                if (existingUsernames.Contains(user))
+                {
+                    selectedWriteUsers.Add(user);
+                }
+                else
+                {
+                    missingUsers.Add(user);
+                }
+            }
+        }
+
+        if (missingUsers.Count > 0)
+        {
+            Logger.LogWarning("Share {ShareName} references non-existent Samba users: {Users}", share.Name, string.Join(", ", missingUsers));
+            ToastService.ShowWarning($"Some users referenced in this share no longer exist and were ignored: {string.Join(", ", missingUsers)}");
+        }
+        
         isShareDialogHidden = false;
+    }
+    
+    /// <summary>
+    /// Handle valid user checkbox change
+    /// </summary>
+    private void OnValidUserChanged(string username, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedValidUsers.Add(username);
+        }
+        else
+        {
+            selectedValidUsers.Remove(username);
+            // If user is removed from valid users, also remove from write users
+            selectedWriteUsers.Remove(username);
+        }
+    }
+    
+    /// <summary>
+    /// Handle write user checkbox change
+    /// </summary>
+    private void OnWriteUserChanged(string username, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedWriteUsers.Add(username);
+        }
+        else
+        {
+            selectedWriteUsers.Remove(username);
+        }
     }
 
     /// <summary>
@@ -433,6 +791,39 @@
             {
                 ToastService.ShowError("Allowed hosts is required for NFS shares");
                 return;
+            }
+            
+            // For CIFS shares, configure user lists based on guest access
+            if (currentShare.Type == ShareType.CIFS)
+            {
+                if (currentShare.GuestOk)
+                {
+                    // When guest access is enabled, clear any explicit user lists
+                    currentShare.ValidUsers = string.Empty;
+                    currentShare.WriteList = string.Empty;
+                }
+                else
+                {
+                    // When guest access is disabled, set user lists from selected users
+                    currentShare.ValidUsers = string.Join(", ", selectedValidUsers);
+                    
+                    // Prevent configuration where CIFS share has no guest access and no valid users
+                    if (string.IsNullOrWhiteSpace(currentShare.ValidUsers))
+                    {
+                        ToastService.ShowError("At least one valid user must be selected for CIFS shares without guest access");
+                        return;
+                    }
+                    
+                    if (currentShare.ReadOnly)
+                    {
+                        // Ensure write permissions list is cleared when the share is read-only
+                        currentShare.WriteList = string.Empty;
+                    }
+                    else
+                    {
+                        currentShare.WriteList = string.Join(", ", selectedWriteUsers);
+                    }
+                }
             }
 
             OperationResult result;
@@ -590,6 +981,179 @@
             Logger.LogError(ex, "Error restarting NFS service");
             ToastService.ShowError("Failed to restart NFS service");
         }
+    }
+
+    #endregion
+    
+    #region User Management
+    
+    /// <summary>
+    /// Open add user dialog
+    /// </summary>
+    private void OpenAddUserDialog()
+    {
+        editingUser = null;
+        currentUser = new SambaUserRequest();
+        confirmPassword = string.Empty;
+        isUserDialogHidden = false;
+    }
+    
+    /// <summary>
+    /// Open edit user dialog (change password)
+    /// </summary>
+    private void OpenEditUserDialog(SambaUser user)
+    {
+        editingUser = user;
+        currentUser = new SambaUserRequest
+        {
+            Username = user.Username
+        };
+        confirmPassword = string.Empty;
+        isUserDialogHidden = false;
+    }
+    
+    /// <summary>
+    /// Save user (add or update password)
+    /// </summary>
+    private async Task SaveUser()
+    {
+        try
+        {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(currentUser.Username))
+            {
+                ToastService.ShowError("Username is required");
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(currentUser.Password))
+            {
+                ToastService.ShowError("Password is required");
+                return;
+            }
+            
+            if (currentUser.Password != confirmPassword)
+            {
+                ToastService.ShowError("Passwords do not match");
+                return;
+            }
+            
+            OperationResult result;
+            
+            if (editingUser == null)
+            {
+                // Add new user
+                result = await ShareService.AddSambaUserAsync(currentUser);
+                
+                if (result.Success)
+                {
+                    ToastService.ShowSuccess($"SMB user '{currentUser.Username}' added successfully");
+                }
+            }
+            else
+            {
+                // Update user password
+                result = await ShareService.UpdateSambaUserPasswordAsync(currentUser.Username, currentUser.Password);
+                
+                if (result.Success)
+                {
+                    ToastService.ShowSuccess($"Password updated for user '{currentUser.Username}'");
+                }
+            }
+            
+            if (result.Success)
+            {
+                await LoadUsers();
+                CloseUserDialog();
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving user");
+            ToastService.ShowError("Failed to save user");
+        }
+    }
+    
+    /// <summary>
+    /// Open delete user confirmation dialog
+    /// </summary>
+    private void DeleteUser(SambaUser user)
+    {
+        userToDelete = user;
+        isDeleteUserDialogHidden = false;
+    }
+    
+    /// <summary>
+    /// Confirm and delete user
+    /// </summary>
+    private async Task ConfirmDeleteUser()
+    {
+        if (userToDelete == null) return;
+        
+        try
+        {
+            // Check if the user is referenced in any shares
+            var referencingShares = sambaShares
+                .Where(s => 
+                    (!string.IsNullOrEmpty(s.ValidUsers) && s.ValidUsers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Contains(userToDelete.Username, StringComparer.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(s.WriteList) && s.WriteList.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Contains(userToDelete.Username, StringComparer.OrdinalIgnoreCase)))
+                .Select(s => s.Name)
+                .ToList();
+            
+            if (referencingShares.Count > 0)
+            {
+                ToastService.ShowWarning($"User '{userToDelete.Username}' is referenced in {referencingShares.Count} share(s): {string.Join(", ", referencingShares)}. The user will be removed from their access lists.");
+            }
+            
+            var result = await ShareService.RemoveSambaUserAsync(userToDelete.Username);
+            
+            if (result.Success)
+            {
+                ToastService.ShowSuccess($"SMB user '{userToDelete.Username}' deleted successfully");
+                await LoadUsers();
+                
+                // Reload shares if user was referenced in any
+                if (referencingShares.Count > 0)
+                {
+                    await LoadShares();
+                }
+            }
+            else
+            {
+                ToastService.ShowError(result.Message);
+            }
+            
+            CloseDeleteUserDialog();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deleting user");
+            ToastService.ShowError("Failed to delete user");
+        }
+    }
+    
+    /// <summary>
+    /// Close user dialog
+    /// </summary>
+    private void CloseUserDialog()
+    {
+        isUserDialogHidden = true;
+        editingUser = null;
+        confirmPassword = string.Empty;
+        currentUser = new SambaUserRequest();
+    }
+    
+    /// <summary>
+    /// Close delete user confirmation dialog
+    /// </summary>
+    private void CloseDeleteUserDialog()
+    {
+        isDeleteUserDialogHidden = true;
+        userToDelete = null;
     }
 
     #endregion

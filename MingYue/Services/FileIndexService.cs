@@ -9,6 +9,7 @@ namespace MingYue.Services
         private readonly IConfiguration _configuration;
         private readonly string _cacheDirectory;
         private const int MaxSearchResults = 100;
+        private const int MaxRecursionDepth = 10;
 
         public FileIndexService(ILogger<FileIndexService> logger, IConfiguration configuration)
         {
@@ -420,9 +421,14 @@ namespace MingYue.Services
         }
 
         /// <summary>
-        /// Advanced search that recursively searches files and directories from a starting directory
-        /// This bypasses the index and searches the actual file system for real-time results
+        /// Advanced search that recursively searches files and directories from a starting directory.
+        /// This bypasses the index and searches the actual file system for real-time results.
         /// </summary>
+        /// <param name="startDirectory">The directory to start searching from</param>
+        /// <param name="searchPattern">The search pattern with wildcard support (* and ?)</param>
+        /// <param name="includeSubdirectories">Whether to search subdirectories recursively</param>
+        /// <param name="includeDirectories">Whether to include directories in the results</param>
+        /// <returns>List of matching files and/or directories with full paths</returns>
         public async Task<List<FileIndex>> AdvancedSearchAsync(string startDirectory, string searchPattern, bool includeSubdirectories = true, bool includeDirectories = true)
         {
             return await Task.Run(() =>
@@ -440,8 +446,11 @@ namespace MingYue.Services
                     // Normalize the start directory path
                     var normalizedStart = Path.GetFullPath(startDirectory);
                     
+                    // Create regex once to avoid repeated compilation
+                    var regex = CreateSearchRegex(searchPattern);
+                    
                     // Search recursively
-                    SearchFileSystemRecursive(normalizedStart, searchPattern, results, includeSubdirectories, includeDirectories, 0, 10);
+                    SearchFileSystemRecursive(normalizedStart, regex, results, includeSubdirectories, includeDirectories, 0, MaxRecursionDepth);
                     
                     _logger.LogInformation("Advanced search completed: {Count} results for pattern '{Pattern}' in {Directory}", 
                         results.Count, searchPattern, startDirectory);
@@ -457,9 +466,16 @@ namespace MingYue.Services
         }
 
         /// <summary>
-        /// Recursively searches the file system for files and directories matching the pattern
+        /// Recursively searches the file system for files and directories matching the pattern.
         /// </summary>
-        private void SearchFileSystemRecursive(string directory, string searchPattern, List<FileIndex> results, 
+        /// <param name="directory">The directory to search in</param>
+        /// <param name="regex">Compiled regex pattern for matching names</param>
+        /// <param name="results">List to accumulate results</param>
+        /// <param name="includeSubdirectories">Whether to recurse into subdirectories</param>
+        /// <param name="includeDirectories">Whether to include directories in results</param>
+        /// <param name="currentDepth">Current recursion depth</param>
+        /// <param name="maxDepth">Maximum recursion depth</param>
+        private void SearchFileSystemRecursive(string directory, System.Text.RegularExpressions.Regex regex, List<FileIndex> results, 
             bool includeSubdirectories, bool includeDirectories, int currentDepth, int maxDepth)
         {
             if (currentDepth >= maxDepth || results.Count >= MaxSearchResults)
@@ -470,9 +486,6 @@ namespace MingYue.Services
             try
             {
                 var dirInfo = new DirectoryInfo(directory);
-                
-                // Create regex pattern from search pattern
-                var regex = CreateSearchRegex(searchPattern);
                 
                 // Search files in current directory
                 foreach (var file in dirInfo.EnumerateFiles())
@@ -494,38 +507,30 @@ namespace MingYue.Services
                     }
                 }
                 
-                // Search directories if requested
-                if (includeDirectories)
+                // Process subdirectories - enumerate once and check/recurse as needed
+                foreach (var subdir in dirInfo.EnumerateDirectories())
                 {
-                    foreach (var subdir in dirInfo.EnumerateDirectories())
+                    if (results.Count >= MaxSearchResults)
+                        break;
+                    
+                    // Add to results if directories are included and name matches
+                    if (includeDirectories && regex.IsMatch(subdir.Name))
                     {
-                        if (results.Count >= MaxSearchResults)
-                            break;
-                            
-                        if (regex.IsMatch(subdir.Name))
+                        results.Add(new FileIndex
                         {
-                            results.Add(new FileIndex
-                            {
-                                FilePath = subdir.FullName,
-                                FileName = subdir.Name,
-                                FileSize = 0, // Directories don't have a size
-                                ModifiedAt = subdir.LastWriteTimeUtc,
-                                FileType = "directory",
-                                IndexedAt = DateTime.UtcNow
-                            });
-                        }
+                            FilePath = subdir.FullName,
+                            FileName = subdir.Name,
+                            FileSize = 0, // Directories don't have a size
+                            ModifiedAt = subdir.LastWriteTimeUtc,
+                            FileType = "directory",
+                            IndexedAt = DateTime.UtcNow
+                        });
                     }
-                }
-                
-                // Recurse into subdirectories if requested
-                if (includeSubdirectories)
-                {
-                    foreach (var subdir in dirInfo.EnumerateDirectories())
+                    
+                    // Recurse if subdirectories should be searched
+                    if (includeSubdirectories)
                     {
-                        if (results.Count >= MaxSearchResults)
-                            break;
-                            
-                        SearchFileSystemRecursive(subdir.FullName, searchPattern, results, 
+                        SearchFileSystemRecursive(subdir.FullName, regex, results, 
                             includeSubdirectories, includeDirectories, currentDepth + 1, maxDepth);
                     }
                 }
@@ -542,15 +547,20 @@ namespace MingYue.Services
         }
 
         /// <summary>
-        /// Creates a regex from a search pattern with wildcard support
+        /// Creates a regex from a search pattern with wildcard support.
+        /// Supports * (matches any characters) and ? (matches single character).
         /// </summary>
+        /// <param name="searchPattern">The search pattern with optional wildcards</param>
+        /// <returns>Compiled regex with case-insensitive matching and 1-second timeout</returns>
         private System.Text.RegularExpressions.Regex CreateSearchRegex(string searchPattern)
         {
             if (string.IsNullOrWhiteSpace(searchPattern) || searchPattern == "*")
             {
                 // Match everything
-                return new System.Text.RegularExpressions.Regex(".*", 
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                return new System.Text.RegularExpressions.Regex(
+                    "^.*$", 
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                    System.TimeSpan.FromSeconds(1));
             }
             
             // Escape special regex characters except * and ?

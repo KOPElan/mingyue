@@ -647,18 +647,41 @@
                 <FluentDivider />
                 <FluentLabel Typo="Typography.Subject">Results (@advancedSearchResults.Count items)</FluentLabel>
                 
+                <style>
+                    .advanced-search-result-item {
+                        padding: 12px;
+                        border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+                        cursor: pointer;
+                        transition: background-color 0.2s;
+                    }
+                    .advanced-search-result-item:hover {
+                        background-color: var(--neutral-fill-secondary-hover);
+                    }
+                    .advanced-search-result-item:last-child {
+                        border-bottom: none;
+                    }
+                </style>
+                
                 <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--neutral-stroke-divider-rest); border-radius: 4px;">
-                    <FluentDataGrid Items="@advancedSearchResults.AsQueryable()" Style="width: 100%;">
-                        <PropertyColumn Property="@(f => f.Name)" Title="Name" Sortable="true" />
-                        <PropertyColumn Property="@(f => f.Path)" Title="Path" Sortable="true" />
-                        <PropertyColumn Property="@(f => f.IsDirectory ? "Folder" : "File")" Title="Type" Sortable="true" />
-                        <TemplateColumn Title="Action">
-                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => NavigateToSearchResult(context))">
-                                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Navigation())" />
-                                Go to
-                            </FluentButton>
-                        </TemplateColumn>
-                    </FluentDataGrid>
+                    @foreach (var item in advancedSearchResults)
+                    {
+                        <div class="advanced-search-result-item" @onclick="@(() => NavigateToSearchResult(item))">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                @if (item.IsDirectory)
+                                {
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder())" Color="@Color.Accent" />
+                                }
+                                else
+                                {
+                                    <FluentIcon Value="@GetFluentFileIcon(item)" />
+                                }
+                                <span style="font-weight: 500;">@item.Name</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--neutral-foreground-hint); margin-left: 28px;">
+                                @item.Path
+                            </div>
+                        </div>
+                    }
                 </div>
             }
             else if (hasPerformedAdvancedSearch)
@@ -1525,6 +1548,7 @@
         if (string.IsNullOrWhiteSpace(searchQuery))
         {
             searchResults.Clear();
+            StateHasChanged();
             return;
         }
 
@@ -1536,16 +1560,20 @@
             searchResults = fileItems
                 .Where(item => pattern.IsMatch(item.Name))
                 .ToList();
+            
+            StateHasChanged();
         }
         catch (System.Text.RegularExpressions.RegexMatchTimeoutException)
         {
             Logger.LogWarning("Regex match timeout for pattern: {Query}", searchQuery);
             searchResults.Clear();
+            StateHasChanged();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error filtering files: {Query}", searchQuery);
             searchResults.Clear();
+            StateHasChanged();
         }
     }
 
@@ -1852,6 +1880,43 @@
             "video" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Video(),
             "music" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.MusicNote2(),
             _ => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder()
+        };
+    }
+
+    private Icon GetFluentFileIcon(FileItemInfo item)
+    {
+        if (item.IsDirectory)
+        {
+            return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder();
+        }
+
+        return item.Extension.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Image(),
+            ".pdf" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentPdf(),
+            ".doc" or ".docx" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Document(),
+            ".xls" or ".xlsx" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentTable(),
+            ".ppt" or ".pptx" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.SlideText(),
+            ".txt" or ".log" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentText(),
+            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.FolderZip(),
+            ".mp3" or ".wav" or ".flac" or ".m4a" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.MusicNote2(),
+            ".mp4" or ".avi" or ".mkv" or ".mov" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Video(),
+            ".js" or ".ts" or ".json" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentJavascript(),
+            ".css" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentCss(),
+            ".cs" or ".py" or ".java" or ".cpp" or ".c" or ".h" or ".html" or ".xml" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Code(),
+            _ => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Document()
         };
     }
 

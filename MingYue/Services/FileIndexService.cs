@@ -8,6 +8,7 @@ namespace MingYue.Services
         private readonly ILogger<FileIndexService> _logger;
         private readonly IConfiguration _configuration;
         private readonly string _cacheDirectory;
+        private const int MaxSearchResults = 100;
 
         public FileIndexService(ILogger<FileIndexService> logger, IConfiguration configuration)
         {
@@ -262,7 +263,7 @@ namespace MingYue.Services
                     }
                 }
                 
-                return results.Take(100).ToList();
+                return results.Take(MaxSearchResults).ToList();
             }
             catch (Exception ex)
             {
@@ -290,11 +291,11 @@ namespace MingYue.Services
                 var index = await LoadIndexAsync(directoryPath);
                 if (index != null)
                 {
-                    var matchingFiles = SearchInIndex(index, searchPattern, directoryPath);
+                    var matchingFiles = SearchInIndex(index, searchPattern, index.DirectoryPath);
                     results.AddRange(matchingFiles);
                 }
 
-                return results.Take(100).ToList();
+                return results.Take(MaxSearchResults).ToList();
             }
             catch (Exception ex)
             {
@@ -311,7 +312,7 @@ namespace MingYue.Services
             if (string.IsNullOrWhiteSpace(searchPattern))
             {
                 // Return all files if no pattern
-                foreach (var entry in index.Files.Take(100))
+                foreach (var entry in index.Files.Take(MaxSearchResults))
                 {
                     results.Add(ConvertToFileIndex(entry, basePath));
                 }

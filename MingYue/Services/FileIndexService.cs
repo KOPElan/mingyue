@@ -272,12 +272,6 @@ namespace MingYue.Services
                 
                 foreach (var indexFile in indexFiles)
                 {
-                    // Early exit if we have enough results
-                    if (results.Count >= MaxSearchResults)
-                    {
-                        break;
-                    }
-                    
                     try
                     {
                         var json = await File.ReadAllTextAsync(indexFile);
@@ -287,6 +281,12 @@ namespace MingYue.Services
                         {
                             var matchingFiles = SearchInIndex(index, searchPattern, index.DirectoryPath);
                             results.AddRange(matchingFiles);
+                            
+                            // Early exit after adding results if we have enough
+                            if (results.Count >= MaxSearchResults)
+                            {
+                                break;
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -354,7 +354,8 @@ namespace MingYue.Services
             // Use CreateSearchRegex for consistent fuzzy/wildcard matching behavior
             var regex = CreateSearchRegex(searchPattern);
 
-            var matchingFiles = index.Files.Where(entry => regex.IsMatch(entry.FileName));
+            // Limit results to avoid unnecessary conversions when there are many matches
+            var matchingFiles = index.Files.Where(entry => regex.IsMatch(entry.FileName)).Take(MaxSearchResults);
             
             foreach (var entry in matchingFiles)
             {
@@ -619,8 +620,15 @@ namespace MingYue.Services
                 return true;
             
             // Exclude the cache directory itself to prevent self-referential indexing
-            if (dirInfo.FullName.StartsWith(_cacheDirectory, StringComparison.OrdinalIgnoreCase))
+            // Normalize both paths and ensure proper path separator handling
+            var normalizedDirPath = Path.GetFullPath(dirInfo.FullName).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var normalizedCachePath = Path.GetFullPath(_cacheDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            
+            if (normalizedDirPath.Equals(normalizedCachePath, StringComparison.OrdinalIgnoreCase) ||
+                normalizedDirPath.StartsWith(normalizedCachePath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
                 return true;
+            }
             
             // Exclude common system and development directories
             return ExcludedDirectoryNames.Contains(dirInfo.Name);

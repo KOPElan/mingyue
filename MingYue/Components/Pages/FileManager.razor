@@ -94,13 +94,16 @@
                 <!-- Search -->
                 <FluentSearch @bind-Value="@searchQuery"
                               @bind-Value:after="@OnSearchChanged"
-                              Placeholder="Search files..."
+                              Placeholder="Filter current directory..."
                               Class="header-search"
-                              Immediate="false"
-                              ImmediateDelay="500" />
+                              Immediate="true"
+                              ImmediateDelay="300" />
 
                 <!-- Actions -->
                 <div class="header-actions">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenAdvancedSearchDialog" Title="Advanced Search">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.SearchSquare())" />
+                    </FluentButton>
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshFiles" Title="Refresh">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
                     </FluentButton>
@@ -202,6 +205,11 @@
             {
                 <div class="file-list-container">
                     <div class="file-list-header">
+                        <div class="file-list-checkbox-header">
+                            <FluentCheckbox @bind-Value="@isAllSelected"
+                                            @bind-Value:after="@OnSelectAllChanged"
+                                            Title="Select all" />
+                        </div>
                         <div>Name</div>
                         <div>Size</div>
                         <div>Modified</div>
@@ -209,16 +217,23 @@
                     </div>
                     @foreach (var item in DisplayedFiles)
                     {
-                        <div class="file-list-row">
-                            <div class="file-list-name">
+                        var isSelected = selectedItems.Contains(item);
+                        <div class="file-list-row @(isSelected ? "selected" : "")"
+                             @onclick="@((e) => OnListRowClick(item, e))">
+                            <div class="file-list-checkbox">
+                                <FluentCheckbox Value="@isSelected"
+                                                ValueChanged="@((bool value) => OnListItemCheckChanged(item, value))"
+                                                @onclick:stopPropagation="true" />
+                            </div>
+                            <div class="file-list-name" @ondblclick="@(() => OnItemClick(item))" @ondblclick:stopPropagation="true">
                                 <img src="@GetFileIcon(item)" alt="@item.Name" class="file-type-icon-small" />
-                                <span class="file-list-name-text" @onclick="@(() => OnItemClick(item))">
+                                <span class="file-list-name-text">
                                     @item.Name
                                 </span>
                             </div>
                             <div>@item.SizeDisplay</div>
                             <div>@item.LastModified.ToString("yyyy-MM-dd HH:mm")</div>
-                            <div class="file-list-actions">
+                            <div class="file-list-actions" @onclick:stopPropagation="true">
                                 @if (!item.IsDirectory)
                                 {
                                     <FluentButton Appearance="Appearance.Lightweight"
@@ -582,6 +597,16 @@
             <FluentDivider />
             
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
+                <FluentLabel Typo="Typography.Subject">Exclusion Rules:</FluentLabel>
+                <FluentLabel Class="text-small-hint">
+                    System and hidden files/folders will be automatically excluded. Common development directories 
+                    (node_modules, .git, bin, obj, etc.) will also be skipped to keep indexes efficient.
+                </FluentLabel>
+            </FluentStack>
+            
+            <FluentDivider />
+            
+            <FluentStack Orientation="Orientation.Vertical" VerticalGap="5">
                 <FluentLabel Typo="Typography.Subject">Schedule:</FluentLabel>
                 <FluentLabel Class="text-small-hint">
                     Tasks will run immediately and can be set to run periodically. Default: Run once now.
@@ -598,6 +623,87 @@
             Create Tasks
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isBackgroundTaskDialogHidden = true)">Cancel</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+<!-- Advanced Search Dialog -->
+<FluentDialog @ref="advancedSearchDialog" @bind-Hidden="@isAdvancedSearchDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 700px; max-width: 900px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.SearchSquare())" />
+            <FluentLabel Typo="Typography.PaneHeader">Advanced Search</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentLabel Class="font-500">Search files and folders recursively from the current directory.</FluentLabel>
+            
+            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10">
+                <FluentSearch @bind-Value="@advancedSearchQuery"
+                              Placeholder="Enter search pattern (e.g., *.txt, file*, etc.)..."
+                              Class="full-width"
+                              Style="flex: 1;" />
+                <FluentButton Appearance="Appearance.Accent" OnClick="@PerformAdvancedSearch">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Search())" />
+                    Search
+                </FluentButton>
+            </FluentStack>
+            
+            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10">
+                <FluentCheckbox @bind-Value="advancedSearchIncludeSubdirs" Label="Include Subdirectories" />
+                <FluentCheckbox @bind-Value="advancedSearchIncludeFolders" Label="Include Folders" />
+            </FluentStack>
+            
+            @if (advancedSearchResults.Count > 0)
+            {
+                <FluentDivider />
+                <FluentLabel Typo="Typography.Subject">Results (@advancedSearchResults.Count items)</FluentLabel>
+                
+                <style>
+                    .advanced-search-result-item {
+                        padding: 12px;
+                        border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+                        cursor: pointer;
+                        transition: background-color 0.2s;
+                    }
+                    .advanced-search-result-item:hover {
+                        background-color: var(--neutral-fill-secondary-hover);
+                    }
+                    .advanced-search-result-item:last-child {
+                        border-bottom: none;
+                    }
+                </style>
+                
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--neutral-stroke-divider-rest); border-radius: 4px;">
+                    @foreach (var item in advancedSearchResults)
+                    {
+                        <div class="advanced-search-result-item" @onclick="@(() => NavigateToSearchResult(item))">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                @if (item.IsDirectory)
+                                {
+                                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder())" Color="@Color.Accent" />
+                                }
+                                else
+                                {
+                                    <FluentIcon Value="@GetFluentFileIcon(item)" />
+                                }
+                                <span style="font-weight: 500;">@item.Name</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--neutral-foreground-hint); margin-left: 28px;">
+                                @item.Path
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (hasPerformedAdvancedSearch)
+            {
+                <FluentLabel>No results found.</FluentLabel>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isAdvancedSearchDialogHidden = true)">Close</FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
 
@@ -622,6 +728,16 @@
     private bool isLoading = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
+    
+    // Advanced search state
+    private FluentDialog? advancedSearchDialog;
+    private bool isAdvancedSearchDialogHidden = true;
+    private string advancedSearchQuery = string.Empty;
+    private bool advancedSearchIncludeSubdirs = true;
+    private bool advancedSearchIncludeFolders = true;
+    private List<FileItemInfo> advancedSearchResults = new();
+    private bool hasPerformedAdvancedSearch = false;
+    
     private (long total, long available) storageInfo;
 
     // Dialog states
@@ -698,6 +814,17 @@
 
     private void OnCardClick(FileItemInfo item, Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
     {
+        HandleItemSelection(item, e);
+    }
+
+    private void OnListRowClick(FileItemInfo item, Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
+        HandleItemSelection(item, e);
+        UpdateSelectAllState();
+    }
+
+    private void HandleItemSelection(FileItemInfo item, Microsoft.AspNetCore.Components.Web.MouseEventArgs e)
+    {
         // Ctrl/Cmd key for multi-select
         if (e.CtrlKey || e.MetaKey)
         {
@@ -710,7 +837,7 @@
                 selectedItems.Add(item);
             }
         }
-        // Shift key for range select (simple implementation)
+        // Shift key for range select
         else if (e.ShiftKey && selectedItems.Any())
         {
             var lastSelected = selectedItems.Last();
@@ -734,6 +861,38 @@
             selectedItems.Clear();
             selectedItems.Add(item);
         }
+    }
+
+    private void OnListItemCheckChanged(FileItemInfo item, bool isChecked)
+    {
+        if (isChecked)
+        {
+            selectedItems.Add(item);
+        }
+        else
+        {
+            selectedItems.Remove(item);
+        }
+        UpdateSelectAllState();
+    }
+
+    private bool isAllSelected = false;
+
+    private void OnSelectAllChanged()
+    {
+        selectedItems.Clear();
+        if (isAllSelected)
+        {
+            foreach (var item in DisplayedFiles)
+            {
+                selectedItems.Add(item);
+            }
+        }
+    }
+
+    private void UpdateSelectAllState()
+    {
+        isAllSelected = DisplayedFiles.Any() && DisplayedFiles.All(f => selectedItems.Contains(f));
     }
 
     private async Task LoadThumbnails()
@@ -861,6 +1020,12 @@
         searchQuery = string.Empty;
         searchResults.Clear();
         selectedItems.Clear(); // Clear selection when navigating
+        UpdateSelectAllState(); // Sync the "Select All" checkbox state
+        
+        // Clear advanced search results when path changes to avoid stale data
+        advancedSearchResults.Clear();
+        hasPerformedAdvancedSearch = false;
+        
         await LoadFiles();
     }
 
@@ -1434,48 +1599,163 @@
 
     #region Search
 
-    private async Task OnSearchChanged()
+    private void OnSearchChanged()
     {
         if (string.IsNullOrWhiteSpace(searchQuery))
         {
             searchResults.Clear();
+            StateHasChanged();
             return;
         }
 
         try
         {
-            // Check if index exists for current directory or parent directories
+            // Real-time filtering of current directory files and folders
+            var pattern = CreateWildcardPattern(searchQuery);
+            
+            searchResults = fileItems
+                .Where(item => pattern.IsMatch(item.Name))
+                .ToList();
+            
+            StateHasChanged();
+        }
+        catch (System.Text.RegularExpressions.RegexMatchTimeoutException)
+        {
+            Logger.LogWarning("Regex match timeout for pattern: {Query}", searchQuery);
+            searchResults.Clear();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error filtering files: {Query}", searchQuery);
+            searchResults.Clear();
+            StateHasChanged();
+        }
+    }
+
+    private void OpenAdvancedSearchDialog()
+    {
+        isAdvancedSearchDialogHidden = false;
+    }
+
+    private async Task PerformAdvancedSearch()
+    {
+        if (string.IsNullOrWhiteSpace(advancedSearchQuery))
+        {
+            ToastService.ShowWarning("Please enter a search pattern");
+            return;
+        }
+
+        try
+        {
+            hasPerformedAdvancedSearch = true;
+            advancedSearchResults.Clear(); // Clear previous results before search
+            
+            // Check if index exists
             var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
             
             if (!hasIndex)
             {
-                // No index found, prompt user to create one
-                ToastService.ShowWarning("No search index found. Please create an index for this directory to enable search.");
-                searchResults.Clear();
+                ToastService.ShowWarning("No search index found. Please create an index for this directory to enable advanced search.");
                 return;
             }
-
-            // Search using the index
-            var indexResults = await FileIndexService.SearchFilesInDirectoryAsync(currentPath, searchQuery);
             
-            // Convert FileIndex to FileItemInfo
-            searchResults = indexResults.Select(fi => new FileItemInfo
-            {
-                Name = fi.FileName,
-                Path = fi.FilePath,
-                Size = fi.FileSize,
-                LastModified = fi.ModifiedAt,
-                IsDirectory = false,
-                Extension = fi.FileType
-            }).ToList();
+            // Perform advanced search using indexes
+            var results = await FileIndexService.AdvancedSearchAsync(
+                currentPath, 
+                advancedSearchQuery, 
+                advancedSearchIncludeSubdirs, 
+                advancedSearchIncludeFolders);
             
-            ToastService.ShowInfo($"Found {searchResults.Count} items");
+            advancedSearchResults = ConvertFileIndexToFileItemInfo(results);
+            ToastService.ShowInfo($"Found {advancedSearchResults.Count} items");
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error searching files: {Query}", searchQuery);
+            Logger.LogError(ex, "Error performing advanced search: {Query}", advancedSearchQuery);
             ToastService.ShowError($"Search failed: {ex.Message}");
+            advancedSearchResults.Clear(); // Clear results on error
         }
+    }
+
+    private async Task NavigateToSearchResult(FileItemInfo item)
+    {
+        try
+        {
+            // Get the directory containing the file
+            var directory = item.IsDirectory ? item.Path : Path.GetDirectoryName(item.Path);
+            
+            if (string.IsNullOrEmpty(directory))
+            {
+                return;
+            }
+
+            // Navigate to the directory and wait for files to load
+            await NavigateToPath(directory);
+            
+            // Wait a moment for the file list to be populated
+            await Task.Delay(100);
+            
+            // Select the item
+            selectedItems.Clear();
+            var targetItem = fileItems.FirstOrDefault(f => f.Path == item.Path);
+            if (targetItem != null)
+            {
+                selectedItems.Add(targetItem);
+            }
+            
+            // Close the dialog
+            isAdvancedSearchDialogHidden = true;
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error navigating to search result: {Path}", item.Path);
+            ToastService.ShowError($"Failed to navigate to {item.Name}");
+        }
+    }
+
+    private System.Text.RegularExpressions.Regex CreateWildcardPattern(string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern) || pattern == "*")
+        {
+            return new System.Text.RegularExpressions.Regex(
+                "^.*$", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                System.TimeSpan.FromSeconds(1));
+        }
+        
+        // Check if pattern contains wildcards
+        bool hasWildcards = pattern.Contains('*') || pattern.Contains('?');
+        
+        // Escape special regex characters except * and ?
+        var escapedPattern = System.Text.RegularExpressions.Regex.Escape(pattern);
+        var regexPattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
+        
+        // If no wildcards, use fuzzy matching (contains) instead of exact match
+        if (!hasWildcards)
+        {
+            regexPattern = $".*{regexPattern}.*";
+        }
+        
+        return new System.Text.RegularExpressions.Regex(
+            $"^{regexPattern}$", 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+            System.TimeSpan.FromSeconds(1));
+    }
+
+    private List<FileItemInfo> ConvertFileIndexToFileItemInfo(List<FileIndex> indexResults)
+    {
+        return indexResults.Select(fi => new FileItemInfo
+        {
+            Name = fi.FileName,
+            Path = fi.FilePath,
+            Size = fi.FileSize,
+            LastModified = fi.ModifiedAt,
+            IsDirectory = fi.FileType == "directory",
+            Extension = fi.FileType == "directory" ? "" : Path.GetExtension(fi.FileName) ?? ""
+        }).ToList();
     }
 
     #endregion
@@ -1665,6 +1945,43 @@
             "video" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Video(),
             "music" => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.MusicNote2(),
             _ => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder()
+        };
+    }
+
+    private Icon GetFluentFileIcon(FileItemInfo item)
+    {
+        if (item.IsDirectory)
+        {
+            return new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Folder();
+        }
+
+        return item.Extension.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" or ".webp" or ".svg" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Image(),
+            ".pdf" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentPdf(),
+            ".doc" or ".docx" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Document(),
+            ".xls" or ".xlsx" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentTable(),
+            ".ppt" or ".pptx" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.SlideText(),
+            ".txt" or ".log" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentText(),
+            ".zip" or ".rar" or ".7z" or ".tar" or ".gz" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.FolderZip(),
+            ".mp3" or ".wav" or ".flac" or ".m4a" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.MusicNote2(),
+            ".mp4" or ".avi" or ".mkv" or ".mov" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Video(),
+            ".js" or ".ts" or ".json" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentJavascript(),
+            ".css" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.DocumentCss(),
+            ".cs" or ".py" or ".java" or ".cpp" or ".c" or ".h" or ".html" or ".xml" 
+                => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Code(),
+            _ => new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Document()
         };
     }
 

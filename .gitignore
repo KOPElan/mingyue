@@ -429,3 +429,6 @@ FodyWeavers.xsd
 # File manager thumbnails and indexes
 .thumbnail/
 .fileindex.json
+
+# MingYue centralized cache directory
+.mingyue-cache/

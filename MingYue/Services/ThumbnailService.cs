@@ -13,6 +13,8 @@ namespace MingYue.Services
     {
         private readonly ILogger<ThumbnailService> _logger;
         private readonly IDbContextFactory<MingYueDbContext> _dbContextFactory;
+        private readonly IConfiguration _configuration;
+        private readonly string _cacheDirectory;
         private readonly HashSet<string> _supportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"
@@ -21,12 +23,35 @@ namespace MingYue.Services
         {
             ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".m4v"
         };
-        private const string ThumbnailDirName = ".thumbnail";
 
-        public ThumbnailService(ILogger<ThumbnailService> logger, IDbContextFactory<MingYueDbContext> dbContextFactory)
+        public ThumbnailService(ILogger<ThumbnailService> logger, IDbContextFactory<MingYueDbContext> dbContextFactory, IConfiguration configuration)
         {
             _logger = logger;
             _dbContextFactory = dbContextFactory;
+            _configuration = configuration;
+            
+            // Get cache directory from configuration, default to .mingyue-cache in user's home
+            var configuredCache = _configuration["Storage:CacheDirectory"];
+            if (string.IsNullOrWhiteSpace(configuredCache))
+            {
+                configuredCache = ".mingyue-cache";
+            }
+            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _cacheDirectory = Path.Combine(homeDir, configuredCache);
+            
+            // Ensure base cache directory exists - fail fast if there are permission issues
+            try
+            {
+                if (!Directory.Exists(_cacheDirectory))
+                {
+                    Directory.CreateDirectory(_cacheDirectory);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create cache directory at {CacheDirectory}", _cacheDirectory);
+                throw;
+            }
         }
 
         public async Task<byte[]?> GetThumbnailAsync(string filePath)
@@ -53,28 +78,38 @@ namespace MingYue.Services
 
         /// <summary>
         /// Gets the path where the thumbnail should be stored
+        /// Thumbnails are stored in a centralized cache directory with a structure based on the file path hash
         /// </summary>
         private string GetThumbnailPath(string filePath)
         {
-            var directory = Path.GetDirectoryName(filePath) ?? string.Empty;
-            var thumbnailDir = Path.Combine(directory, ThumbnailDirName);
-            var fileName = Path.GetFileName(filePath);
+            // Normalize path to ensure consistent hashing
+            var normalizedPath = Path.GetFullPath(filePath);
             
-            // Generate a hash-based filename to avoid conflicts and handle special characters
-            var hash = ComputeFileHash(fileName);
-            var thumbnailFileName = $"{hash}.jpg";
+            // Compute hash of the full file path to create a unique identifier
+            var pathHash = ComputeFileHash(normalizedPath);
             
+            // Use first 2 characters of hash for subdirectory to avoid too many files in one directory
+            var subDir = pathHash.Length >= 2 ? pathHash.Substring(0, 2) : pathHash;
+            var thumbnailDir = Path.Combine(_cacheDirectory, "thumbnails", subDir);
+            
+            // Ensure directory exists
+            if (!Directory.Exists(thumbnailDir))
+            {
+                Directory.CreateDirectory(thumbnailDir);
+            }
+            
+            var thumbnailFileName = $"{pathHash}.jpg";
             return Path.Combine(thumbnailDir, thumbnailFileName);
         }
 
         /// <summary>
-        /// Computes a hash for the filename to create a unique thumbnail filename
+        /// Computes a hash for the file path to create a unique thumbnail identifier
         /// </summary>
-        private string ComputeFileHash(string fileName)
+        private string ComputeFileHash(string filePath)
         {
             using var sha256 = SHA256.Create();
-            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(fileName));
-            return Convert.ToHexString(hashBytes).ToLowerInvariant()[..16];
+            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(filePath));
+            return Convert.ToHexString(hashBytes).ToLowerInvariant();
         }
 
         public async Task<byte[]?> GenerateThumbnailAsync(string filePath, int width = 200, int height = 200)
@@ -169,20 +204,6 @@ namespace MingYue.Services
         private async Task SaveThumbnailToFileAsync(string filePath, byte[] thumbnailData)
         {
             var thumbnailPath = GetThumbnailPath(filePath);
-            var thumbnailDir = Path.GetDirectoryName(thumbnailPath);
-            
-            if (!string.IsNullOrEmpty(thumbnailDir) && !Directory.Exists(thumbnailDir))
-            {
-                Directory.CreateDirectory(thumbnailDir);
-                
-                // Set directory as hidden on Windows
-                if (OperatingSystem.IsWindows())
-                {
-                    var dirInfo = new DirectoryInfo(thumbnailDir);
-                    dirInfo.Attributes |= FileAttributes.Hidden;
-                }
-            }
-            
             await File.WriteAllBytesAsync(thumbnailPath, thumbnailData);
         }
 
@@ -229,7 +250,6 @@ namespace MingYue.Services
                 
                 var files = Directory.GetFiles(directoryPath, "*.*", searchOption)
                     .Where(f => allExtensions.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase))
-                    .Where(f => !IsInThumbnailDirectory(f)) // Exclude files in .thumbnail directories
                     .ToList();
 
                 _logger.LogInformation("Generating thumbnails for {Count} files in {DirectoryPath}", files.Count, directoryPath);
@@ -259,16 +279,6 @@ namespace MingYue.Services
             {
                 _logger.LogError(ex, "Error generating thumbnails for directory {DirectoryPath}", directoryPath);
             }
-        }
-
-        /// <summary>
-        /// Checks if a file path is within a .thumbnail directory
-        /// </summary>
-        private bool IsInThumbnailDirectory(string filePath)
-        {
-            // Check if any part of the path contains the .thumbnail directory
-            var pathParts = filePath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            return pathParts.Contains(ThumbnailDirName, StringComparer.OrdinalIgnoreCase);
         }
     }
 }

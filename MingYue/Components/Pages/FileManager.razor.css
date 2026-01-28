@@ -260,7 +260,7 @@
 
 .file-list-header {
     display: grid;
-    grid-template-columns: 3fr 1fr 1.5fr 1fr;
+    grid-template-columns: 40px 3fr 1fr 1.5fr 1fr;
     gap: 16px;
     padding: 12px 16px;
     background: var(--neutral-layer-3, #fafafa);
@@ -272,18 +272,39 @@
     letter-spacing: 0.5px;
 }
 
+.file-list-checkbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .file-list-row {
     display: grid;
-    grid-template-columns: 3fr 1fr 1.5fr 1fr;
+    grid-template-columns: 40px 3fr 1fr 1.5fr 1fr;
     gap: 16px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--neutral-stroke-layer-rest, #e0e0e0);
     transition: background 0.2s;
     align-items: center;
+    cursor: pointer;
 }
 
 .file-list-row:hover {
     background: var(--neutral-fill-secondary-hover, #f5f5f5);
+}
+
+.file-list-row.selected {
+    background: var(--accent-fill-subtle, #e6f3ff);
+}
+
+.file-list-row.selected:hover {
+    background: var(--accent-fill-subtle-hover, #d1e8ff);
+}
+
+.file-list-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .file-list-name {
@@ -294,7 +315,6 @@
 }
 
 .file-list-name-text {
-    cursor: pointer;
     color: var(--accent-fill-rest, #0078d4);
     text-decoration: none;
     font-weight: 500;
@@ -360,11 +380,16 @@
 
     .file-list-header,
     .file-list-row {
-        grid-template-columns: 2fr 1fr 1fr;
+        grid-template-columns: 40px 2fr 1fr 1fr;
     }
 
     .file-list-row .file-list-actions {
         display: none;
+    }
+
+    .file-list-checkbox-header,
+    .file-list-checkbox {
+        width: 40px;
     }
 }
 

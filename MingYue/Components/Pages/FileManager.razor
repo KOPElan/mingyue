@@ -94,10 +94,29 @@
                 <!-- Search -->
                 <FluentSearch @bind-Value="@searchQuery"
                               @bind-Value:after="@OnSearchChanged"
-                              Placeholder="Search files..."
+                              Placeholder="@(useAdvancedSearch ? "Advanced search (recursive)..." : "Search files...")"
                               Class="header-search"
                               Immediate="false"
                               ImmediateDelay="500" />
+
+                <!-- Advanced Search Options -->
+                <div style="display: flex; align-items: center; gap: 12px; margin-left: 8px;">
+                    <FluentSwitch @bind-Value="useAdvancedSearch" 
+                                  @bind-Value:after="OnAdvancedSearchToggle"
+                                  Label="Advanced" 
+                                  Title="Enable advanced search (recursive, includes subdirectories)" />
+                    @if (useAdvancedSearch)
+                    {
+                        <FluentCheckbox @bind-Value="advancedSearchIncludeSubdirs" 
+                                        @bind-Value:after="OnSearchChanged"
+                                        Label="Subdirs" 
+                                        Title="Include subdirectories" />
+                        <FluentCheckbox @bind-Value="advancedSearchIncludeFolders" 
+                                        @bind-Value:after="OnSearchChanged"
+                                        Label="Folders" 
+                                        Title="Include folders in results" />
+                    }
+                </div>
 
                 <!-- Actions -->
                 <div class="header-actions">
@@ -622,6 +641,9 @@
     private bool isLoading = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
+    private bool useAdvancedSearch = false;
+    private bool advancedSearchIncludeSubdirs = true;
+    private bool advancedSearchIncludeFolders = true;
     private (long total, long available) storageInfo;
 
     // Dialog states
@@ -1434,6 +1456,15 @@
 
     #region Search
 
+    private async Task OnAdvancedSearchToggle()
+    {
+        // Re-run search when toggling advanced mode
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            await OnSearchChanged();
+        }
+    }
+
     private async Task OnSearchChanged()
     {
         if (string.IsNullOrWhiteSpace(searchQuery))
@@ -1444,32 +1475,58 @@
 
         try
         {
-            // Check if index exists for current directory or parent directories
-            var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
-            
-            if (!hasIndex)
+            if (useAdvancedSearch)
             {
-                // No index found, prompt user to create one
-                ToastService.ShowWarning("No search index found. Please create an index for this directory to enable search.");
-                searchResults.Clear();
-                return;
+                // Use advanced search - bypasses index, searches file system directly
+                var advancedResults = await FileIndexService.AdvancedSearchAsync(
+                    currentPath, 
+                    searchQuery, 
+                    advancedSearchIncludeSubdirs, 
+                    advancedSearchIncludeFolders);
+                
+                // Convert FileIndex to FileItemInfo
+                searchResults = advancedResults.Select(fi => new FileItemInfo
+                {
+                    Name = fi.FileName,
+                    Path = fi.FilePath,
+                    Size = fi.FileSize,
+                    LastModified = fi.ModifiedAt,
+                    IsDirectory = fi.FileType == "directory",
+                    Extension = fi.FileType
+                }).ToList();
+                
+                ToastService.ShowInfo($"Advanced search found {searchResults.Count} items");
             }
-
-            // Search using the index
-            var indexResults = await FileIndexService.SearchFilesInDirectoryAsync(currentPath, searchQuery);
-            
-            // Convert FileIndex to FileItemInfo
-            searchResults = indexResults.Select(fi => new FileItemInfo
+            else
             {
-                Name = fi.FileName,
-                Path = fi.FilePath,
-                Size = fi.FileSize,
-                LastModified = fi.ModifiedAt,
-                IsDirectory = false,
-                Extension = fi.FileType
-            }).ToList();
-            
-            ToastService.ShowInfo($"Found {searchResults.Count} items");
+                // Use standard search with index
+                // Check if index exists for current directory or parent directories
+                var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
+                
+                if (!hasIndex)
+                {
+                    // No index found, prompt user to create one or use advanced search
+                    ToastService.ShowWarning("No search index found. Try Advanced search or create an index for this directory.");
+                    searchResults.Clear();
+                    return;
+                }
+
+                // Search using the index
+                var indexResults = await FileIndexService.SearchFilesInDirectoryAsync(currentPath, searchQuery);
+                
+                // Convert FileIndex to FileItemInfo
+                searchResults = indexResults.Select(fi => new FileItemInfo
+                {
+                    Name = fi.FileName,
+                    Path = fi.FilePath,
+                    Size = fi.FileSize,
+                    LastModified = fi.ModifiedAt,
+                    IsDirectory = false,
+                    Extension = fi.FileType
+                }).ToList();
+                
+                ToastService.ShowInfo($"Found {searchResults.Count} items");
+            }
         }
         catch (Exception ex)
         {

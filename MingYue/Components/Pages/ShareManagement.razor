@@ -30,7 +30,7 @@
         <!-- SMB Users Section -->
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-                <h3 style="margin: 0;">SMB Users</h3>
+                <FluentLabel Typo="Typography.H3">SMB Users</FluentLabel>
                 <FluentSpacer />
                 <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddUserDialog" IconStart="@(new Icons.Regular.Size16.Add())">
                     Add User
@@ -673,22 +673,67 @@
             NfsOptions = share.NfsOptions
         };
         
-        // Parse existing users into selection sets
+        // Parse existing users into selection sets, filtering out groups and non-existent users
         selectedValidUsers.Clear();
         selectedWriteUsers.Clear();
+
+        // Build a lookup of existing Samba usernames
+        var existingUsernames = new HashSet<string>(
+            sambaUsers.Select(u => u.Username),
+            StringComparer.OrdinalIgnoreCase);
+
+        var missingUsers = new List<string>();
+
         if (!string.IsNullOrEmpty(share.ValidUsers))
         {
             foreach (var user in share.ValidUsers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                selectedValidUsers.Add(user);
+                // Skip Samba group entries (start with '@')
+                if (user.StartsWith("@", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                
+                if (existingUsernames.Contains(user))
+                {
+                    selectedValidUsers.Add(user);
+                }
+                else
+                {
+                    missingUsers.Add(user);
+                }
             }
         }
+
         if (!string.IsNullOrEmpty(share.WriteList))
         {
             foreach (var user in share.WriteList.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                selectedWriteUsers.Add(user);
+                // Skip Samba group entries (start with '@')
+                if (user.StartsWith("@", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                
+                if (existingUsernames.Contains(user))
+                {
+                    selectedWriteUsers.Add(user);
+                }
+                else
+                {
+                    // Avoid duplicating missing usernames
+                    if (!missingUsers.Contains(user, StringComparer.OrdinalIgnoreCase))
+                    {
+                        missingUsers.Add(user);
+                    }
+                }
             }
+        }
+
+        if (missingUsers.Count > 0)
+        {
+            Logger.LogWarning("Share {ShareName} references non-existent Samba users: {Users}", share.Name, string.Join(", ", missingUsers));
+            ToastService.ShowWarning($"Some users referenced in this share no longer exist and were ignored: {string.Join(", ", missingUsers)}");
         }
         
         isShareDialogHidden = false;
@@ -752,11 +797,38 @@
                 return;
             }
             
-            // For CIFS shares, set user lists from selected users
-            if (currentShare.Type == ShareType.CIFS && !currentShare.GuestOk)
+            // For CIFS shares, configure user lists based on guest access
+            if (currentShare.Type == ShareType.CIFS)
             {
-                currentShare.ValidUsers = string.Join(", ", selectedValidUsers);
-                currentShare.WriteList = string.Join(", ", selectedWriteUsers);
+                if (currentShare.GuestOk)
+                {
+                    // When guest access is enabled, clear any explicit user lists
+                    currentShare.ValidUsers = string.Empty;
+                    currentShare.WriteList = string.Empty;
+                }
+                else
+                {
+                    // When guest access is disabled, set user lists from selected users
+                    currentShare.ValidUsers = string.Join(", ", selectedValidUsers);
+                    
+                    // Prevent configuration where CIFS share has no guest access and no valid users
+                    if (string.IsNullOrWhiteSpace(currentShare.ValidUsers))
+                    {
+                        ToastService.ShowError("At least one valid user must be selected for CIFS shares without guest access");
+                        return;
+                    }
+                    
+                    if (currentShare.ReadOnly)
+                    {
+                        // Ensure write permissions are cleared when the share is read-only
+                        selectedWriteUsers.Clear();
+                        currentShare.WriteList = string.Empty;
+                    }
+                    else
+                    {
+                        currentShare.WriteList = string.Join(", ", selectedWriteUsers);
+                    }
+                }
             }
 
             OperationResult result;
@@ -1029,12 +1101,31 @@
         
         try
         {
+            // Check if the user is referenced in any shares
+            var referencingShares = sambaShares
+                .Where(s => 
+                    (!string.IsNullOrEmpty(s.ValidUsers) && s.ValidUsers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Contains(userToDelete.Username, StringComparer.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(s.WriteList) && s.WriteList.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Contains(userToDelete.Username, StringComparer.OrdinalIgnoreCase)))
+                .Select(s => s.Name)
+                .ToList();
+            
+            if (referencingShares.Count > 0)
+            {
+                ToastService.ShowWarning($"User '{userToDelete.Username}' is referenced in {referencingShares.Count} share(s): {string.Join(", ", referencingShares)}. Please update those shares first or the user will be removed from their access lists.");
+            }
+            
             var result = await ShareService.RemoveSambaUserAsync(userToDelete.Username);
             
             if (result.Success)
             {
                 ToastService.ShowSuccess($"SMB user '{userToDelete.Username}' deleted successfully");
                 await LoadUsers();
+                
+                // Reload shares if user was referenced in any
+                if (referencingShares.Count > 0)
+                {
+                    await LoadShares();
+                }
             }
             else
             {
@@ -1058,6 +1149,7 @@
         isUserDialogHidden = true;
         editingUser = null;
         confirmPassword = string.Empty;
+        currentUser = new SambaUserRequest();
     }
     
     /// <summary>

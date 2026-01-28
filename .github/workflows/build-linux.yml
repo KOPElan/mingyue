@@ -41,10 +41,12 @@ jobs:
           -p:IncludeNativeLibrariesForSelfExtract=true \
           -o ./publish/linux-x64
           
-    - name: Copy installation script
+    - name: Copy installation scripts
       run: |
         cp install.sh ./publish/linux-x64/ || echo "No install.sh found, skipping"
+        cp uninstall.sh ./publish/linux-x64/ || echo "No uninstall.sh found, skipping"
         chmod +x ./publish/linux-x64/install.sh || true
+        chmod +x ./publish/linux-x64/uninstall.sh || true
         
     - name: Create release package
       run: |

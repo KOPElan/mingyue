@@ -36,7 +36,7 @@ The easiest way to get a Linux release build is through GitHub Actions:
    ```
 
 The installation script will:
-- Install required system dependencies (Docker, Samba, NFS, disk utilities)
+- Install required system dependencies (Samba, NFS, disk utilities)
 - Create a dedicated `mingyue` user
 - Set up directories (`/opt/mingyue`, `/var/lib/mingyue`, `/var/log/mingyue`)
 - Configure sudo permissions for necessary system commands
@@ -163,7 +163,21 @@ By default, MingYue runs on port 5000. To change it:
 
 ## Uninstallation
 
-To remove MingYue:
+To remove MingYue, use the provided uninstall script:
+
+```bash
+sudo ./uninstall.sh
+```
+
+The script will:
+- Stop and disable the MingYue service
+- Remove the systemd service file
+- Remove application files from `/opt/mingyue`
+- Optionally remove data and logs (prompts for confirmation)
+- Remove sudoers configuration
+- Optionally remove the mingyue user and group (prompts for confirmation)
+
+If you don't have the uninstall script, you can remove MingYue manually:
 
 ```bash
 # Stop and disable service
@@ -176,11 +190,13 @@ sudo systemctl daemon-reload
 
 # Remove application files
 sudo rm -rf /opt/mingyue
-sudo rm -rf /var/lib/mingyue
-sudo rm -rf /var/log/mingyue
 
 # Remove sudoers configuration
 sudo rm /etc/sudoers.d/mingyue
+
+# (Optional) Remove data and logs
+sudo rm -rf /var/lib/mingyue
+sudo rm -rf /var/log/mingyue
 
 # (Optional) Remove user
 sudo userdel mingyue
@@ -207,21 +223,12 @@ sudo chown -R mingyue:mingyue /var/lib/mingyue
 
 Change the port in the systemd service file (see Port Configuration above).
 
-### Docker commands not working
-
-Add mingyue user to docker group:
-```bash
-sudo usermod -aG docker mingyue
-sudo systemctl restart mingyue
-```
-
 ## Security Considerations
 
 - MingYue is designed for internal network use
 - For internet access, use a reverse proxy (Nginx/Apache) with HTTPS
 - Regularly update dependencies for security patches
 - **IMPORTANT**: The installation grants the `mingyue` user significant system privileges:
-  - Docker group membership (equivalent to root access)
   - Sudo permissions for system commands (mount, systemctl, etc.)
 - Review and restrict `/etc/sudoers.d/mingyue` based on your security requirements
 - Configure firewall rules appropriately to limit access

@@ -74,13 +74,8 @@ install_dependencies() {
                 samba \
                 samba-common-bin \
                 nfs-kernel-server \
-                docker.io \
                 curl \
                 ca-certificates
-            
-            # Enable and start Docker
-            systemctl enable docker || true
-            systemctl start docker || true
             ;;
             
         centos|rhel|fedora)
@@ -97,13 +92,8 @@ install_dependencies() {
                 nfs-utils \
                 samba \
                 samba-common \
-                docker \
                 curl \
                 ca-certificates
-            
-            # Enable and start Docker
-            systemctl enable docker || true
-            systemctl start docker || true
             ;;
             
         *)
@@ -112,7 +102,6 @@ install_dependencies() {
             print_warn "- util-linux, hdparm"
             print_warn "- cifs-utils, nfs-common/nfs-utils"
             print_warn "- samba, nfs-kernel-server/nfs-utils"
-            print_warn "- docker"
             ;;
     esac
     
@@ -136,12 +125,6 @@ create_user() {
     else
         useradd --system --no-create-home --shell /bin/false --gid $APP_GROUP $APP_USER
         print_info "User $APP_USER created"
-    fi
-    
-    # Add user to docker group if docker is installed
-    if command -v docker &> /dev/null; then
-        usermod -aG docker $APP_USER || true
-        print_warn "Added $APP_USER to docker group (grants root-level privileges)"
     fi
     
     # Add user to necessary groups for disk management
@@ -240,7 +223,7 @@ create_systemd_service() {
     cat > "/etc/systemd/system/$SERVICE_NAME" <<EOF
 [Unit]
 Description=MingYue Home Server Portal
-After=network.target docker.service
+After=network.target
 
 [Service]
 Type=simple

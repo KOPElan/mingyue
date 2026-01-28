@@ -1689,7 +1689,7 @@
             Size = fi.FileSize,
             LastModified = fi.ModifiedAt,
             IsDirectory = fi.FileType == "directory",
-            Extension = fi.FileType
+            Extension = fi.FileType == "directory" ? "" : Path.GetExtension(fi.FileName) ?? ""
         }).ToList();
     }
 

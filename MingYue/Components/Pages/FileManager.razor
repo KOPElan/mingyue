@@ -109,7 +109,7 @@
                     {
                         <FluentCheckbox @bind-Value="advancedSearchIncludeSubdirs" 
                                         @bind-Value:after="OnSearchChanged"
-                                        Label="Subdirs" 
+                                        Label="Subdirectories" 
                                         Title="Include subdirectories" />
                         <FluentCheckbox @bind-Value="advancedSearchIncludeFolders" 
                                         @bind-Value:after="OnSearchChanged"
@@ -1484,17 +1484,7 @@
                     advancedSearchIncludeSubdirs, 
                     advancedSearchIncludeFolders);
                 
-                // Convert FileIndex to FileItemInfo
-                searchResults = advancedResults.Select(fi => new FileItemInfo
-                {
-                    Name = fi.FileName,
-                    Path = fi.FilePath,
-                    Size = fi.FileSize,
-                    LastModified = fi.ModifiedAt,
-                    IsDirectory = fi.FileType == "directory",
-                    Extension = fi.FileType
-                }).ToList();
-                
+                searchResults = ConvertFileIndexToFileItemInfo(advancedResults);
                 ToastService.ShowInfo($"Advanced search found {searchResults.Count} items");
             }
             else
@@ -1506,25 +1496,14 @@
                 if (!hasIndex)
                 {
                     // No index found, prompt user to create one or use advanced search
-                    ToastService.ShowWarning("No search index found. Try Advanced search or create an index for this directory.");
+                    ToastService.ShowWarning("No search index found. Enable Advanced search or create an index for this directory.");
                     searchResults.Clear();
                     return;
                 }
 
                 // Search using the index
                 var indexResults = await FileIndexService.SearchFilesInDirectoryAsync(currentPath, searchQuery);
-                
-                // Convert FileIndex to FileItemInfo
-                searchResults = indexResults.Select(fi => new FileItemInfo
-                {
-                    Name = fi.FileName,
-                    Path = fi.FilePath,
-                    Size = fi.FileSize,
-                    LastModified = fi.ModifiedAt,
-                    IsDirectory = false,
-                    Extension = fi.FileType
-                }).ToList();
-                
+                searchResults = ConvertFileIndexToFileItemInfo(indexResults);
                 ToastService.ShowInfo($"Found {searchResults.Count} items");
             }
         }
@@ -1533,6 +1512,19 @@
             Logger.LogError(ex, "Error searching files: {Query}", searchQuery);
             ToastService.ShowError($"Search failed: {ex.Message}");
         }
+    }
+
+    private List<FileItemInfo> ConvertFileIndexToFileItemInfo(List<FileIndex> indexResults)
+    {
+        return indexResults.Select(fi => new FileItemInfo
+        {
+            Name = fi.FileName,
+            Path = fi.FilePath,
+            Size = fi.FileSize,
+            LastModified = fi.ModifiedAt,
+            IsDirectory = fi.FileType == "directory",
+            Extension = fi.FileType
+        }).ToList();
     }
 
     #endregion

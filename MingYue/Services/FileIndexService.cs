@@ -191,6 +191,13 @@ namespace MingYue.Services
                     {
                         var fileInfo = new FileInfo(file);
                         
+                        // Skip hidden and system files
+                        if ((fileInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden ||
+                            (fileInfo.Attributes & FileAttributes.System) == FileAttributes.System)
+                        {
+                            continue;
+                        }
+                        
                         index.Files.Add(new FileIndexEntry
                         {
                             FileName = fileInfo.Name,
@@ -216,6 +223,15 @@ namespace MingYue.Services
                     
                     foreach (var subdir in subdirs)
                     {
+                        var dirInfo = new DirectoryInfo(subdir);
+                        
+                        // Skip system/hidden directories and common development directories
+                        if (ShouldExcludeDirectory(dirInfo))
+                        {
+                            _logger.LogDebug("Skipping excluded directory: {Directory}", subdir);
+                            continue;
+                        }
+                        
                         await IndexDirectoryAsync(subdir, true);
                     }
                 }
@@ -421,8 +437,8 @@ namespace MingYue.Services
         }
 
         /// <summary>
-        /// Advanced search that recursively searches files and directories from a starting directory.
-        /// This bypasses the index and searches the actual file system for real-time results.
+        /// Advanced search that recursively searches through indexed directories.
+        /// Searches all subdirectory indexes starting from the specified directory.
         /// </summary>
         /// <param name="startDirectory">The directory to start searching from</param>
         /// <param name="searchPattern">The search pattern with wildcard support (* and ?)</param>
@@ -431,119 +447,176 @@ namespace MingYue.Services
         /// <returns>List of matching files and/or directories with full paths</returns>
         public async Task<List<FileIndex>> AdvancedSearchAsync(string startDirectory, string searchPattern, bool includeSubdirectories = true, bool includeDirectories = true)
         {
-            return await Task.Run(() =>
+            var results = new List<FileIndex>();
+            
+            try
             {
-                var results = new List<FileIndex>();
-                
-                try
+                if (!Directory.Exists(startDirectory))
                 {
-                    if (!Directory.Exists(startDirectory))
-                    {
-                        _logger.LogWarning("Start directory not found for advanced search: {StartDirectory}", startDirectory);
-                        return results;
-                    }
+                    _logger.LogWarning("Start directory not found for advanced search: {StartDirectory}", startDirectory);
+                    return results;
+                }
 
-                    // Normalize the start directory path
-                    var normalizedStart = Path.GetFullPath(startDirectory);
-                    
-                    // Create regex once to avoid repeated compilation
-                    var regex = CreateSearchRegex(searchPattern);
-                    
-                    // Search recursively
-                    SearchFileSystemRecursive(normalizedStart, regex, results, includeSubdirectories, includeDirectories, 0, MaxRecursionDepth);
-                    
-                    _logger.LogInformation("Advanced search completed: {Count} results for pattern '{Pattern}' in {Directory}", 
-                        results.Count, searchPattern, startDirectory);
-                }
-                catch (Exception ex)
+                // Normalize the start directory path
+                var normalizedStart = Path.GetFullPath(startDirectory);
+                
+                // Search the starting directory's index
+                var startIndex = await LoadIndexAsync(normalizedStart);
+                if (startIndex != null)
                 {
-                    _logger.LogError(ex, "Error during advanced search in {StartDirectory} with pattern {SearchPattern}", 
-                        startDirectory, searchPattern);
+                    var matchingFiles = SearchInIndex(startIndex, searchPattern, normalizedStart);
+                    results.AddRange(matchingFiles);
                 }
                 
-                return results.Take(MaxSearchResults).ToList();
-            });
+                // If recursive, search all subdirectory indexes
+                if (includeSubdirectories)
+                {
+                    await SearchIndexesRecursive(normalizedStart, searchPattern, results);
+                }
+                
+                // If including directories, search for matching directory names
+                if (includeDirectories)
+                {
+                    var regex = CreateSearchRegex(searchPattern);
+                    SearchDirectoriesRecursive(normalizedStart, regex, results, includeSubdirectories);
+                }
+                
+                _logger.LogInformation("Advanced search completed: {Count} results for pattern '{Pattern}' in {Directory}", 
+                    results.Count, searchPattern, startDirectory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during advanced search in {StartDirectory} with pattern {SearchPattern}", 
+                    startDirectory, searchPattern);
+            }
+            
+            return results.Take(MaxSearchResults).ToList();
         }
 
         /// <summary>
-        /// Recursively searches the file system for files and directories matching the pattern.
+        /// Recursively searches through subdirectory indexes
         /// </summary>
-        /// <param name="directory">The directory to search in</param>
-        /// <param name="regex">Compiled regex pattern for matching names</param>
-        /// <param name="results">List to accumulate results</param>
-        /// <param name="includeSubdirectories">Whether to recurse into subdirectories</param>
-        /// <param name="includeDirectories">Whether to include directories in results</param>
-        /// <param name="currentDepth">Current recursion depth</param>
-        /// <param name="maxDepth">Maximum recursion depth</param>
-        private void SearchFileSystemRecursive(string directory, System.Text.RegularExpressions.Regex regex, List<FileIndex> results, 
-            bool includeSubdirectories, bool includeDirectories, int currentDepth, int maxDepth)
+        private async Task SearchIndexesRecursive(string directoryPath, string searchPattern, List<FileIndex> results)
         {
-            if (currentDepth >= maxDepth || results.Count >= MaxSearchResults)
+            if (results.Count >= MaxSearchResults)
             {
                 return;
             }
 
             try
             {
-                var dirInfo = new DirectoryInfo(directory);
+                var subdirs = Directory.GetDirectories(directoryPath);
                 
-                // Search files in current directory
-                foreach (var file in dirInfo.EnumerateFiles())
-                {
-                    if (results.Count >= MaxSearchResults)
-                        break;
-                        
-                    if (regex.IsMatch(file.Name))
-                    {
-                        results.Add(new FileIndex
-                        {
-                            FilePath = file.FullName,
-                            FileName = file.Name,
-                            FileSize = file.Length,
-                            ModifiedAt = file.LastWriteTimeUtc,
-                            FileType = file.Extension,
-                            IndexedAt = DateTime.UtcNow
-                        });
-                    }
-                }
-                
-                // Process subdirectories - enumerate once and check/recurse as needed
-                foreach (var subdir in dirInfo.EnumerateDirectories())
+                foreach (var subdir in subdirs)
                 {
                     if (results.Count >= MaxSearchResults)
                         break;
                     
-                    // Add to results if directories are included and name matches
-                    if (includeDirectories && regex.IsMatch(subdir.Name))
+                    // Skip system/hidden directories
+                    var dirInfo = new DirectoryInfo(subdir);
+                    if (ShouldExcludeDirectory(dirInfo))
+                        continue;
+                    
+                    // Load and search this subdirectory's index
+                    var index = await LoadIndexAsync(subdir);
+                    if (index != null)
                     {
-                        results.Add(new FileIndex
-                        {
-                            FilePath = subdir.FullName,
-                            FileName = subdir.Name,
-                            FileSize = 0, // Directories don't have a size
-                            ModifiedAt = subdir.LastWriteTimeUtc,
-                            FileType = "directory",
-                            IndexedAt = DateTime.UtcNow
-                        });
+                        var matchingFiles = SearchInIndex(index, searchPattern, subdir);
+                        results.AddRange(matchingFiles);
                     }
                     
-                    // Recurse if subdirectories should be searched
-                    if (includeSubdirectories)
-                    {
-                        SearchFileSystemRecursive(subdir.FullName, regex, results, 
-                            includeSubdirectories, includeDirectories, currentDepth + 1, maxDepth);
-                    }
+                    // Recurse into this subdirectory
+                    await SearchIndexesRecursive(subdir, searchPattern, results);
                 }
             }
             catch (UnauthorizedAccessException)
             {
                 // Skip directories we don't have permission to access
-                _logger.LogDebug("Access denied to directory: {Directory}", directory);
+                _logger.LogDebug("Access denied to directory: {Directory}", directoryPath);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error searching directory: {Directory}", directory);
+                _logger.LogWarning(ex, "Error searching subdirectories of: {Directory}", directoryPath);
             }
+        }
+
+        /// <summary>
+        /// Recursively searches for directories matching the pattern
+        /// </summary>
+        private void SearchDirectoriesRecursive(string directoryPath, System.Text.RegularExpressions.Regex regex, List<FileIndex> results, bool includeSubdirectories)
+        {
+            if (results.Count >= MaxSearchResults)
+            {
+                return;
+            }
+
+            try
+            {
+                var subdirs = Directory.GetDirectories(directoryPath);
+                
+                foreach (var subdir in subdirs)
+                {
+                    if (results.Count >= MaxSearchResults)
+                        break;
+                    
+                    var dirInfo = new DirectoryInfo(subdir);
+                    
+                    // Skip system/hidden directories
+                    if (ShouldExcludeDirectory(dirInfo))
+                        continue;
+                    
+                    // Check if directory name matches pattern
+                    if (regex.IsMatch(dirInfo.Name))
+                    {
+                        results.Add(new FileIndex
+                        {
+                            FilePath = dirInfo.FullName,
+                            FileName = dirInfo.Name,
+                            FileSize = 0,
+                            ModifiedAt = dirInfo.LastWriteTimeUtc,
+                            FileType = "directory",
+                            IndexedAt = DateTime.UtcNow
+                        });
+                    }
+                    
+                    // Recurse if requested
+                    if (includeSubdirectories)
+                    {
+                        SearchDirectoriesRecursive(subdir, regex, results, includeSubdirectories);
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogDebug("Access denied to directory: {Directory}", directoryPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error searching directories in: {Directory}", directoryPath);
+            }
+        }
+
+        /// <summary>
+        /// Determines if a directory should be excluded from indexing/searching
+        /// </summary>
+        private bool ShouldExcludeDirectory(DirectoryInfo dirInfo)
+        {
+            // Exclude hidden and system directories
+            if ((dirInfo.Attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                return true;
+            
+            if ((dirInfo.Attributes & FileAttributes.System) == FileAttributes.System)
+                return true;
+            
+            // Exclude common system and development directories
+            var excludedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "node_modules", ".git", ".svn", ".hg", "bin", "obj", 
+                ".vs", ".vscode", ".idea", "packages", "__pycache__",
+                ".next", ".nuxt", "dist", "build", "target"
+            };
+            
+            return excludedNames.Contains(dirInfo.Name);
         }
 
         /// <summary>

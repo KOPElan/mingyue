@@ -94,32 +94,16 @@
                 <!-- Search -->
                 <FluentSearch @bind-Value="@searchQuery"
                               @bind-Value:after="@OnSearchChanged"
-                              Placeholder="@(useAdvancedSearch ? "Advanced search (recursive)..." : "Search files...")"
+                              Placeholder="Filter current directory..."
                               Class="header-search"
-                              Immediate="false"
-                              ImmediateDelay="500" />
-
-                <!-- Advanced Search Options -->
-                <div style="display: flex; align-items: center; gap: 12px; margin-left: 8px;">
-                    <FluentSwitch @bind-Value="useAdvancedSearch" 
-                                  @bind-Value:after="OnAdvancedSearchToggle"
-                                  Label="Advanced" 
-                                  Title="Enable advanced search (recursive, includes subdirectories)" />
-                    @if (useAdvancedSearch)
-                    {
-                        <FluentCheckbox @bind-Value="advancedSearchIncludeSubdirs" 
-                                        @bind-Value:after="OnSearchChanged"
-                                        Label="Subdirectories" 
-                                        Title="Include subdirectories" />
-                        <FluentCheckbox @bind-Value="advancedSearchIncludeFolders" 
-                                        @bind-Value:after="OnSearchChanged"
-                                        Label="Folders" 
-                                        Title="Include folders in results" />
-                    }
-                </div>
+                              Immediate="true"
+                              ImmediateDelay="300" />
 
                 <!-- Actions -->
                 <div class="header-actions">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@OpenAdvancedSearchDialog" Title="Advanced Search">
+                        <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.SearchSquare())" />
+                    </FluentButton>
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshFiles" Title="Refresh">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
                     </FluentButton>
@@ -630,6 +614,64 @@
     </FluentDialogFooter>
 </FluentDialog>
 
+<!-- Advanced Search Dialog -->
+<FluentDialog @ref="advancedSearchDialog" @bind-Hidden="@isAdvancedSearchDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 700px; max-width: 900px;">
+    <FluentDialogHeader ShowDismiss="true">
+        <FluentStack VerticalAlignment="VerticalAlignment.Center">
+            <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.SearchSquare())" />
+            <FluentLabel Typo="Typography.PaneHeader">Advanced Search</FluentLabel>
+        </FluentStack>
+    </FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
+            <FluentLabel Class="font-500">Search files and folders recursively from the current directory.</FluentLabel>
+            
+            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10">
+                <FluentSearch @bind-Value="@advancedSearchQuery"
+                              Placeholder="Enter search pattern (e.g., *.txt, file*, etc.)..."
+                              Class="full-width"
+                              Style="flex: 1;" />
+                <FluentButton Appearance="Appearance.Accent" OnClick="@PerformAdvancedSearch">
+                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Search())" />
+                    Search
+                </FluentButton>
+            </FluentStack>
+            
+            <FluentStack Orientation="Orientation.Horizontal" VerticalGap="10">
+                <FluentCheckbox @bind-Value="advancedSearchIncludeSubdirs" Label="Include Subdirectories" />
+                <FluentCheckbox @bind-Value="advancedSearchIncludeFolders" Label="Include Folders" />
+            </FluentStack>
+            
+            @if (advancedSearchResults.Count > 0)
+            {
+                <FluentDivider />
+                <FluentLabel Typo="Typography.Subject">Results (@advancedSearchResults.Count items)</FluentLabel>
+                
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--neutral-stroke-divider-rest); border-radius: 4px;">
+                    <FluentDataGrid Items="@advancedSearchResults.AsQueryable()" Style="width: 100%;">
+                        <PropertyColumn Property="@(f => f.Name)" Title="Name" Sortable="true" />
+                        <PropertyColumn Property="@(f => f.Path)" Title="Path" Sortable="true" />
+                        <PropertyColumn Property="@(f => f.IsDirectory ? "Folder" : "File")" Title="Type" Sortable="true" />
+                        <TemplateColumn Title="Action">
+                            <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => NavigateToSearchResult(context))">
+                                <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Navigation())" />
+                                Go to
+                            </FluentButton>
+                        </TemplateColumn>
+                    </FluentDataGrid>
+                </div>
+            }
+            else if (hasPerformedAdvancedSearch)
+            {
+                <FluentLabel>No results found.</FluentLabel>
+            }
+        </FluentStack>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Neutral" OnClick="@(() => isAdvancedSearchDialogHidden = true)">Close</FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
 @code {
     [Parameter]
     public string? InitialPath { get; set; }
@@ -651,9 +693,16 @@
     private bool isLoading = true;
     private string errorMessage = string.Empty;
     private string searchQuery = string.Empty;
-    private bool useAdvancedSearch = false;
+    
+    // Advanced search state
+    private FluentDialog? advancedSearchDialog;
+    private bool isAdvancedSearchDialogHidden = true;
+    private string advancedSearchQuery = string.Empty;
     private bool advancedSearchIncludeSubdirs = true;
     private bool advancedSearchIncludeFolders = true;
+    private List<FileItemInfo> advancedSearchResults = new();
+    private bool hasPerformedAdvancedSearch = false;
+    
     private (long total, long available) storageInfo;
 
     // Dialog states
@@ -1466,17 +1515,10 @@
 
     #region Search
 
-    private async Task OnAdvancedSearchToggle()
-    {
-        // Re-run search when toggling advanced mode
-        if (!string.IsNullOrWhiteSpace(searchQuery))
-        {
-            await OnSearchChanged();
-        }
-    }
-
     private async Task OnSearchChanged()
     {
+        await Task.CompletedTask; // Make it async for consistency
+        
         if (string.IsNullOrWhiteSpace(searchQuery))
         {
             searchResults.Clear();
@@ -1485,53 +1527,116 @@
 
         try
         {
-            if (useAdvancedSearch)
-            {
-                // Advanced search also requires index (recursive search through indexed directories)
-                var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
-                
-                if (!hasIndex)
-                {
-                    // No index found, prompt user to create one
-                    ToastService.ShowWarning("No search index found. Please create an index for this directory to enable advanced search.");
-                    searchResults.Clear();
-                    return;
-                }
-                
-                var advancedResults = await FileIndexService.AdvancedSearchAsync(
-                    currentPath, 
-                    searchQuery, 
-                    advancedSearchIncludeSubdirs, 
-                    advancedSearchIncludeFolders);
-                
-                searchResults = ConvertFileIndexToFileItemInfo(advancedResults);
-                ToastService.ShowInfo($"Advanced search found {searchResults.Count} items");
-            }
-            else
-            {
-                // Use standard search with index
-                // Check if index exists for current directory or parent directories
-                var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
-                
-                if (!hasIndex)
-                {
-                    // No index found, prompt user to create one
-                    ToastService.ShowWarning("No search index found. Please create an index for this directory to enable search.");
-                    searchResults.Clear();
-                    return;
-                }
-
-                // Search using the index
-                var indexResults = await FileIndexService.SearchFilesInDirectoryAsync(currentPath, searchQuery);
-                searchResults = ConvertFileIndexToFileItemInfo(indexResults);
-                ToastService.ShowInfo($"Found {searchResults.Count} items");
-            }
+            // Real-time filtering of current directory files and folders
+            var pattern = CreateWildcardPattern(searchQuery);
+            
+            searchResults = fileItems
+                .Where(item => pattern.IsMatch(item.Name))
+                .ToList();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error searching files: {Query}", searchQuery);
+            Logger.LogError(ex, "Error filtering files: {Query}", searchQuery);
+        }
+    }
+
+    private void OpenAdvancedSearchDialog()
+    {
+        isAdvancedSearchDialogHidden = false;
+    }
+
+    private async Task PerformAdvancedSearch()
+    {
+        if (string.IsNullOrWhiteSpace(advancedSearchQuery))
+        {
+            ToastService.ShowWarning("Please enter a search pattern");
+            return;
+        }
+
+        try
+        {
+            hasPerformedAdvancedSearch = true;
+            
+            // Check if index exists
+            var hasIndex = await FileIndexService.HasIndexAsync(currentPath);
+            
+            if (!hasIndex)
+            {
+                ToastService.ShowWarning("No search index found. Please create an index for this directory to enable advanced search.");
+                advancedSearchResults.Clear();
+                return;
+            }
+            
+            // Perform advanced search using indexes
+            var results = await FileIndexService.AdvancedSearchAsync(
+                currentPath, 
+                advancedSearchQuery, 
+                advancedSearchIncludeSubdirs, 
+                advancedSearchIncludeFolders);
+            
+            advancedSearchResults = ConvertFileIndexToFileItemInfo(results);
+            ToastService.ShowInfo($"Found {advancedSearchResults.Count} items");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error performing advanced search: {Query}", advancedSearchQuery);
             ToastService.ShowError($"Search failed: {ex.Message}");
         }
+    }
+
+    private async Task NavigateToSearchResult(FileItemInfo item)
+    {
+        try
+        {
+            // Get the directory containing the file
+            var directory = item.IsDirectory ? item.Path : Path.GetDirectoryName(item.Path);
+            
+            if (string.IsNullOrEmpty(directory))
+            {
+                return;
+            }
+
+            // Navigate to the directory
+            await NavigateToPath(directory);
+            
+            // Select the item
+            selectedItems.Clear();
+            var targetItem = fileItems.FirstOrDefault(f => f.Path == item.Path);
+            if (targetItem != null)
+            {
+                selectedItems.Add(targetItem);
+            }
+            
+            // Close the dialog
+            isAdvancedSearchDialogHidden = true;
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error navigating to search result: {Path}", item.Path);
+            ToastService.ShowError($"Failed to navigate to {item.Name}");
+        }
+    }
+
+    private System.Text.RegularExpressions.Regex CreateWildcardPattern(string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern) || pattern == "*")
+        {
+            return new System.Text.RegularExpressions.Regex(
+                "^.*$", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                System.TimeSpan.FromSeconds(1));
+        }
+        
+        // Escape special regex characters except * and ?
+        var escapedPattern = System.Text.RegularExpressions.Regex.Escape(pattern);
+        var regexPattern = escapedPattern.Replace(@"\*", ".*").Replace(@"\?", ".");
+        
+        return new System.Text.RegularExpressions.Regex(
+            $"^{regexPattern}$", 
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+            System.TimeSpan.FromSeconds(1));
     }
 
     private List<FileItemInfo> ConvertFileIndexToFileItemInfo(List<FileIndex> indexResults)

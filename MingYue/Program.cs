@@ -71,7 +71,6 @@ using (var scope = app.Services.CreateScope())
 if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
 {
     using var scope = app.Services.CreateScope();
-    var diskService = scope.ServiceProvider.GetRequiredService<IDiskManagementService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     
     try

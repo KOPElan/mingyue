@@ -1,0 +1,71 @@
+name: Build Linux Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: false
+        default: '1.0.0'
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore MingYue/MingYue.csproj
+      
+    - name: Build project
+      run: dotnet build MingYue/MingYue.csproj -c Release --no-restore
+      
+    - name: Publish for Linux x64
+      run: |
+        dotnet publish MingYue/MingYue.csproj \
+          -c Release \
+          -r linux-x64 \
+          --self-contained true \
+          -p:PublishSingleFile=true \
+          -p:PublishTrimmed=false \
+          -p:IncludeNativeLibrariesForSelfExtract=true \
+          -o ./publish/linux-x64
+          
+    - name: Copy installation scripts
+      run: |
+        cp install.sh ./publish/linux-x64/ || echo "No install.sh found, skipping"
+        cp uninstall.sh ./publish/linux-x64/ || echo "No uninstall.sh found, skipping"
+        chmod +x ./publish/linux-x64/install.sh || true
+        chmod +x ./publish/linux-x64/uninstall.sh || true
+        
+    - name: Create release package
+      run: |
+        mkdir -p publish/mingyue-linux-x64-${{ inputs.version }}
+        cp -r publish/linux-x64/* publish/mingyue-linux-x64-${{ inputs.version }}/
+        cd publish
+        tar -czf mingyue-linux-x64-${{ inputs.version }}.tar.gz mingyue-linux-x64-${{ inputs.version }}
+        cd ..
+        
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mingyue-linux-x64-${{ inputs.version }}
+        path: publish/mingyue-linux-x64-${{ inputs.version }}.tar.gz
+        retention-days: 30
+        
+    - name: Display build info
+      run: |
+        echo "Build completed successfully!"
+        echo "Version: ${{ inputs.version }}"
+        echo "Platform: linux-x64"
+        ls -lh publish/

@@ -3,7 +3,7 @@
 # MingYue Uninstallation Script
 # This script removes MingYue and its configuration
 
-set -e
+# Note: Not using 'set -e' to ensure uninstallation continues even if individual steps fail
 
 # Color codes for output
 RED='\033[0;31m'
@@ -45,15 +45,15 @@ check_root() {
 stop_service() {
     print_info "Stopping and disabling $SERVICE_NAME..."
     
-    if systemctl is-active --quiet $SERVICE_NAME; then
-        systemctl stop $SERVICE_NAME
+    if systemctl is-active --quiet $SERVICE_NAME 2>/dev/null; then
+        systemctl stop $SERVICE_NAME || print_warn "Failed to stop service, continuing..."
         print_info "Service stopped"
     else
         print_warn "Service is not running"
     fi
     
     if systemctl is-enabled --quiet $SERVICE_NAME 2>/dev/null; then
-        systemctl disable $SERVICE_NAME
+        systemctl disable $SERVICE_NAME || print_warn "Failed to disable service, continuing..."
         print_info "Service disabled"
     else
         print_warn "Service is not enabled"
@@ -138,14 +138,20 @@ remove_user() {
     
     if [ "$REMOVE_USER" = true ]; then
         if id "$APP_USER" &>/dev/null; then
-            userdel $APP_USER
-            print_info "User $APP_USER removed"
+            userdel -r $APP_USER 2>/dev/null || userdel $APP_USER 2>/dev/null || print_warn "Failed to remove user $APP_USER"
+            if ! id "$APP_USER" &>/dev/null; then
+                print_info "User $APP_USER removed"
+            fi
         else
             print_warn "User $APP_USER not found"
         fi
         
         if getent group "$APP_GROUP" &>/dev/null; then
-            groupdel $APP_GROUP 2>/dev/null || print_warn "Group $APP_GROUP still has members or is in use"
+            if groupdel $APP_GROUP 2>/dev/null; then
+                print_info "Group $APP_GROUP removed"
+            else
+                print_warn "Failed to remove group $APP_GROUP (may still have members or be in use by running processes)"
+            fi
         else
             print_warn "Group $APP_GROUP not found"
         fi

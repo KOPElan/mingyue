@@ -131,8 +131,10 @@ create_user() {
     if id "$APP_USER" &>/dev/null; then
         print_warn "User $APP_USER already exists, skipping..."
     else
-        useradd --system --no-create-home --shell /bin/false --gid $APP_GROUP $APP_USER
-        print_info "User $APP_USER created"
+        # Set the user's home directory to the application's data dir so
+        # runtime won't try to use /home/<user>. Do not create a home under /home.
+        useradd --system --no-create-home --home-dir "$BASE_DATA_DIR" --shell /bin/false --gid $APP_GROUP $APP_USER
+        print_info "User $APP_USER created (home: $BASE_DATA_DIR)"
     fi
 }
 
@@ -265,6 +267,7 @@ Environment=DOTNET_ENVIRONMENT=Production
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=MINGYUE_DATA_DIR=$DATA_DIR
 Environment=MINGYUE_CACHE_DIR=$CACHE_DIR
+Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 
 # Security settings
 # Note: Some restrictions are relaxed due to application requirements

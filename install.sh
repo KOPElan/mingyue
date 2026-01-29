@@ -270,10 +270,12 @@ Environment=MINGYUE_CACHE_DIR=$CACHE_DIR
 Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 
 # Security settings
-# Note: Some restrictions are relaxed due to application requirements
-# Review and tighten based on your security needs
-# NoNewPrivileges=true is disabled because it prevents sudo mount/umount operations
-# NoNewPrivileges=true
+# Using Linux capabilities for mount operations instead of sudo
+# CAP_SYS_ADMIN: Required for mount/umount operations
+# AmbientCapabilities grants capabilities to the process without requiring sudo
+# This is more secure than disabling NoNewPrivileges
+AmbientCapabilities=CAP_SYS_ADMIN
+NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true

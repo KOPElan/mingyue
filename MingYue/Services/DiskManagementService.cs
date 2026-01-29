@@ -38,11 +38,11 @@ namespace MingYue.Services
         private static readonly Regex HdparmSettingRegex = new(@"^\s*([a-z_-]+)\s*=\s*(.+)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
-        /// Check if an error indicates sudo permission issues and return appropriate error result
+        /// Check if an error indicates permission issues and return appropriate error result
         /// </summary>
         private DiskOperationResult CheckSudoPermissionError(string error, string operation)
         {
-            // Check for specific sudo permission errors
+            // Check for specific sudo permission errors (legacy, when systemd uses sudo)
             if (error.Contains("sudo: a password is required") || 
                 error.Contains("sudo: password is required") ||
                 (error.Contains("sudo") && error.Contains("not allowed to execute")))
@@ -52,7 +52,7 @@ namespace MingYue.Services
                     "请配置 sudoers 文件允许无密码执行 mount/umount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
             }
             
-            // Check for "no new privileges" error which occurs when systemd service has NoNewPrivileges=true
+            // Check for "no new privileges" error (legacy, should not occur with AmbientCapabilities)
             if (error.Contains("no new privileges") || error.Contains("已设置'no new privileges'标志") || error.Contains("已设置\"no new privileges\"标志"))
             {
                 _logger.LogError("{Operation} failed due to 'no new privileges' restriction. Error: {Error}", operation, error);
@@ -60,7 +60,16 @@ namespace MingYue.Services
                     "systemd 服务配置阻止了 sudo 权限提升。解决方法请参考 CONFIGURATION.md 中的'Network disk mount failures'章节");
             }
             
-            return null!; // Return null to indicate no sudo permission error detected
+            // Check for capability/permission errors when using direct mount (without sudo)
+            if (error.Contains("Operation not permitted") || error.Contains("Permission denied") || 
+                error.Contains("不允许的操作") || error.Contains("权限不够"))
+            {
+                _logger.LogError("{Operation} failed due to insufficient capabilities. Error: {Error}", operation, error);
+                return DiskOperationResult.Failed($"{operation}失败：权限不足", 
+                    "服务缺少必要的系统权限。请确保 systemd 服务配置中包含 AmbientCapabilities=CAP_SYS_ADMIN 并执行 'sudo systemctl daemon-reload && sudo systemctl restart mingyue'");
+            }
+            
+            return null!; // Return null to indicate no permission error detected
         }
 
         public async Task<List<DiskInfo>> GetAllDisksAsync()
@@ -376,7 +385,7 @@ namespace MingYue.Services
 
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "sudo",
+                    FileName = "mount",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -384,7 +393,6 @@ namespace MingYue.Services
                 };
 
                 // Build mount command arguments using ArgumentList for proper escaping
-                processInfo.ArgumentList.Add("mount");
                 
                 if (!string.IsNullOrEmpty(fileSystem))
                 {
@@ -523,7 +531,7 @@ namespace MingYue.Services
             {
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "sudo",
+                    FileName = "umount",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -531,7 +539,6 @@ namespace MingYue.Services
                 };
 
                 // Build umount command arguments using ArgumentList for proper escaping
-                processInfo.ArgumentList.Add("umount");
                 processInfo.ArgumentList.Add(mountPoint);
 
                 using var process = Process.Start(processInfo);
@@ -1434,15 +1441,12 @@ namespace MingYue.Services
 
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "sudo",
+                    FileName = "mount",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-
-                // Add mount command as first argument to sudo
-                processInfo.ArgumentList.Add("mount");
 
                 if (diskType == NetworkDiskType.CIFS)
                 {

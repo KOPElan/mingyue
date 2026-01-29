@@ -218,20 +218,23 @@ sudo chown mingyue:mingyue /srv/mingyue/data/mingyue.db
    sudo journalctl -u mingyue -n 100
    ```
 
-### Network disk mount failures ("no new privileges" error)
+### Network disk mount failures (permission errors)
 
-If you encounter errors like "sudo: 已设置'no new privileges'标志，它阻止 sudo 以 root 身份运行" when mounting network disks, this is caused by the `NoNewPrivileges=true` security setting in systemd.
+**For installations using the new capability-based approach (recommended):**
 
-**Solution**: Edit the systemd service file to disable NoNewPrivileges:
+If you encounter errors like "Operation not permitted" or "权限不足" when mounting network disks, the systemd service may be missing the required capability.
+
+**Solution**: Ensure the systemd service has CAP_SYS_ADMIN capability:
 
 1. Edit the service file:
    ```bash
    sudo nano /etc/systemd/system/mingyue.service
    ```
 
-2. Find and comment out the `NoNewPrivileges=true` line:
+2. Verify these lines are present in the `[Service]` section:
    ```ini
-   # NoNewPrivileges=true
+   AmbientCapabilities=CAP_SYS_ADMIN
+   NoNewPrivileges=true
    ```
 
 3. Reload and restart the service:
@@ -240,7 +243,22 @@ If you encounter errors like "sudo: 已设置'no new privileges'标志，它阻�
    sudo systemctl restart mingyue
    ```
 
-**Note**: NoNewPrivileges is already commented out by default in newer installations. This is necessary because disk mount operations require privilege escalation via sudo.
+**For older installations using sudo (legacy):**
+
+If you encounter "sudo: 已设置'no new privileges'标志" errors, your installation is using the older sudo-based approach.
+
+We recommend upgrading to the capability-based approach which is more secure. To upgrade:
+
+1. Re-run the installation script to update the systemd service configuration
+2. Or manually update `/etc/systemd/system/mingyue.service` to use `AmbientCapabilities=CAP_SYS_ADMIN` and enable `NoNewPrivileges=true`
+3. Update DiskManagementService.cs to use mount/umount directly instead of sudo
+
+**Note**: The new approach using Linux capabilities (AmbientCapabilities) is more secure than sudo because:
+- It maintains `NoNewPrivileges=true` security hardening
+- It grants only the specific capability needed (CAP_SYS_ADMIN for mount operations)
+- It doesn't require sudoers configuration
+- It follows the principle of least privilege
+
 
 
 ## Migration from Old Directory Structure

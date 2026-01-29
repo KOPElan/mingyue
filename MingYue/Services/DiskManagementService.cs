@@ -473,7 +473,7 @@ namespace MingYue.Services
                 fstabEntry += $" {(string.IsNullOrEmpty(options) ? "defaults" : options)}";
                 fstabEntry += " 0 2";
 
-                // Use File.AppendAllText for safer file writing instead of shell command
+                // Use temp file approach for ProtectSystem=full compatibility
                 try
                 {
                     var fstabPath = "/etc/fstab";
@@ -496,15 +496,32 @@ namespace MingYue.Services
                         }
                     }
 
-                    await File.AppendAllTextAsync(fstabPath, fstabEntry + Environment.NewLine);
+                    // Create temp file in /tmp (writable with PrivateTmp=true)
+                    var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                    var newContent = string.Join(Environment.NewLine, existingLines) + 
+                                   (existingLines.Length > 0 ? Environment.NewLine : "") + 
+                                   fstabEntry + Environment.NewLine;
+                    
+                    await File.WriteAllTextAsync(tempPath, newContent);
+                    
+                    // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on read-only /etc)
+                    File.Move(tempPath, fstabPath, overwrite: true);
+                    
                     return DiskOperationResult.Successful($"成功将 {devicePath} 挂载到 {mountPoint} 并添加到 /etc/fstab");
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException ex)
                 {
+                    _logger.LogError(ex, "Permission denied when writing to /etc/fstab for device '{Device}'", devicePath);
                     return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时权限被拒绝。条目: {fstabEntry}");
+                }
+                catch (IOException ex)
+                {
+                    _logger.LogError(ex, "I/O error when writing to /etc/fstab for device '{Device}'", devicePath);
+                    return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error appending to /etc/fstab for device '{Device}' at mount point '{MountPoint}'", devicePath, mountPoint);
                     Debug.WriteLine($"Error appending to /etc/fstab for device '{devicePath}' at mount point '{mountPoint}'. Exception: {ex}");
                     return DiskOperationResult.Failed($"挂载成功但更新 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
@@ -1774,6 +1791,7 @@ namespace MingYue.Services
 
                 var fstabEntry = $"{device} {mountPoint} {fsType} {string.Join(",", fstabOptions)} 0 0";
 
+                // Use temp file approach for ProtectSystem=full compatibility
                 try
                 {
                     var fstabPath = "/etc/fstab";
@@ -1801,15 +1819,32 @@ namespace MingYue.Services
                         return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint}；/etc/fstab 中已存在匹配条目");
                     }
 
-                    await File.AppendAllTextAsync(fstabPath, fstabEntry + Environment.NewLine);
+                    // Create temp file in /tmp (writable with PrivateTmp=true)
+                    var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                    var newContent = string.Join(Environment.NewLine, existingLines) + 
+                                   (existingLines.Length > 0 ? Environment.NewLine : "") + 
+                                   fstabEntry + Environment.NewLine;
+                    
+                    await File.WriteAllTextAsync(tempPath, newContent);
+                    
+                    // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on read-only /etc)
+                    File.Move(tempPath, fstabPath, overwrite: true);
+                    
                     return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint} 并添加到 /etc/fstab");
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException ex)
                 {
+                    _logger.LogError(ex, "Permission denied when writing to /etc/fstab for network disk '{Device}'", device);
                     return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时权限被拒绝。条目: {fstabEntry}");
+                }
+                catch (IOException ex)
+                {
+                    _logger.LogError(ex, "I/O error when writing to /etc/fstab for network disk '{Device}'", device);
+                    return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error appending to /etc/fstab for network disk '{Device}' at mount point '{MountPoint}'", device, mountPoint);
                     Debug.WriteLine($"Error appending to /etc/fstab for network disk '{device}' at mount point '{mountPoint}'. Exception: {ex}");
                     return DiskOperationResult.Failed($"挂载成功但更新 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }

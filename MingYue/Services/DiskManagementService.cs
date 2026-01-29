@@ -1646,7 +1646,7 @@ namespace MingYue.Services
                         var hashInput = $"{server}-{sharePath}";
                         var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(hashInput));
                         var hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant()[..32];
-                        var credFile = $"/etc/cifs-credentials-{hashString}";
+                        var credFile = $"/tmp/cifs-credentials-{hashString}";
                         try
                         {
                             var credContent = $"username={username}\npassword={password}\n";

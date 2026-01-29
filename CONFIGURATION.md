@@ -218,13 +218,13 @@ sudo chown mingyue:mingyue /srv/mingyue/data/mingyue.db
    sudo journalctl -u mingyue -n 100
    ```
 
-### Network disk mount failures (permission errors)
+### Permission errors (disk mount, file operations, service management)
 
-**For installations using the new capability-based approach (recommended):**
+**For installations using the capability-based approach (recommended):**
 
-If you encounter errors like "Operation not permitted" or "权限不足" when mounting network disks, the systemd service may be missing the required capability.
+If you encounter permission errors when performing system operations (mounting disks, managing shares, restarting services), ensure the systemd service has the required capabilities.
 
-**Solution**: Ensure the systemd service has CAP_SYS_ADMIN capability:
+**Solution**: Verify the systemd service has all necessary capabilities:
 
 1. Edit the service file:
    ```bash
@@ -233,7 +233,8 @@ If you encounter errors like "Operation not permitted" or "权限不足" when mo
 
 2. Verify these lines are present in the `[Service]` section:
    ```ini
-   AmbientCapabilities=CAP_SYS_ADMIN
+   # Required capabilities for system operations
+   AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE
    NoNewPrivileges=true
    ```
 
@@ -243,21 +244,27 @@ If you encounter errors like "Operation not permitted" or "权限不足" when mo
    sudo systemctl restart mingyue
    ```
 
+**What each capability does:**
+- `CAP_SYS_ADMIN`: Mount/umount operations, systemctl commands (restart services), exportfs
+- `CAP_DAC_OVERRIDE`: Write to system configuration files (/etc/samba/smb.conf, /etc/exports)
+
 **For older installations using sudo (legacy):**
 
-If you encounter "sudo: 已设置'no new privileges'标志" errors, your installation is using the older sudo-based approach.
+If you encounter "sudo: 已设置'no new privileges'标志" errors, your installation is using the older sudo-based approach which is less secure.
 
-We recommend upgrading to the capability-based approach which is more secure. To upgrade:
+**Recommended upgrade path:**
 
-1. Re-run the installation script to update the systemd service configuration
-2. Or manually update `/etc/systemd/system/mingyue.service` to use `AmbientCapabilities=CAP_SYS_ADMIN` and enable `NoNewPrivileges=true`
-3. Update DiskManagementService.cs to use mount/umount directly instead of sudo
+1. Re-run the installation script to get the new capability-based configuration
+2. The old sudoers file (/etc/sudoers.d/mingyue) is no longer needed and can be removed
+3. The new approach eliminates sudo entirely, using Linux capabilities instead
 
-**Note**: The new approach using Linux capabilities (AmbientCapabilities) is more secure than sudo because:
-- It maintains `NoNewPrivileges=true` security hardening
-- It grants only the specific capability needed (CAP_SYS_ADMIN for mount operations)
-- It doesn't require sudoers configuration
-- It follows the principle of least privilege
+**Security benefits of the capability-based approach:**
+- ✅ Maintains `NoNewPrivileges=true` security hardening
+- ✅ Grants only specific capabilities needed (principle of least privilege)
+- ✅ No sudoers configuration required (reduces attack surface)
+- ✅ More granular control than blanket sudo access
+- ✅ All operations auditable through systemd
+
 
 
 

@@ -191,51 +191,6 @@ install_app() {
     print_info "Application files installed to $INSTALL_DIR"
 }
 
-# Configure sudoers for required commands
-configure_sudoers() {
-    print_warn "Configuring sudoers for $APP_USER..."
-    print_warn "This grants significant elevated privileges. Review carefully!"
-    
-    SUDOERS_FILE="/etc/sudoers.d/mingyue"
-    SUDOERS_TEMP=$(mktemp /tmp/mingyue.sudoers.XXXXXX)
-    chmod 600 "$SUDOERS_TEMP"
-    
-    cat > "$SUDOERS_TEMP" <<EOF
-# MingYue service commands
-# WARNING: These permissions grant significant system access
-# Review and restrict based on your security requirements
-# Consider using wrapper scripts with input validation instead of direct sudo access
-$APP_USER ALL=(ALL) NOPASSWD: /bin/mount
-$APP_USER ALL=(ALL) NOPASSWD: /bin/umount
-$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/hdparm
-$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/smartctl
-$APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart smbd
-$APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nmbd
-$APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-kernel-server
-$APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-server
-$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/samba/smb.conf
-$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/exports
-$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs
-$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs -ra
-EOF
-    
-    # Validate sudoers syntax before installing
-    if visudo -c -f "$SUDOERS_TEMP" &>/dev/null; then
-        mv "$SUDOERS_TEMP" "$SUDOERS_FILE"
-        chmod 440 "$SUDOERS_FILE"
-        chown root:root "$SUDOERS_FILE"
-        print_info "Sudoers file validated and installed"
-    else
-        print_error "Sudoers validation failed! File not installed."
-        rm -f "$SUDOERS_TEMP"
-        return 1
-    fi
-    
-    print_warn "SECURITY WARNING: Sudoers grants broad root privileges to $APP_USER"
-    print_warn "Review /etc/sudoers.d/mingyue and restrict as needed for your environment"
-    print_warn "Consider using wrapper scripts with input validation for production use"
-}
-
 # Create systemd service
 create_systemd_service() {
     print_info "Creating systemd service..."
@@ -270,11 +225,12 @@ Environment=MINGYUE_CACHE_DIR=$CACHE_DIR
 Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 
 # Security settings
-# Using Linux capabilities for mount operations instead of sudo
-# CAP_SYS_ADMIN: Required for mount/umount operations
+# Using Linux capabilities instead of sudo for better security
+# CAP_SYS_ADMIN: Required for mount/umount operations and systemctl commands
+# CAP_DAC_OVERRIDE: Required for writing to system configuration files (/etc/samba/smb.conf, /etc/exports)
 # AmbientCapabilities grants capabilities to the process without requiring sudo
-# This is more secure than disabling NoNewPrivileges
-AmbientCapabilities=CAP_SYS_ADMIN
+# This is more secure than using sudo and maintains NoNewPrivileges protection
+AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
@@ -376,7 +332,6 @@ main() {
     create_user
     create_directories
     install_app
-    configure_sudoers
     create_systemd_service
     enable_service
     display_info

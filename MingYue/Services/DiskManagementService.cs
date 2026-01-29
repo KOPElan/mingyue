@@ -40,7 +40,7 @@ namespace MingYue.Services
         /// <summary>
         /// Check if an error indicates permission issues and return appropriate error result
         /// </summary>
-        private DiskOperationResult CheckSudoPermissionError(string error, string operation)
+        private DiskOperationResult CheckPermissionError(string error, string operation)
         {
             // Check for specific sudo permission errors (legacy, when systemd uses sudo)
             if (error.Contains("sudo: a password is required") || 
@@ -57,7 +57,7 @@ namespace MingYue.Services
             {
                 _logger.LogError("{Operation} failed due to 'no new privileges' restriction. Error: {Error}", operation, error);
                 return DiskOperationResult.Failed($"{operation}失败：服务被 NoNewPrivileges 限制", 
-                    "systemd 服务配置阻止了 sudo 权限提升。解决方法请参考 CONFIGURATION.md 中的'Network disk mount failures'章节");
+                    "systemd 服务配置阻止了 sudo 权限提升。解决方法请参考 CONFIGURATION.md 中的 'Permission errors (disk mount, file operations, service management)' 章节");
             }
             
             // Check for capability/permission errors when using direct mount (without sudo)
@@ -422,11 +422,11 @@ namespace MingYue.Services
                     }
                     else
                     {
-                        // Check if the error is due to sudo requiring a password
-                        var sudoError = CheckSudoPermissionError(error, "挂载");
-                        if (sudoError != null)
+                        // Check if the error is due to permission issues
+                        var permError = CheckPermissionError(error, "挂载");
+                        if (permError != null)
                         {
-                            return sudoError;
+                            return permError;
                         }
                         return DiskOperationResult.Failed($"挂载失败", error);
                     }
@@ -554,11 +554,11 @@ namespace MingYue.Services
                     }
                     else
                     {
-                        // Check if the error is due to sudo requiring a password
-                        var sudoError = CheckSudoPermissionError(error, "卸载");
-                        if (sudoError != null)
+                        // Check if the error is due to permission issues
+                        var permError = CheckPermissionError(error, "卸载");
+                        if (permError != null)
                         {
-                            return sudoError;
+                            return permError;
                         }
                         return DiskOperationResult.Failed($"卸载失败", error);
                     }
@@ -1568,11 +1568,11 @@ namespace MingYue.Services
                         }
                         else
                         {
-                            // Check if the error is due to sudo requiring a password
-                            var sudoError = CheckSudoPermissionError(error, "挂载");
-                            if (sudoError != null)
+                            // Check if the error is due to permission issues
+                            var permError = CheckPermissionError(error, "挂载");
+                            if (permError != null)
                             {
-                                return sudoError;
+                                return permError;
                             }
                             
                             // Log the error details to help with debugging

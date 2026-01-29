@@ -234,7 +234,7 @@ If you encounter permission errors when performing system operations (mounting d
 2. Verify these lines are present in the `[Service]` section:
    ```ini
    # Required capabilities for system operations
-   AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE
+   AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_RAWIO
    NoNewPrivileges=true
    ```
 
@@ -245,8 +245,15 @@ If you encounter permission errors when performing system operations (mounting d
    ```
 
 **What each capability does:**
-- `CAP_SYS_ADMIN`: Mount/umount operations, systemctl commands (restart services), exportfs
+- `CAP_SYS_ADMIN`: Mount/umount operations, exportfs (NFS export management), and other low-level system management
 - `CAP_DAC_OVERRIDE`: Write to system configuration files (/etc/samba/smb.conf, /etc/exports)
+- `CAP_SYS_RAWIO`: Direct disk I/O access for smartctl SMART monitoring
+
+**Important limitations:**
+- `CAP_SYS_ADMIN` does **not** allow restarting systemd services via `systemctl`
+- Service restart operations (smbd, nmbd, nfs-server) require minimal sudo configuration
+- The installation script creates `/etc/sudoers.d/mingyue` for these specific systemctl commands only
+- `exportfs` command typically works with `CAP_SYS_ADMIN`, but if it fails, a sudo rule may be needed
 
 **For older installations using sudo (legacy):**
 
@@ -254,14 +261,14 @@ If you encounter "sudo: 已设置'no new privileges'标志" errors, your install
 
 **Recommended upgrade path:**
 
-1. Re-run the installation script to get the new capability-based configuration
-2. The old sudoers file (/etc/sudoers.d/mingyue) is no longer needed and can be removed
-3. The new approach eliminates sudo entirely, using Linux capabilities instead
+1. Re-run the installation script to get the new hybrid capability + minimal sudo configuration
+2. The new approach uses Linux capabilities for most operations (mount, file writes, disk I/O)
+3. Minimal sudo is only used for systemctl service restart commands (4 commands total)
 
-**Security benefits of the capability-based approach:**
+**Security benefits of the hybrid approach:**
 - ✅ Maintains `NoNewPrivileges=true` security hardening
 - ✅ Grants only specific capabilities needed (principle of least privilege)
-- ✅ No sudoers configuration required (reduces attack surface)
+- ✅ Minimal sudo configuration (only 4 systemctl commands vs. 11 previously)
 - ✅ More granular control than blanket sudo access
 - ✅ All operations auditable through systemd
 

@@ -613,9 +613,9 @@ namespace MingYue.Services
 
             try
             {
-                // Try systemctl first - restart both smbd and nmbd
-                var resultSmbd = await ExecuteCommandAsync("systemctl", "restart smbd");
-                var resultNmbd = await ExecuteCommandAsync("systemctl", "restart nmbd");
+                // Try systemctl first - restart both smbd and nmbd (requires sudo)
+                var resultSmbd = await ExecuteCommandAsync("sudo", "systemctl restart smbd");
+                var resultNmbd = await ExecuteCommandAsync("sudo", "systemctl restart nmbd");
 
                 if (resultSmbd.exitCode == 0 && resultNmbd.exitCode == 0)
                 {
@@ -648,15 +648,15 @@ namespace MingYue.Services
 
             try
             {
-                // Try systemctl first
-                var nfsServerResult = await ExecuteCommandAsync("systemctl", "restart nfs-server");
+                // Try systemctl first (requires sudo)
+                var nfsServerResult = await ExecuteCommandAsync("sudo", "systemctl restart nfs-server");
                 if (nfsServerResult.exitCode == 0)
                 {
                     return new OperationResult { Success = true, Message = "Successfully restarted NFS service" };
                 }
 
-                // Try nfs-kernel-server for Debian/Ubuntu
-                var nfsKernelServerResult = await ExecuteCommandAsync("systemctl", "restart nfs-kernel-server");
+                // Try nfs-kernel-server for Debian/Ubuntu (requires sudo)
+                var nfsKernelServerResult = await ExecuteCommandAsync("sudo", "systemctl restart nfs-kernel-server");
                 if (nfsKernelServerResult.exitCode == 0)
                 {
                     return new OperationResult { Success = true, Message = "Successfully restarted NFS service" };

@@ -218,6 +218,31 @@ sudo chown mingyue:mingyue /srv/mingyue/data/mingyue.db
    sudo journalctl -u mingyue -n 100
    ```
 
+### Network disk mount failures ("no new privileges" error)
+
+If you encounter errors like "sudo: 已设置'no new privileges'标志，它阻止 sudo 以 root 身份运行" when mounting network disks, this is caused by the `NoNewPrivileges=true` security setting in systemd.
+
+**Solution**: Edit the systemd service file to disable NoNewPrivileges:
+
+1. Edit the service file:
+   ```bash
+   sudo nano /etc/systemd/system/mingyue.service
+   ```
+
+2. Find and comment out the `NoNewPrivileges=true` line:
+   ```ini
+   # NoNewPrivileges=true
+   ```
+
+3. Reload and restart the service:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart mingyue
+   ```
+
+**Note**: NoNewPrivileges is already commented out by default in newer installations. This is necessary because disk mount operations require privilege escalation via sudo.
+
+
 ## Migration from Old Directory Structure
 
 If you're upgrading from an older version that used scattered directories:

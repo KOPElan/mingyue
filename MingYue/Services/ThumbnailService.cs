@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MingYue.Data;
 using MingYue.Models;
+using MingYue.Utilities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -30,37 +31,13 @@ namespace MingYue.Services
             _dbContextFactory = dbContextFactory;
             _configuration = configuration;
             
-            // Get cache directory from environment variable first, then configuration, then default
-            var cacheDir = Environment.GetEnvironmentVariable("MINGYUE_CACHE_DIR");
-            if (string.IsNullOrWhiteSpace(cacheDir))
-            {
-                cacheDir = _configuration["Storage:CacheDirectory"];
-            }
-            
-            // If still not set, use a default path
-            if (string.IsNullOrWhiteSpace(cacheDir))
-            {
-                // Default to /srv/mingyue/cache on Linux, or .mingyue-cache in user profile on Windows
-                if (OperatingSystem.IsLinux())
-                {
-                    cacheDir = "/srv/mingyue/cache";
-                }
-                else
-                {
-                    var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    cacheDir = Path.Combine(homeDir, ".mingyue-cache");
-                }
-            }
-            
-            _cacheDirectory = cacheDir;
+            // Use helper to get cache directory
+            _cacheDirectory = PathHelper.GetCacheDirectory(configuration);
             
             // Ensure base cache directory exists - fail fast if there are permission issues
             try
             {
-                if (!Directory.Exists(_cacheDirectory))
-                {
-                    Directory.CreateDirectory(_cacheDirectory);
-                }
+                PathHelper.EnsureDirectoryExists(_cacheDirectory);
             }
             catch (Exception ex)
             {

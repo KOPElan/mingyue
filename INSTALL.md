@@ -43,7 +43,6 @@ The installation script will:
   - Unified data directory: `/srv/mingyue`
     - Database and data: `/srv/mingyue/data`
     - Cache files: `/srv/mingyue/cache`
-    - Log files: `/srv/mingyue/logs`
 - Configure sudo permissions for necessary system commands
 - Create and enable a systemd service
 - Start the application automatically
@@ -140,13 +139,14 @@ All application data is centralized in a unified directory structure:
 - **Unified Data Directory**: `/srv/mingyue` - All application data in one location
   - **Database**: `/srv/mingyue/data/mingyue.db` - SQLite database
   - **Cache**: `/srv/mingyue/cache` - Thumbnail cache and file indexes
-  - **Logs**: `/srv/mingyue/logs` - Application log files (also available via journalctl)
+- **Logs**: Managed by systemd journal (view with `journalctl -u mingyue`)
 
 This unified structure ensures:
 - Easy backup and management (just backup `/srv/mingyue`)
 - No scattered files across system directories
 - No dependency on user home directories
 - Clear separation between code and data
+- Standard systemd logging practices
 
 ### Environment Variables
 
@@ -154,10 +154,10 @@ The application supports the following environment variables for path configurat
 
 - `MINGYUE_DATA_DIR` - Directory for database and persistent data (default: `/srv/mingyue/data`)
 - `MINGYUE_CACHE_DIR` - Directory for cache files (default: `/srv/mingyue/cache`)
-- `MINGYUE_LOG_DIR` - Directory for log files (default: `/srv/mingyue/logs`)
-- `ConnectionStrings__DefaultConnection` - Database connection string
 
 These are automatically configured by the installation script in the systemd service file.
+
+**Note**: Logs are managed by systemd journal and can be viewed with `journalctl -u mingyue`. This follows standard systemd service practices and provides better integration with system logging.
 
 ### Configuration
 

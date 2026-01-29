@@ -20,7 +20,6 @@ INSTALL_DIR="/opt/mingyue"
 BASE_DATA_DIR="/srv/mingyue"
 DATA_DIR="$BASE_DATA_DIR/data"
 CACHE_DIR="$BASE_DATA_DIR/cache"
-LOG_DIR="$BASE_DATA_DIR/logs"
 SERVICE_NAME="mingyue.service"
 DEFAULT_PORT=5000
 
@@ -145,7 +144,6 @@ create_directories() {
     mkdir -p "$BASE_DATA_DIR"
     mkdir -p "$DATA_DIR"
     mkdir -p "$CACHE_DIR"
-    mkdir -p "$LOG_DIR"
     
     # Set ownership
     chown -R $APP_USER:$APP_GROUP "$INSTALL_DIR"
@@ -156,7 +154,6 @@ create_directories() {
     chmod 755 "$BASE_DATA_DIR"
     chmod 755 "$DATA_DIR"
     chmod 755 "$CACHE_DIR"
-    chmod 755 "$LOG_DIR"
     
     print_info "Directories created successfully"
 }
@@ -265,8 +262,6 @@ Environment=DOTNET_ENVIRONMENT=Production
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=MINGYUE_DATA_DIR=$DATA_DIR
 Environment=MINGYUE_CACHE_DIR=$CACHE_DIR
-Environment=MINGYUE_LOG_DIR=$LOG_DIR
-Environment="ConnectionStrings__DefaultConnection=Data Source=$DATA_DIR/mingyue.db"
 
 # Security settings
 # Note: Some restrictions are relaxed due to application requirements
@@ -280,7 +275,8 @@ ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictRealtime=true
 
-# Logging
+# Logging - logs are sent to systemd journal
+# View logs with: journalctl -u mingyue -f
 StandardOutput=journal
 StandardError=journal
 
@@ -325,7 +321,7 @@ display_info() {
     echo "Unified data directory: $BASE_DATA_DIR"
     echo "  - Database and data: $DATA_DIR"
     echo "  - Cache files: $CACHE_DIR"
-    echo "  - Log files: $LOG_DIR"
+    echo "  - Logs: Use 'journalctl -u $SERVICE_NAME' to view logs"
     echo ""
     echo "Service name: $SERVICE_NAME"
     echo "Service status: systemctl status $SERVICE_NAME"

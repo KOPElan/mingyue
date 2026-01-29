@@ -11,8 +11,12 @@ MingYue uses a unified directory structure to keep all application data organize
 /srv/mingyue/          # Unified data directory (default)
 ├── data/              # Database and persistent data
 │   └── mingyue.db     # SQLite database
-├── cache/             # Thumbnail cache and file indexes
-└── logs/              # Application logs
+└── cache/             # Thumbnail cache and file indexes
+```
+
+**Logs**: Application logs are managed by systemd journal. View them with:
+```bash
+sudo journalctl -u mingyue -f
 ```
 
 ## Environment Variables
@@ -23,17 +27,21 @@ MingYue supports the following environment variables for path configuration:
 
 | Variable | Description | Default (Linux) | Default (Windows) |
 |----------|-------------|-----------------|-------------------|
-| `MINGYUE_DATA_DIR` | Directory for database and persistent data | `/srv/mingyue/data` | N/A |
+| `MINGYUE_DATA_DIR` | Directory for database and persistent data | `/srv/mingyue/data` | Current directory |
 | `MINGYUE_CACHE_DIR` | Directory for cache files (thumbnails, indexes) | `/srv/mingyue/cache` | `%USERPROFILE%\.mingyue-cache` |
-| `MINGYUE_LOG_DIR` | Directory for log files | `/srv/mingyue/logs` | N/A |
+
+**Note**: Logs are managed by systemd journal on Linux and are not configured via environment variables. Use `journalctl -u mingyue` to view logs.
 
 ### Database Configuration
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ConnectionStrings__DefaultConnection` | Database connection string | `Data Source=/srv/mingyue/data/mingyue.db` |
+| `ConnectionStrings__DefaultConnection` | Full database connection string (overrides MINGYUE_DATA_DIR if set) | Uses MINGYUE_DATA_DIR or defaults to `mingyue.db` in current directory |
 
-**Note**: The double underscore (`__`) in `ConnectionStrings__DefaultConnection` is required for ASP.NET Core configuration hierarchy.
+**Note**: 
+- The double underscore (`__`) in `ConnectionStrings__DefaultConnection` is required for ASP.NET Core configuration hierarchy.
+- If `ConnectionStrings__DefaultConnection` is not set, the application will use `MINGYUE_DATA_DIR` to construct the database path as `{MINGYUE_DATA_DIR}/mingyue.db`
+- If neither is set, it defaults to `mingyue.db` in the application's working directory
 
 ### Application Environment
 
@@ -57,8 +65,6 @@ Example configuration:
 [Service]
 Environment=MINGYUE_DATA_DIR=/srv/mingyue/data
 Environment=MINGYUE_CACHE_DIR=/srv/mingyue/cache
-Environment=MINGYUE_LOG_DIR=/srv/mingyue/logs
-Environment="ConnectionStrings__DefaultConnection=Data Source=/srv/mingyue/data/mingyue.db"
 ```
 
 After modifying the service file:
@@ -89,7 +95,6 @@ For manual execution or testing:
 ```bash
 export MINGYUE_CACHE_DIR=/srv/mingyue/cache
 export MINGYUE_DATA_DIR=/srv/mingyue/data
-export ConnectionStrings__DefaultConnection="Data Source=/srv/mingyue/data/mingyue.db"
 ./MingYue --urls "http://0.0.0.0:5000"
 ```
 
@@ -111,7 +116,7 @@ If you want to store all MingYue data on a different drive or partition:
 
 1. Create the directory structure:
 ```bash
-sudo mkdir -p /mnt/data/mingyue/{data,cache,logs}
+sudo mkdir -p /mnt/data/mingyue/{data,cache}
 sudo chown -R mingyue:mingyue /mnt/data/mingyue
 ```
 
@@ -124,8 +129,6 @@ sudo nano /etc/systemd/system/mingyue.service
 ```ini
 Environment=MINGYUE_DATA_DIR=/mnt/data/mingyue/data
 Environment=MINGYUE_CACHE_DIR=/mnt/data/mingyue/cache
-Environment=MINGYUE_LOG_DIR=/mnt/data/mingyue/logs
-Environment="ConnectionStrings__DefaultConnection=Data Source=/mnt/data/mingyue/data/mingyue.db"
 ```
 
 4. Also update the `ReadWritePaths` directive:
@@ -234,9 +237,6 @@ If you're upgrading from an older version that used scattered directories:
    
    # Move cache (if exists in old location)
    sudo mv /home/mingyue/.mingyue-cache/* /srv/mingyue/cache/ 2>/dev/null || true
-   
-   # Move logs (optional, as journald also captures logs)
-   sudo mv /var/log/mingyue/* /srv/mingyue/logs/ 2>/dev/null || true
    ```
 
 4. Set ownership:

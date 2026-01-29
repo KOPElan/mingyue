@@ -23,14 +23,29 @@ namespace MingYue.Services
             _logger = logger;
             _configuration = configuration;
             
-            // Get cache directory from configuration, default to .mingyue-cache in user's home
-            var configuredCache = _configuration["Storage:CacheDirectory"];
-            if (string.IsNullOrWhiteSpace(configuredCache))
+            // Get cache directory from environment variable first, then configuration, then default
+            var cacheDir = Environment.GetEnvironmentVariable("MINGYUE_CACHE_DIR");
+            if (string.IsNullOrWhiteSpace(cacheDir))
             {
-                configuredCache = ".mingyue-cache";
+                cacheDir = _configuration["Storage:CacheDirectory"];
             }
-            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            _cacheDirectory = Path.Combine(homeDir, configuredCache);
+            
+            // If still not set, use a default path
+            if (string.IsNullOrWhiteSpace(cacheDir))
+            {
+                // Default to /srv/mingyue/cache on Linux, or .mingyue-cache in user profile on Windows
+                if (OperatingSystem.IsLinux())
+                {
+                    cacheDir = "/srv/mingyue/cache";
+                }
+                else
+                {
+                    var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                    cacheDir = Path.Combine(homeDir, ".mingyue-cache");
+                }
+            }
+            
+            _cacheDirectory = cacheDir;
             
             // Ensure base cache directory exists - fail fast if there are permission issues
             try

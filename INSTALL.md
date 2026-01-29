@@ -38,7 +38,12 @@ The easiest way to get a Linux release build is through GitHub Actions:
 The installation script will:
 - Install required system dependencies (Samba, NFS, disk utilities)
 - Create a dedicated `mingyue` user
-- Set up directories (`/opt/mingyue`, `/var/lib/mingyue`, `/var/log/mingyue`)
+- Set up directories:
+  - Installation: `/opt/mingyue`
+  - Unified data directory: `/srv/mingyue`
+    - Database and data: `/srv/mingyue/data`
+    - Cache files: `/srv/mingyue/cache`
+    - Log files: `/srv/mingyue/logs`
 - Configure sudo permissions for necessary system commands
 - Create and enable a systemd service
 - Start the application automatically
@@ -129,10 +134,30 @@ sudo journalctl -u mingyue -f
 
 ### Directories
 
-- **Installation**: `/opt/mingyue`
-- **Data**: `/var/lib/mingyue` (database, uploaded files, etc.)
-  - The SQLite database is configured to be stored at `/var/lib/mingyue/mingyue.db`
-- **Logs**: `/var/log/mingyue`
+All application data is centralized in a unified directory structure:
+
+- **Installation**: `/opt/mingyue` - Application binaries and executable files
+- **Unified Data Directory**: `/srv/mingyue` - All application data in one location
+  - **Database**: `/srv/mingyue/data/mingyue.db` - SQLite database
+  - **Cache**: `/srv/mingyue/cache` - Thumbnail cache and file indexes
+  - **Logs**: `/srv/mingyue/logs` - Application log files (also available via journalctl)
+
+This unified structure ensures:
+- Easy backup and management (just backup `/srv/mingyue`)
+- No scattered files across system directories
+- No dependency on user home directories
+- Clear separation between code and data
+
+### Environment Variables
+
+The application supports the following environment variables for path configuration:
+
+- `MINGYUE_DATA_DIR` - Directory for database and persistent data (default: `/srv/mingyue/data`)
+- `MINGYUE_CACHE_DIR` - Directory for cache files (default: `/srv/mingyue/cache`)
+- `MINGYUE_LOG_DIR` - Directory for log files (default: `/srv/mingyue/logs`)
+- `ConnectionStrings__DefaultConnection` - Database connection string
+
+These are automatically configured by the installation script in the systemd service file.
 
 ### Configuration
 
@@ -196,8 +221,7 @@ sudo rm -rf /opt/mingyue
 sudo rm /etc/sudoers.d/mingyue
 
 # (Optional) Remove data and logs
-sudo rm -rf /var/lib/mingyue
-sudo rm -rf /var/log/mingyue
+sudo rm -rf /srv/mingyue
 
 # (Optional) Remove user
 sudo userdel mingyue
@@ -217,7 +241,7 @@ sudo journalctl -u mingyue -n 50
 Ensure the mingyue user has proper permissions:
 ```bash
 sudo chown -R mingyue:mingyue /opt/mingyue
-sudo chown -R mingyue:mingyue /var/lib/mingyue
+sudo chown -R mingyue:mingyue /srv/mingyue
 ```
 
 ### Port already in use

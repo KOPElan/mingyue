@@ -16,8 +16,8 @@ APP_NAME="mingyue"
 APP_USER="mingyue"
 APP_GROUP="mingyue"
 INSTALL_DIR="/opt/mingyue"
-DATA_DIR="/var/lib/mingyue"
-LOG_DIR="/var/log/mingyue"
+# Unified data directory
+BASE_DATA_DIR="/srv/mingyue"
 SERVICE_NAME="mingyue.service"
 
 # Print colored messages
@@ -89,8 +89,8 @@ remove_app_files() {
 remove_data() {
     local REMOVE_DATA=false
     
-    if [ -d "$DATA_DIR" ] || [ -d "$LOG_DIR" ]; then
-        read -p "Do you want to remove data and logs? (y/N) " -n 1 -r
+    if [ -d "$BASE_DATA_DIR" ]; then
+        read -p "Do you want to remove all data (database, cache, logs)? (y/N) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             REMOVE_DATA=true
@@ -98,19 +98,13 @@ remove_data() {
     fi
     
     if [ "$REMOVE_DATA" = true ]; then
-        if [ -d "$DATA_DIR" ]; then
-            rm -rf "$DATA_DIR"
-            print_info "Data directory removed: $DATA_DIR"
-        fi
-        
-        if [ -d "$LOG_DIR" ]; then
-            rm -rf "$LOG_DIR"
-            print_info "Log directory removed: $LOG_DIR"
+        if [ -d "$BASE_DATA_DIR" ]; then
+            rm -rf "$BASE_DATA_DIR"
+            print_info "Data directory removed: $BASE_DATA_DIR"
         fi
     else
-        print_warn "Data and logs preserved"
-        [ -d "$DATA_DIR" ] && print_info "Data directory: $DATA_DIR"
-        [ -d "$LOG_DIR" ] && print_info "Log directory: $LOG_DIR"
+        print_warn "Data preserved"
+        [ -d "$BASE_DATA_DIR" ] && print_info "Data directory: $BASE_DATA_DIR"
     fi
 }
 
@@ -168,14 +162,12 @@ display_info() {
     echo "========================================"
     echo ""
     
-    if [ -d "$DATA_DIR" ] || [ -d "$LOG_DIR" ]; then
+    if [ -d "$BASE_DATA_DIR" ]; then
         echo "Preserved directories:"
-        [ -d "$DATA_DIR" ] && echo "  Data: $DATA_DIR"
-        [ -d "$LOG_DIR" ] && echo "  Logs: $LOG_DIR"
+        echo "  Data: $BASE_DATA_DIR"
         echo ""
         echo "To remove these manually:"
-        [ -d "$DATA_DIR" ] && echo "  sudo rm -rf $DATA_DIR"
-        [ -d "$LOG_DIR" ] && echo "  sudo rm -rf $LOG_DIR"
+        echo "  sudo rm -rf $BASE_DATA_DIR"
         echo ""
     fi
 }

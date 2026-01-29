@@ -16,8 +16,11 @@ APP_NAME="mingyue"
 APP_USER="mingyue"
 APP_GROUP="mingyue"
 INSTALL_DIR="/opt/mingyue"
-DATA_DIR="/var/lib/mingyue"
-LOG_DIR="/var/log/mingyue"
+# Unified data directory under /srv to avoid scattered system directories
+BASE_DATA_DIR="/srv/mingyue"
+DATA_DIR="$BASE_DATA_DIR/data"
+CACHE_DIR="$BASE_DATA_DIR/cache"
+LOG_DIR="$BASE_DATA_DIR/logs"
 SERVICE_NAME="mingyue.service"
 DEFAULT_PORT=5000
 
@@ -139,17 +142,20 @@ create_directories() {
     print_info "Creating application directories..."
     
     mkdir -p "$INSTALL_DIR"
+    mkdir -p "$BASE_DATA_DIR"
     mkdir -p "$DATA_DIR"
+    mkdir -p "$CACHE_DIR"
     mkdir -p "$LOG_DIR"
     
     # Set ownership
     chown -R $APP_USER:$APP_GROUP "$INSTALL_DIR"
-    chown -R $APP_USER:$APP_GROUP "$DATA_DIR"
-    chown -R $APP_USER:$APP_GROUP "$LOG_DIR"
+    chown -R $APP_USER:$APP_GROUP "$BASE_DATA_DIR"
     
     # Set permissions
     chmod 755 "$INSTALL_DIR"
+    chmod 755 "$BASE_DATA_DIR"
     chmod 755 "$DATA_DIR"
+    chmod 755 "$CACHE_DIR"
     chmod 755 "$LOG_DIR"
     
     print_info "Directories created successfully"
@@ -253,9 +259,13 @@ Restart=always
 RestartSec=10
 KillSignal=SIGINT
 SyslogIdentifier=mingyue
+
+# Environment variables for unified data directory structure
 Environment=DOTNET_ENVIRONMENT=Production
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=MINGYUE_DATA_DIR=$DATA_DIR
+Environment=MINGYUE_CACHE_DIR=$CACHE_DIR
+Environment=MINGYUE_LOG_DIR=$LOG_DIR
 Environment="ConnectionStrings__DefaultConnection=Data Source=$DATA_DIR/mingyue.db"
 
 # Security settings
@@ -265,7 +275,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true
-ReadWritePaths=$DATA_DIR $LOG_DIR
+ReadWritePaths=$BASE_DATA_DIR
 ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictRealtime=true
@@ -312,8 +322,10 @@ display_info() {
     echo "========================================"
     echo ""
     echo "Application installed to: $INSTALL_DIR"
-    echo "Data directory: $DATA_DIR"
-    echo "Log directory: $LOG_DIR"
+    echo "Unified data directory: $BASE_DATA_DIR"
+    echo "  - Database and data: $DATA_DIR"
+    echo "  - Cache files: $CACHE_DIR"
+    echo "  - Log files: $LOG_DIR"
     echo ""
     echo "Service name: $SERVICE_NAME"
     echo "Service status: systemctl status $SERVICE_NAME"

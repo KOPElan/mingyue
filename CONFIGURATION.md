@@ -218,6 +218,56 @@ sudo chown mingyue:mingyue /srv/mingyue/data/mingyue.db
    sudo journalctl -u mingyue -n 100
    ```
 
+### Permission errors (disk mount, file operations, service management)
+
+**For installations using the capability-based approach (recommended):**
+
+If you encounter permission errors when performing system operations (mounting disks, managing shares, restarting services), ensure the systemd service has the required capabilities.
+
+**Solution**: Verify the systemd service has all necessary capabilities:
+
+1. Edit the service file:
+   ```bash
+   sudo nano /etc/systemd/system/mingyue.service
+   ```
+
+2. Verify these lines are present in the `[Service]` section:
+   ```ini
+   # Required capabilities for system operations
+   AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE
+   NoNewPrivileges=true
+   ```
+
+3. Reload and restart the service:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart mingyue
+   ```
+
+**What each capability does:**
+- `CAP_SYS_ADMIN`: Mount/umount operations, systemctl commands (restart services), exportfs
+- `CAP_DAC_OVERRIDE`: Write to system configuration files (/etc/samba/smb.conf, /etc/exports)
+
+**For older installations using sudo (legacy):**
+
+If you encounter "sudo: 已设置'no new privileges'标志" errors, your installation is using the older sudo-based approach which is less secure.
+
+**Recommended upgrade path:**
+
+1. Re-run the installation script to get the new capability-based configuration
+2. The old sudoers file (/etc/sudoers.d/mingyue) is no longer needed and can be removed
+3. The new approach eliminates sudo entirely, using Linux capabilities instead
+
+**Security benefits of the capability-based approach:**
+- ✅ Maintains `NoNewPrivileges=true` security hardening
+- ✅ Grants only specific capabilities needed (principle of least privilege)
+- ✅ No sudoers configuration required (reduces attack surface)
+- ✅ More granular control than blanket sudo access
+- ✅ All operations auditable through systemd
+
+
+
+
 ## Migration from Old Directory Structure
 
 If you're upgrading from an older version that used scattered directories:

@@ -235,7 +235,7 @@ If you encounter permission errors when performing system operations (mounting d
    ```ini
    # Required capabilities for system operations
    AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
-   NoNewPrivileges=true
+   # NoNewPrivileges=true  # MUST BE DISABLED to allow sudo
    ```
 
 3. Reload and restart the service:
@@ -248,7 +248,13 @@ If you encounter permission errors when performing system operations (mounting d
 - `CAP_DAC_OVERRIDE`: Write to system configuration files (/etc/samba/smb.conf, /etc/exports)
 - `CAP_SYS_RAWIO`: Direct disk I/O access for smartctl SMART monitoring
 
-**Important limitations and sudo requirements:**
+**Important: Why NoNewPrivileges must be disabled:**
+- `NoNewPrivileges=true` prevents sudo from escalating privileges
+- This setting **blocks** mount.cifs and systemctl operations that require sudo
+- **Must be disabled or commented out** for the sudo-based operations to work
+- Trade-off: Less systemd hardening, but necessary for functionality
+
+**Sudo requirements:**
 - `mount`/`umount` operations require sudo (mount.cifs requires setuid root or sudo)
 - `systemctl` service restart operations require sudo (capabilities cannot control systemd)
 - `exportfs` command may require sudo on some systems
@@ -256,21 +262,19 @@ If you encounter permission errors when performing system operations (mounting d
   - `/bin/mount` and `/bin/umount`
   - 4 specific `/bin/systemctl restart` commands (smbd, nmbd, nfs-server, nfs-kernel-server)
 
-**For older installations using sudo (legacy):**
+**For installations with "no new privileges" errors:**
 
-If you encounter "sudo: 已设置'no new privileges'标志" errors, your installation is using the older sudo-based approach which is less secure.
+If you encounter "sudo: 已设置'no new privileges'标志" errors:
 
-**Recommended upgrade path:**
+1. Edit `/etc/systemd/system/mingyue.service`
+2. Comment out or remove the `NoNewPrivileges=true` line
+3. Run `sudo systemctl daemon-reload && sudo systemctl restart mingyue`
 
-1. Re-run the installation script to get the new hybrid capability + minimal sudo configuration
-2. The new approach uses Linux capabilities for file writes and disk I/O
-3. Minimal sudo is used for mount/umount and systemctl operations (6 commands total)
-
-**Security benefits of the hybrid approach:**
-- ✅ Maintains `NoNewPrivileges=true` security hardening
-- ✅ Grants only specific capabilities needed (principle of least privilege)
-- ✅ Minimal sudo configuration (6 specific commands: mount, umount, 4× systemctl restart)
-- ✅ More granular control than blanket sudo access
+**Security trade-offs:**
+- ❌ Cannot use `NoNewPrivileges=true` (conflicts with sudo)
+- ✅ Uses Linux capabilities for file and disk I/O (reduces sudo usage)
+- ✅ Minimal sudo configuration (only 6 specific commands)
+- ✅ More secure than running entire application as root
 - ✅ All operations auditable through systemd
 
 

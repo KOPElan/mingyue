@@ -270,11 +270,12 @@ Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 # CAP_DAC_OVERRIDE: Required for writing to system configuration files (/etc/samba/smb.conf, /etc/exports)
 # CAP_SYS_RAWIO: Required for smartctl to perform direct disk I/O for SMART monitoring
 # AmbientCapabilities grants capabilities to the process without requiring sudo for these operations
-# Note: mount/umount and systemctl commands require sudo (see configure_sudoers function)
+# Note: NoNewPrivileges is DISABLED to allow sudo mount/umount and systemctl commands
 #   - mount.cifs requires setuid root or sudo (capabilities alone don't work)
 #   - systemctl operations require sudo (capabilities cannot control systemd services)
+#   - NoNewPrivileges=true would block sudo from working, so it must be disabled or omitted
 AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
-NoNewPrivileges=true
+# NoNewPrivileges=true  # DISABLED - this prevents sudo from working
 PrivateTmp=true
 ProtectSystem=full
 ProtectHome=true

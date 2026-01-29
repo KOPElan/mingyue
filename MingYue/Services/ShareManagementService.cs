@@ -803,11 +803,11 @@ namespace MingYue.Services
                 {
                     File.Copy(filePath, backupPath, overwrite: true);
                     backupCreated = true;
-                    File.Delete(filePath);
                 }
 
-                // Move the temp file from /tmp into place (CAP_DAC_OVERRIDE allows this)
-                File.Move(tempPath, filePath);
+                // Move the temp file from /tmp into place, overwriting existing file
+                // (CAP_DAC_OVERRIDE allows this even with ProtectSystem=full)
+                File.Move(tempPath, filePath, overwrite: true);
 
                 // If we succeeded, remove the backup
                 if (backupCreated && File.Exists(backupPath))

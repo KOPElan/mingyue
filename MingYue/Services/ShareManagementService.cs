@@ -697,7 +697,7 @@ namespace MingYue.Services
         {
             try
             {
-                var result = await ExecuteCommandAsync("exportfs", "-ra");
+                var result = await ExecuteCommandAsync("sudo", "exportfs -ra");
                 if (result.exitCode == 0)
                 {
                     return new OperationResult { Success = true, Message = "Successfully reloaded NFS exports" };
@@ -1136,7 +1136,7 @@ namespace MingYue.Services
             try
             {
                 // Use pdbedit to list Samba users
-                var result = await ExecuteCommandAsync("pdbedit", "-L -v");
+                var result = await ExecuteCommandAsync("sudo", "pdbedit -L -v");
 
                 if (result.exitCode != 0)
                 {
@@ -1249,7 +1249,7 @@ namespace MingYue.Services
                 // Use -a to add user and -s for non-interactive mode
                 // Note: Username is safe to interpolate because it's validated with SafeNameRegex above,
                 // which only allows alphanumeric characters, underscore, dot, and dash (no shell metacharacters)
-                var result = await ExecuteCommandWithInputAsync("smbpasswd", $"-a -s {request.Username}",
+                var result = await ExecuteCommandWithInputAsync("sudo", $"smbpasswd -a -s {request.Username}",
                     $"{request.Password}\n{request.Password}\n");
 
                 if (result.exitCode == 0)
@@ -1307,7 +1307,7 @@ namespace MingYue.Services
                 // Update password using smbpasswd -s (non-interactive)
                 // Note: Username is safe to interpolate because it's validated with SafeNameRegex above,
                 // which only allows alphanumeric characters, underscore, dot, and dash (no shell metacharacters)
-                var result = await ExecuteCommandWithInputAsync("smbpasswd", $"-s {username}",
+                var result = await ExecuteCommandWithInputAsync("sudo", $"smbpasswd -s {username}",
                     $"{password}\n{password}\n");
 
                 if (result.exitCode == 0)
@@ -1360,7 +1360,7 @@ namespace MingYue.Services
                 // Remove Samba user using smbpasswd -x
                 // Note: Username is safe to interpolate because it's validated with SafeNameRegex above,
                 // which only allows alphanumeric characters, underscore, dot, and dash (no shell metacharacters)
-                var result = await ExecuteCommandAsync("smbpasswd", $"-x {username}");
+                var result = await ExecuteCommandAsync("sudo", $"smbpasswd -x {username}");
 
                 if (result.exitCode == 0)
                 {

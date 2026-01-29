@@ -194,9 +194,10 @@ install_app() {
 # Configure minimal sudoers for mount and systemctl operations
 # mount.cifs requires setuid root or sudo (capabilities alone don't work)
 # Linux capabilities cannot control systemd services, so minimal sudo access is needed
+# Samba and NFS management commands also require sudo
 configure_sudoers() {
-    print_warn "Configuring minimal sudoers for mount and systemctl operations..."
-    print_warn "This is required because mount.cifs and systemctl need sudo access"
+    print_warn "Configuring minimal sudoers for privileged operations..."
+    print_warn "This is required for mount, systemctl, smbpasswd, pdbedit, and exportfs"
     
     SUDOERS_FILE="/etc/sudoers.d/mingyue"
     SUDOERS_TEMP=$(mktemp /tmp/mingyue.sudoers.XXXXXX)
@@ -205,15 +206,20 @@ configure_sudoers() {
     cat > "$SUDOERS_TEMP" <<EOF
 # MingYue service management and mount commands
 # Note: File operations use Linux capabilities (CAP_DAC_OVERRIDE, CAP_SYS_RAWIO)
-# mount/umount and systemctl require sudo:
+# mount/umount, systemctl, and samba commands require sudo:
 # - mount.cifs requires setuid root or sudo (capabilities alone don't work)
 # - systemctl operations require sudo (capabilities cannot control systemd services)
+# - smbpasswd/pdbedit require sudo (Samba user management needs root)
+# - exportfs requires sudo (NFS export management needs root)
 $APP_USER ALL=(ALL) NOPASSWD: /bin/mount
 $APP_USER ALL=(ALL) NOPASSWD: /bin/umount
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart smbd
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nmbd
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-kernel-server
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-server
+$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/smbpasswd
+$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/pdbedit
+$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs
 EOF
     
     # Validate sudoers syntax before installing

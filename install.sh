@@ -278,7 +278,6 @@ AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
 # NoNewPrivileges=true  # DISABLED - this prevents sudo from working
 PrivateTmp=true
 ProtectSystem=full
-ProtectHome=true
 ReadWritePaths=$BASE_DATA_DIR
 ProtectKernelTunables=true
 ProtectControlGroups=true

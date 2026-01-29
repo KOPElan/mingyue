@@ -191,20 +191,25 @@ install_app() {
     print_info "Application files installed to $INSTALL_DIR"
 }
 
-# Configure minimal sudoers for systemctl operations
+# Configure minimal sudoers for mount and systemctl operations
+# mount.cifs requires setuid root or sudo (capabilities alone don't work)
 # Linux capabilities cannot control systemd services, so minimal sudo access is needed
 configure_sudoers() {
-    print_warn "Configuring minimal sudoers for systemctl operations..."
-    print_warn "This is required because Linux capabilities don't grant systemctl access"
+    print_warn "Configuring minimal sudoers for mount and systemctl operations..."
+    print_warn "This is required because mount.cifs and systemctl need sudo access"
     
     SUDOERS_FILE="/etc/sudoers.d/mingyue"
     SUDOERS_TEMP=$(mktemp /tmp/mingyue.sudoers.XXXXXX)
     chmod 600 "$SUDOERS_TEMP"
     
     cat > "$SUDOERS_TEMP" <<EOF
-# MingYue service management commands
-# Note: Most operations use Linux capabilities (CAP_SYS_ADMIN, CAP_DAC_OVERRIDE, CAP_SYS_RAWIO)
-# Only systemctl operations require sudo as capabilities cannot control systemd services
+# MingYue service management and mount commands
+# Note: File operations use Linux capabilities (CAP_DAC_OVERRIDE, CAP_SYS_RAWIO)
+# mount/umount and systemctl require sudo:
+# - mount.cifs requires setuid root or sudo (capabilities alone don't work)
+# - systemctl operations require sudo (capabilities cannot control systemd services)
+$APP_USER ALL=(ALL) NOPASSWD: /bin/mount
+$APP_USER ALL=(ALL) NOPASSWD: /bin/umount
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart smbd
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nmbd
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-kernel-server
@@ -223,8 +228,8 @@ EOF
         return 1
     fi
     
-    print_info "Minimal sudo configuration created for systemctl operations"
-    print_info "Other operations (mount, disk management, file writes) use Linux capabilities"
+    print_info "Minimal sudo configuration created for mount and systemctl operations"
+    print_info "Other operations (disk I/O, file writes) use Linux capabilities"
 }
 
 # Create systemd service
@@ -262,13 +267,13 @@ Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 
 # Security settings
 # Using Linux capabilities and minimal sudo for system operations
-# CAP_SYS_ADMIN: Required for mount/umount operations, exportfs (NFS exports)
 # CAP_DAC_OVERRIDE: Required for writing to system configuration files (/etc/samba/smb.conf, /etc/exports)
 # CAP_SYS_RAWIO: Required for smartctl to perform direct disk I/O for SMART monitoring
-# AmbientCapabilities grants capabilities to the process without requiring sudo
-# This is more secure than using sudo and maintains NoNewPrivileges protection
-# Note: systemctl commands still require sudo configuration (see configure_sudoers function)
-AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_RAWIO
+# AmbientCapabilities grants capabilities to the process without requiring sudo for these operations
+# Note: mount/umount and systemctl commands require sudo (see configure_sudoers function)
+#   - mount.cifs requires setuid root or sudo (capabilities alone don't work)
+#   - systemctl operations require sudo (capabilities cannot control systemd services)
+AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full

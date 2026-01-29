@@ -385,7 +385,7 @@ namespace MingYue.Services
 
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "mount",
+                    FileName = "sudo",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -393,6 +393,7 @@ namespace MingYue.Services
                 };
 
                 // Build mount command arguments using ArgumentList for proper escaping
+                processInfo.ArgumentList.Add("mount");
                 
                 if (!string.IsNullOrEmpty(fileSystem))
                 {
@@ -531,7 +532,7 @@ namespace MingYue.Services
             {
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "umount",
+                    FileName = "sudo",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -539,6 +540,7 @@ namespace MingYue.Services
                 };
 
                 // Build umount command arguments using ArgumentList for proper escaping
+                processInfo.ArgumentList.Add("umount");
                 processInfo.ArgumentList.Add(mountPoint);
 
                 using var process = Process.Start(processInfo);
@@ -1441,12 +1443,15 @@ namespace MingYue.Services
 
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "mount",
+                    FileName = "sudo",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
+
+                // Add mount command as first argument to sudo
+                processInfo.ArgumentList.Add("mount");
 
                 if (diskType == NetworkDiskType.CIFS)
                 {

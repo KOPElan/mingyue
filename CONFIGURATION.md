@@ -234,7 +234,7 @@ If you encounter permission errors when performing system operations (mounting d
 2. Verify these lines are present in the `[Service]` section:
    ```ini
    # Required capabilities for system operations
-   AmbientCapabilities=CAP_SYS_ADMIN CAP_DAC_OVERRIDE CAP_SYS_RAWIO
+   AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
    NoNewPrivileges=true
    ```
 
@@ -245,15 +245,16 @@ If you encounter permission errors when performing system operations (mounting d
    ```
 
 **What each capability does:**
-- `CAP_SYS_ADMIN`: Mount/umount operations, exportfs (NFS export management), and other low-level system management
 - `CAP_DAC_OVERRIDE`: Write to system configuration files (/etc/samba/smb.conf, /etc/exports)
 - `CAP_SYS_RAWIO`: Direct disk I/O access for smartctl SMART monitoring
 
-**Important limitations:**
-- `CAP_SYS_ADMIN` does **not** allow restarting systemd services via `systemctl`
-- Service restart operations (smbd, nmbd, nfs-server) require minimal sudo configuration
-- The installation script creates `/etc/sudoers.d/mingyue` for these specific systemctl commands only
-- `exportfs` command typically works with `CAP_SYS_ADMIN`, but if it fails, a sudo rule may be needed
+**Important limitations and sudo requirements:**
+- `mount`/`umount` operations require sudo (mount.cifs requires setuid root or sudo)
+- `systemctl` service restart operations require sudo (capabilities cannot control systemd)
+- `exportfs` command may require sudo on some systems
+- The installation script creates `/etc/sudoers.d/mingyue` with minimal permissions:
+  - `/bin/mount` and `/bin/umount`
+  - 4 specific `/bin/systemctl restart` commands (smbd, nmbd, nfs-server, nfs-kernel-server)
 
 **For older installations using sudo (legacy):**
 
@@ -262,13 +263,13 @@ If you encounter "sudo: 已设置'no new privileges'标志" errors, your install
 **Recommended upgrade path:**
 
 1. Re-run the installation script to get the new hybrid capability + minimal sudo configuration
-2. The new approach uses Linux capabilities for most operations (mount, file writes, disk I/O)
-3. Minimal sudo is only used for systemctl service restart commands (4 commands total)
+2. The new approach uses Linux capabilities for file writes and disk I/O
+3. Minimal sudo is used for mount/umount and systemctl operations (6 commands total)
 
 **Security benefits of the hybrid approach:**
 - ✅ Maintains `NoNewPrivileges=true` security hardening
 - ✅ Grants only specific capabilities needed (principle of least privilege)
-- ✅ Minimal sudo configuration (only 4 systemctl commands vs. 11 previously)
+- ✅ Minimal sudo configuration (6 specific commands: mount, umount, 4× systemctl restart)
 - ✅ More granular control than blanket sudo access
 - ✅ All operations auditable through systemd
 

@@ -157,7 +157,7 @@ The application supports the following environment variables for path configurat
 
 These are automatically configured by the installation script in the systemd service file.
 
-**Note**: Logs are managed by systemd journal and can be viewed with `journalctl -u mingyue`. This follows standard systemd service practices and provides better integration with system logging.
+**Note**: Logs are managed by systemd journal and can be viewed with `journalctl -u mingyue`. This follows standard systemd service practices and provides better integration with system logging. For comprehensive logging, auditing, and log management information, see [LOGGING_AUDIT_GUIDE.md](LOGGING_AUDIT_GUIDE.md).
 
 ### Configuration
 

@@ -19,6 +19,8 @@ MingYue uses a unified directory structure to keep all application data organize
 sudo journalctl -u mingyue -f
 ```
 
+For comprehensive logging, auditing, and log management information, see [LOGGING_AUDIT_GUIDE.md](LOGGING_AUDIT_GUIDE.md).
+
 ## Environment Variables
 
 MingYue supports the following environment variables for path configuration:

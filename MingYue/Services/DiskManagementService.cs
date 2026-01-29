@@ -51,6 +51,15 @@ namespace MingYue.Services
                 return DiskOperationResult.Failed($"{operation}失败：需要配置 sudo 权限", 
                     "请配置 sudoers 文件允许无密码执行 mount/umount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
             }
+            
+            // Check for "no new privileges" error which occurs when systemd service has NoNewPrivileges=true
+            if (error.Contains("no new privileges") || error.Contains("已设置\"no new privileges\"标志"))
+            {
+                _logger.LogError("{Operation} failed due to 'no new privileges' restriction. Error: {Error}", operation, error);
+                return DiskOperationResult.Failed($"{operation}失败：服务被 NoNewPrivileges 限制", 
+                    "systemd 服务配置中的 NoNewPrivileges=true 阻止了 sudo 权限提升。请在 /etc/systemd/system/mingyue.service 中注释掉 NoNewPrivileges=true 并执行 'sudo systemctl daemon-reload && sudo systemctl restart mingyue'");
+            }
+            
             return null!; // Return null to indicate no sudo permission error detected
         }
 

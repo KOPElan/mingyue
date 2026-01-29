@@ -42,6 +42,11 @@ if (!string.IsNullOrWhiteSpace(configuredConnectionString))
 else if (!string.IsNullOrWhiteSpace(dataDir))
 {
     // Build connection string from MINGYUE_DATA_DIR environment variable
+    // Ensure the directory exists before creating the database
+    if (!Directory.Exists(dataDir))
+    {
+        Directory.CreateDirectory(dataDir);
+    }
     var dbPath = Path.Combine(dataDir, "mingyue.db");
     connectionString = $"Data Source={dbPath}";
 }

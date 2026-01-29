@@ -90,7 +90,7 @@ remove_data() {
     local REMOVE_DATA=false
     
     if [ -d "$BASE_DATA_DIR" ]; then
-        read -p "Do you want to remove all data (database, cache, logs)? (y/N) " -n 1 -r
+        read -p "Do you want to remove all data (database, cache)? (y/N) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             REMOVE_DATA=true

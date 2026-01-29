@@ -229,7 +229,7 @@ If you're upgrading from an older version that used scattered directories:
 
 2. Create the new unified structure:
    ```bash
-   sudo mkdir -p /srv/mingyue/{data,cache,logs}
+   sudo mkdir -p /srv/mingyue/{data,cache}
    ```
 
 3. Move existing data:

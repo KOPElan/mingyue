@@ -42,7 +42,7 @@ namespace MingYue.Utilities
         /// Ensures a directory exists, creating it if necessary
         /// </summary>
         /// <param name="path">Directory path to ensure exists</param>
-        /// <exception cref="IOException">Thrown if directory creation fails</exception>
+        /// <exception cref="Exception">Thrown if directory creation fails</exception>
         public static void EnsureDirectoryExists(string path)
         {
             if (!Directory.Exists(path))

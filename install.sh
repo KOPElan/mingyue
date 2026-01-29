@@ -150,10 +150,13 @@ create_directories() {
     chown -R $APP_USER:$APP_GROUP "$BASE_DATA_DIR"
     
     # Set permissions
+    # Use 755 for install dir (needs to be executable)
     chmod 755 "$INSTALL_DIR"
-    chmod 755 "$BASE_DATA_DIR"
-    chmod 755 "$DATA_DIR"
-    chmod 755 "$CACHE_DIR"
+    # Use 750 for data directories to prevent world-readable access
+    # Only mingyue user and group can access, protecting sensitive data
+    chmod 750 "$BASE_DATA_DIR"
+    chmod 750 "$DATA_DIR"
+    chmod 750 "$CACHE_DIR"
     
     print_info "Directories created successfully"
 }

@@ -53,11 +53,11 @@ namespace MingYue.Services
             }
             
             // Check for "no new privileges" error which occurs when systemd service has NoNewPrivileges=true
-            if (error.Contains("no new privileges") || error.Contains("已设置\"no new privileges\"标志"))
+            if (error.Contains("no new privileges") || error.Contains("已设置'no new privileges'标志") || error.Contains("已设置\"no new privileges\"标志"))
             {
                 _logger.LogError("{Operation} failed due to 'no new privileges' restriction. Error: {Error}", operation, error);
                 return DiskOperationResult.Failed($"{operation}失败：服务被 NoNewPrivileges 限制", 
-                    "systemd 服务配置中的 NoNewPrivileges=true 阻止了 sudo 权限提升。请在 /etc/systemd/system/mingyue.service 中注释掉 NoNewPrivileges=true 并执行 'sudo systemctl daemon-reload && sudo systemctl restart mingyue'");
+                    "systemd 服务配置阻止了 sudo 权限提升。解决方法请参考 CONFIGURATION.md 中的'Network disk mount failures'章节");
             }
             
             return null!; // Return null to indicate no sudo permission error detected

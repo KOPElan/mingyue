@@ -272,8 +272,7 @@ Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 # Security settings
 # Note: Some restrictions are relaxed due to application requirements
 # Review and tighten based on your security needs
-# NoNewPrivileges=true is commented out because it prevents sudo from working,
-# which is required for disk mount/umount operations
+# NoNewPrivileges=true is disabled because it prevents sudo mount/umount operations
 # NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full

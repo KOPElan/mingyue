@@ -1,4 +1,5 @@
 using MingYue.Models;
+using MingYue.Utilities;
 using System.Text.Json;
 
 namespace MingYue.Services
@@ -23,22 +24,13 @@ namespace MingYue.Services
             _logger = logger;
             _configuration = configuration;
             
-            // Get cache directory from configuration, default to .mingyue-cache in user's home
-            var configuredCache = _configuration["Storage:CacheDirectory"];
-            if (string.IsNullOrWhiteSpace(configuredCache))
-            {
-                configuredCache = ".mingyue-cache";
-            }
-            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            _cacheDirectory = Path.Combine(homeDir, configuredCache);
+            // Use helper to get cache directory
+            _cacheDirectory = PathHelper.GetCacheDirectory(configuration);
             
             // Ensure base cache directory exists - fail fast if there are permission issues
             try
             {
-                if (!Directory.Exists(_cacheDirectory))
-                {
-                    Directory.CreateDirectory(_cacheDirectory);
-                }
+                PathHelper.EnsureDirectoryExists(_cacheDirectory);
             }
             catch (Exception ex)
             {

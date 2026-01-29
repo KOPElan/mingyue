@@ -29,8 +29,33 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 
 // Add SQLite database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Data Source=mingyue.db";
+var dataDir = Environment.GetEnvironmentVariable("MINGYUE_DATA_DIR");
+string connectionString;
+
+// Check if connection string is explicitly configured
+var configuredConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrWhiteSpace(configuredConnectionString))
+{
+    // Use the explicitly configured connection string
+    connectionString = configuredConnectionString;
+}
+else if (!string.IsNullOrWhiteSpace(dataDir))
+{
+    // Build connection string from MINGYUE_DATA_DIR environment variable
+    // Ensure the directory exists before creating the database
+    if (!Directory.Exists(dataDir))
+    {
+        Directory.CreateDirectory(dataDir);
+    }
+    var dbPath = Path.Combine(dataDir, "mingyue.db");
+    connectionString = $"Data Source={dbPath}";
+}
+else
+{
+    // Default to mingyue.db in the current directory
+    connectionString = "Data Source=mingyue.db";
+}
+
 // Register DbContextFactory for services that need multiple contexts or custom lifetime management (e.g., FileManagerService)
 builder.Services.AddDbContextFactory<MingYueDbContext>(options =>
     options.UseSqlite(connectionString));

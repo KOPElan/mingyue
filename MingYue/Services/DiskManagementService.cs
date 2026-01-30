@@ -1,4 +1,39 @@
-﻿using MingYue.Models;
+﻿        /// <summary>
+        /// Remove a network disk entry from /etc/fstab by mountPoint and fsType
+        /// </summary>
+        public async Task<DiskOperationResult> RemoveNetworkDiskFromFstabAsync(string mountPoint, string fsType)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return DiskOperationResult.Failed("仅支持 Linux");
+            var fstabPath = "/etc/fstab";
+            if (!File.Exists(fstabPath))
+                return DiskOperationResult.Failed("/etc/fstab 不存在");
+            try
+            {
+                var lines = (await File.ReadAllLinesAsync(fstabPath)).ToList();
+                var newLines = lines.Where(line => {
+                    var trimmed = line.Trim();
+                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) return true;
+                    var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 4) return true;
+                    var mp = parts[1];
+                    var type = parts[2];
+                    return !(mp == mountPoint && type == fsType);
+                }).ToList();
+                if (newLines.Count == lines.Count)
+                    return DiskOperationResult.Failed("未找到对应的 fstab 条目");
+                // 用 temp+move 方式写回
+                var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                await File.WriteAllLinesAsync(tempPath, newLines);
+                File.Move(tempPath, fstabPath, overwrite: true);
+                return DiskOperationResult.Successful("已从 /etc/fstab 移除网络磁盘配置");
+            }
+            catch (Exception ex)
+            {
+                return DiskOperationResult.Failed("移除 fstab 条目失败", ex.Message);
+            }
+        }
+using MingYue.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -1312,102 +1347,145 @@ namespace MingYue.Services
         public async Task<List<NetworkDiskInfo>> GetNetworkDisksAsync()
         {
             var networkDisks = new List<NetworkDiskInfo>();
-
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
                 return networkDisks;
-            }
 
+            var mounted = new List<NetworkDiskInfo>();
+            var mountedKeySet = new HashSet<string>();
             try
             {
-                // Read /proc/mounts to find network mounts
+                // 1. 读取 /proc/mounts，收集已挂载的网络磁盘
                 var mountsPath = "/proc/mounts";
-                if (!File.Exists(mountsPath))
+                if (File.Exists(mountsPath))
                 {
-                    return networkDisks;
-                }
-
-                var lines = await File.ReadAllLinesAsync(mountsPath);
-                foreach (var line in lines)
-                {
-                    var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length < 4)
-                        continue;
-
-                    var device = parts[0];
-                    var mountPoint = parts[1];
-                    var fsType = parts[2];
-                    var options = parts.Length > 3 ? parts[3] : "";
-
-                    // Check if it's a network filesystem
-                    if (fsType == "cifs" || fsType == "nfs" || fsType == "nfs4")
+                    var lines = await File.ReadAllLinesAsync(mountsPath);
+                    foreach (var line in lines)
                     {
-                        var diskInfo = new NetworkDiskInfo
+                        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4) continue;
+                        var device = parts[0];
+                        var mountPoint = parts[1];
+                        var fsType = parts[2];
+                        var options = parts.Length > 3 ? parts[3] : "";
+                        if (fsType == "cifs" || fsType == "nfs" || fsType == "nfs4")
                         {
-                            MountPoint = mountPoint,
-                            FileSystem = fsType,
-                            Options = options,
-                            IsReady = true
-                        };
-
-                        // Parse server and share path
-                        if (fsType == "cifs")
-                        {
-                            diskInfo.DiskType = NetworkDiskType.CIFS;
-                            // Format: //server/share
-                            if (device.StartsWith("//") && device.Length > 2)
+                            var diskInfo = new NetworkDiskInfo
                             {
-                                var pathParts = device[2..].Split('/', 2);
-                                if (pathParts.Length >= 1)
+                                MountPoint = mountPoint,
+                                FileSystem = fsType,
+                                Options = options,
+                                IsReady = true
+                            };
+                            if (fsType == "cifs")
+                            {
+                                diskInfo.DiskType = NetworkDiskType.CIFS;
+                                if (device.StartsWith("//") && device.Length > 2)
                                 {
-                                    diskInfo.Server = pathParts[0];
-                                    diskInfo.SharePath = pathParts.Length > 1 ? pathParts[1] : "";
+                                    var pathParts = device[2..].Split('/', 2);
+                                    if (pathParts.Length >= 1)
+                                    {
+                                        diskInfo.Server = pathParts[0];
+                                        diskInfo.SharePath = pathParts.Length > 1 ? pathParts[1] : "";
+                                    }
                                 }
                             }
-                        }
-                        else if (fsType == "nfs" || fsType == "nfs4")
-                        {
-                            diskInfo.DiskType = NetworkDiskType.NFS;
-                            // Format: server:/path
-                            var colonIndex = device.IndexOf(':');
-                            if (colonIndex > 0 && colonIndex < device.Length - 1)
+                            else if (fsType == "nfs" || fsType == "nfs4")
                             {
-                                diskInfo.Server = device[..colonIndex];
-                                diskInfo.SharePath = device[(colonIndex + 1)..];
-                            }
-                        }
-
-                        // Get usage information
-                        if (Directory.Exists(mountPoint))
-                        {
-                            try
-                            {
-                                var driveInfo = new DriveInfo(mountPoint);
-                                if (driveInfo.IsReady)
+                                diskInfo.DiskType = NetworkDiskType.NFS;
+                                var colonIndex = device.IndexOf(':');
+                                if (colonIndex > 0 && colonIndex < device.Length - 1)
                                 {
-                                    diskInfo.TotalBytes = driveInfo.TotalSize;
-                                    diskInfo.AvailableBytes = driveInfo.AvailableFreeSpace;
-                                    diskInfo.UsedBytes = driveInfo.TotalSize - driveInfo.AvailableFreeSpace;
-                                    diskInfo.UsagePercent = diskInfo.TotalBytes > 0
-                                        ? Math.Round((double)diskInfo.UsedBytes / diskInfo.TotalBytes * 100, 2)
-                                        : 0;
+                                    diskInfo.Server = device[..colonIndex];
+                                    diskInfo.SharePath = device[(colonIndex + 1)..];
                                 }
                             }
-                            catch
+                            // 获取空间信息
+                            if (Directory.Exists(mountPoint))
                             {
-                                // Ignore errors getting usage info
+                                try
+                                {
+                                    var driveInfo = new DriveInfo(mountPoint);
+                                    if (driveInfo.IsReady)
+                                    {
+                                        diskInfo.TotalBytes = driveInfo.TotalSize;
+                                        diskInfo.AvailableBytes = driveInfo.AvailableFreeSpace;
+                                        diskInfo.UsedBytes = driveInfo.TotalSize - driveInfo.AvailableFreeSpace;
+                                        diskInfo.UsagePercent = diskInfo.TotalBytes > 0
+                                            ? Math.Round((double)diskInfo.UsedBytes / diskInfo.TotalBytes * 100, 2)
+                                            : 0;
+                                    }
+                                }
+                                catch { }
                             }
+                            mounted.Add(diskInfo);
+                            // 用唯一 key 标记（mountPoint+fsType）
+                            mountedKeySet.Add($"{mountPoint}|{fsType}");
                         }
-
-                        networkDisks.Add(diskInfo);
                     }
                 }
             }
-            catch
-            {
-                // Return empty list on error
-            }
+            catch { }
 
+            // 2. 读取 /etc/fstab，收集所有配置的网络磁盘（包括未挂载/挂载失败的）
+            try
+            {
+                var fstabPath = "/etc/fstab";
+                if (File.Exists(fstabPath))
+                {
+                    var lines = await File.ReadAllLinesAsync(fstabPath);
+                    foreach (var line in lines)
+                    {
+                        var trimmed = line.Trim();
+                        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
+                        var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4) continue;
+                        var device = parts[0];
+                        var mountPoint = parts[1];
+                        var fsType = parts[2];
+                        var options = parts[3];
+                        if (fsType == "cifs" || fsType == "nfs" || fsType == "nfs4")
+                        {
+                            var key = $"{mountPoint}|{fsType}";
+                            if (mountedKeySet.Contains(key)) continue; // 已挂载的已在 mounted 列表
+                            var diskInfo = new NetworkDiskInfo
+                            {
+                                MountPoint = mountPoint,
+                                FileSystem = fsType,
+                                Options = options,
+                                IsReady = false // 未挂载/挂载失败
+                            };
+                            if (fsType == "cifs")
+                            {
+                                diskInfo.DiskType = NetworkDiskType.CIFS;
+                                if (device.StartsWith("//") && device.Length > 2)
+                                {
+                                    var pathParts = device[2..].Split('/', 2);
+                                    if (pathParts.Length >= 1)
+                                    {
+                                        diskInfo.Server = pathParts[0];
+                                        diskInfo.SharePath = pathParts.Length > 1 ? pathParts[1] : "";
+                                    }
+                                }
+                            }
+                            else if (fsType == "nfs" || fsType == "nfs4")
+                            {
+                                diskInfo.DiskType = NetworkDiskType.NFS;
+                                var colonIndex = device.IndexOf(':');
+                                if (colonIndex > 0 && colonIndex < device.Length - 1)
+                                {
+                                    diskInfo.Server = device[..colonIndex];
+                                    diskInfo.SharePath = device[(colonIndex + 1)..];
+                                }
+                            }
+                            networkDisks.Add(diskInfo);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 3. 合并已挂载和未挂载的网络磁盘
+            networkDisks.InsertRange(0, mounted);
             return networkDisks;
         }
 

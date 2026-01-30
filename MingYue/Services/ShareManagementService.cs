@@ -347,12 +347,19 @@ namespace MingYue.Services
 
                 return new OperationResult { Success = true, Message = $"Successfully added CIFS share '{request.Name}'. Please restart Samba service to apply changes." };
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                _logger.LogError(ex, "Permission denied when adding CIFS share '{ShareName}'", request.Name);
                 return new OperationResult { Success = false, Message = "Permission denied. The application needs root privileges to modify Samba configuration." };
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "I/O error when adding CIFS share '{ShareName}'", request.Name);
+                return new OperationResult { Success = false, Message = $"Error adding CIFS share: {ex.Message}" };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unexpected error when adding CIFS share '{ShareName}'", request.Name);
                 return new OperationResult { Success = false, Message = $"Error adding CIFS share: {ex.Message}" };
             }
         }
@@ -419,12 +426,19 @@ namespace MingYue.Services
 
                 return new OperationResult { Success = true, Message = $"Successfully added NFS export '{request.Path}' and reloaded exports." };
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                _logger.LogError(ex, "Permission denied when adding NFS export '{Path}'", request.Path);
                 return new OperationResult { Success = false, Message = "Permission denied. The application needs root privileges to modify NFS exports." };
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "I/O error when adding NFS export '{Path}'", request.Path);
+                return new OperationResult { Success = false, Message = $"Error adding NFS export: {ex.Message}" };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unexpected error when adding NFS export '{Path}'", request.Path);
                 return new OperationResult { Success = false, Message = $"Error adding NFS export: {ex.Message}" };
             }
         }
@@ -518,12 +532,19 @@ namespace MingYue.Services
 
                 return new OperationResult { Success = true, Message = $"Successfully removed CIFS share '{shareName}'. Please restart Samba service to apply changes." };
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                _logger.LogError(ex, "Permission denied when removing CIFS share '{ShareName}'", shareName);
                 return new OperationResult { Success = false, Message = "Permission denied. The application needs root privileges to modify Samba configuration." };
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "I/O error when removing CIFS share '{ShareName}'", shareName);
+                return new OperationResult { Success = false, Message = $"Error removing CIFS share: {ex.Message}" };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unexpected error when removing CIFS share '{ShareName}'", shareName);
                 return new OperationResult { Success = false, Message = $"Error removing CIFS share: {ex.Message}" };
             }
         }
@@ -594,12 +615,19 @@ namespace MingYue.Services
 
                 return new OperationResult { Success = true, Message = $"Successfully removed NFS export '{exportPath}' and reloaded exports." };
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                _logger.LogError(ex, "Permission denied when removing NFS export '{Path}'", exportPath);
                 return new OperationResult { Success = false, Message = "Permission denied. The application needs root privileges to modify NFS exports." };
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "I/O error when removing NFS export '{Path}'", exportPath);
+                return new OperationResult { Success = false, Message = $"Error removing NFS export: {ex.Message}" };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unexpected error when removing NFS export '{Path}'", exportPath);
                 return new OperationResult { Success = false, Message = $"Error removing NFS export: {ex.Message}" };
             }
         }
@@ -613,9 +641,9 @@ namespace MingYue.Services
 
             try
             {
-                // Try systemctl first - restart both smbd and nmbd
-                var resultSmbd = await ExecuteCommandAsync("systemctl", "restart smbd");
-                var resultNmbd = await ExecuteCommandAsync("systemctl", "restart nmbd");
+                // Try systemctl first - restart both smbd and nmbd (requires sudo)
+                var resultSmbd = await ExecuteCommandAsync("sudo", "systemctl restart smbd");
+                var resultNmbd = await ExecuteCommandAsync("sudo", "systemctl restart nmbd");
 
                 if (resultSmbd.exitCode == 0 && resultNmbd.exitCode == 0)
                 {
@@ -648,15 +676,15 @@ namespace MingYue.Services
 
             try
             {
-                // Try systemctl first
-                var nfsServerResult = await ExecuteCommandAsync("systemctl", "restart nfs-server");
+                // Try systemctl first (requires sudo)
+                var nfsServerResult = await ExecuteCommandAsync("sudo", "systemctl restart nfs-server");
                 if (nfsServerResult.exitCode == 0)
                 {
                     return new OperationResult { Success = true, Message = "Successfully restarted NFS service" };
                 }
 
-                // Try nfs-kernel-server for Debian/Ubuntu
-                var nfsKernelServerResult = await ExecuteCommandAsync("systemctl", "restart nfs-kernel-server");
+                // Try nfs-kernel-server for Debian/Ubuntu (requires sudo)
+                var nfsKernelServerResult = await ExecuteCommandAsync("sudo", "systemctl restart nfs-kernel-server");
                 if (nfsKernelServerResult.exitCode == 0)
                 {
                     return new OperationResult { Success = true, Message = "Successfully restarted NFS service" };
@@ -697,7 +725,7 @@ namespace MingYue.Services
         {
             try
             {
-                var result = await ExecuteCommandAsync("exportfs", "-ra");
+                var result = await ExecuteCommandAsync("sudo", "exportfs -ra");
                 if (result.exitCode == 0)
                 {
                     return new OperationResult { Success = true, Message = "Successfully reloaded NFS exports" };
@@ -745,20 +773,22 @@ namespace MingYue.Services
 
         private static async Task WriteConfigFileAsync(string filePath, List<string> lines)
         {
-            var tempPath = $"{filePath}.tmp";
-            var backupPath = $"{filePath}.bak";
+            // Use /tmp for temporary files (PrivateTmp provides isolation, ProtectSystem=full makes /etc read-only)
+            var fileName = Path.GetFileName(filePath);
+            var tempPath = Path.Combine("/tmp", $"{fileName}.{Guid.NewGuid():N}.tmp");
+            var backupPath = Path.Combine("/tmp", $"{fileName}.{Guid.NewGuid():N}.bak");
             var backupCreated = false;
 
             try
             {
-                // Ensure the parent directory exists
+                // Ensure the target directory exists (but we won't create it if it doesn't due to ProtectSystem)
                 var directory = Path.GetDirectoryName(filePath);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
-                    Directory.CreateDirectory(directory);
+                    throw new IOException($"Target directory '{directory}' does not exist. Ensure the package is properly installed.");
                 }
 
-                // Write new configuration to a temporary file
+                // Write new configuration to a temporary file in /tmp
                 await File.WriteAllLinesAsync(tempPath, lines);
 
                 // Verify the temp file was written successfully
@@ -768,16 +798,16 @@ namespace MingYue.Services
                     throw new IOException($"Temporary configuration file '{tempPath}' was not written correctly.");
                 }
 
-                // Create a backup of the existing file, if any
+                // Create a backup of the existing file to /tmp, if any
                 if (File.Exists(filePath))
                 {
                     File.Copy(filePath, backupPath, overwrite: true);
                     backupCreated = true;
-                    File.Delete(filePath);
                 }
 
-                // Move the temp file into place
-                File.Move(tempPath, filePath);
+                // Move the temp file from /tmp into place, overwriting existing file
+                // (CAP_DAC_OVERRIDE allows this even with ProtectSystem=full)
+                File.Move(tempPath, filePath, overwrite: true);
 
                 // If we succeeded, remove the backup
                 if (backupCreated && File.Exists(backupPath))
@@ -1136,7 +1166,7 @@ namespace MingYue.Services
             try
             {
                 // Use pdbedit to list Samba users
-                var result = await ExecuteCommandAsync("pdbedit", "-L -v");
+                var result = await ExecuteCommandAsync("sudo", "pdbedit -L -v");
 
                 if (result.exitCode != 0)
                 {
@@ -1249,7 +1279,7 @@ namespace MingYue.Services
                 // Use -a to add user and -s for non-interactive mode
                 // Note: Username is safe to interpolate because it's validated with SafeNameRegex above,
                 // which only allows alphanumeric characters, underscore, dot, and dash (no shell metacharacters)
-                var result = await ExecuteCommandWithInputAsync("smbpasswd", $"-a -s {request.Username}",
+                var result = await ExecuteCommandWithInputAsync("sudo", $"smbpasswd -a -s {request.Username}",
                     $"{request.Password}\n{request.Password}\n");
 
                 if (result.exitCode == 0)
@@ -1307,7 +1337,7 @@ namespace MingYue.Services
                 // Update password using smbpasswd -s (non-interactive)
                 // Note: Username is safe to interpolate because it's validated with SafeNameRegex above,
                 // which only allows alphanumeric characters, underscore, dot, and dash (no shell metacharacters)
-                var result = await ExecuteCommandWithInputAsync("smbpasswd", $"-s {username}",
+                var result = await ExecuteCommandWithInputAsync("sudo", $"smbpasswd -s {username}",
                     $"{password}\n{password}\n");
 
                 if (result.exitCode == 0)
@@ -1360,7 +1390,7 @@ namespace MingYue.Services
                 // Remove Samba user using smbpasswd -x
                 // Note: Username is safe to interpolate because it's validated with SafeNameRegex above,
                 // which only allows alphanumeric characters, underscore, dot, and dash (no shell metacharacters)
-                var result = await ExecuteCommandAsync("smbpasswd", $"-x {username}");
+                var result = await ExecuteCommandAsync("sudo", $"smbpasswd -x {username}");
 
                 if (result.exitCode == 0)
                 {

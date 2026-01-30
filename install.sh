@@ -191,32 +191,35 @@ install_app() {
     print_info "Application files installed to $INSTALL_DIR"
 }
 
-# Configure sudoers for required commands
+# Configure minimal sudoers for mount and systemctl operations
+# mount.cifs requires setuid root or sudo (capabilities alone don't work)
+# Linux capabilities cannot control systemd services, so minimal sudo access is needed
+# Samba and NFS management commands also require sudo
 configure_sudoers() {
-    print_warn "Configuring sudoers for $APP_USER..."
-    print_warn "This grants significant elevated privileges. Review carefully!"
+    print_warn "Configuring minimal sudoers for privileged operations..."
+    print_warn "This is required for mount, systemctl, smbpasswd, pdbedit, and exportfs"
     
     SUDOERS_FILE="/etc/sudoers.d/mingyue"
     SUDOERS_TEMP=$(mktemp /tmp/mingyue.sudoers.XXXXXX)
     chmod 600 "$SUDOERS_TEMP"
     
     cat > "$SUDOERS_TEMP" <<EOF
-# MingYue service commands
-# WARNING: These permissions grant significant system access
-# Review and restrict based on your security requirements
-# Consider using wrapper scripts with input validation instead of direct sudo access
+# MingYue service management and mount commands
+# Note: File operations use Linux capabilities (CAP_DAC_OVERRIDE, CAP_SYS_RAWIO)
+# mount/umount, systemctl, and samba commands require sudo:
+# - mount.cifs requires setuid root or sudo (capabilities alone don't work)
+# - systemctl operations require sudo (capabilities cannot control systemd services)
+# - smbpasswd/pdbedit require sudo (Samba user management needs root)
+# - exportfs requires sudo (NFS export management needs root)
 $APP_USER ALL=(ALL) NOPASSWD: /bin/mount
 $APP_USER ALL=(ALL) NOPASSWD: /bin/umount
-$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/hdparm
-$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/smartctl
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart smbd
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nmbd
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-kernel-server
 $APP_USER ALL=(ALL) NOPASSWD: /bin/systemctl restart nfs-server
-$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/samba/smb.conf
-$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/tee /etc/exports
+$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/smbpasswd
+$APP_USER ALL=(ALL) NOPASSWD: /usr/bin/pdbedit
 $APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs
-$APP_USER ALL=(ALL) NOPASSWD: /usr/sbin/exportfs -ra
 EOF
     
     # Validate sudoers syntax before installing
@@ -231,9 +234,8 @@ EOF
         return 1
     fi
     
-    print_warn "SECURITY WARNING: Sudoers grants broad root privileges to $APP_USER"
-    print_warn "Review /etc/sudoers.d/mingyue and restrict as needed for your environment"
-    print_warn "Consider using wrapper scripts with input validation for production use"
+    print_info "Minimal sudo configuration created for mount and systemctl operations"
+    print_info "Other operations (disk I/O, file writes) use Linux capabilities"
 }
 
 # Create systemd service
@@ -270,13 +272,19 @@ Environment=MINGYUE_CACHE_DIR=$CACHE_DIR
 Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=$CACHE_DIR
 
 # Security settings
-# Note: Some restrictions are relaxed due to application requirements
-# Review and tighten based on your security needs
-NoNewPrivileges=true
+# Using Linux capabilities and minimal sudo for system operations
+# CAP_DAC_OVERRIDE: Required for writing to system configuration files (/etc/samba/smb.conf, /etc/exports)
+# CAP_SYS_RAWIO: Required for smartctl to perform direct disk I/O for SMART monitoring
+# AmbientCapabilities grants capabilities to the process without requiring sudo for these operations
+# Note: NoNewPrivileges is DISABLED to allow sudo mount/umount and systemctl commands
+#   - mount.cifs requires setuid root or sudo (capabilities alone don't work)
+#   - systemctl operations require sudo (capabilities cannot control systemd services)
+#   - NoNewPrivileges=true would block sudo from working, so it must be disabled or omitted
+AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
+# NoNewPrivileges=true  # DISABLED - this prevents sudo from working
 PrivateTmp=true
 ProtectSystem=full
-ProtectHome=true
-ReadWritePaths=$BASE_DATA_DIR
+ReadWritePaths=$BASE_DATA_DIR /etc/samba /etc/exports /etc/fstab
 ProtectKernelTunables=true
 ProtectControlGroups=true
 RestrictRealtime=true

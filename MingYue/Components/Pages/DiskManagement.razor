@@ -262,13 +262,14 @@
                             <th>挂载点</th>
                             <th>使用率</th>
                             <th>服务器</th>
+                            <th>状态</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var disk in networkDisks)
                         {
-                            <tr>
+                            <tr class="@(disk.IsReady ? "" : "disk-unmounted-row")">
                                 <td>
                                     <div class="device-cell">
                                         @if (disk.DiskType == NetworkDiskType.NFS)
@@ -304,6 +305,16 @@
                                     }
                                 </td>
                                 <td>@(string.IsNullOrEmpty(disk.Server) ? "-" : disk.Server)</td>
+                                                                <td>
+                                                                    @if (disk.IsReady)
+                                                                    {
+                                                                        <span class="disk-status-mounted">已挂载</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="disk-status-unmounted">未挂载/挂载失败</span>
+                                                                    }
+                                                                </td>
                                 <td>
                                     <div class="action-buttons">
                                         @if (disk.IsReady)
@@ -843,7 +854,16 @@
                 }
             }
 
-            ToastService.ShowSuccess("Network disk removed successfully");
+            // Remove from fstab (regardless of mount status)
+            var removeResult = await DiskService.RemoveNetworkDiskFromFstabAsync(disk.MountPoint, disk.FileSystem);
+            if (removeResult.Success)
+            {
+                ToastService.ShowSuccess(removeResult.Message);
+            }
+            else
+            {
+                ToastService.ShowWarning($"未能从配置中移除: {removeResult.Message}");
+            }
             await LoadDisks();
         }
         catch (Exception ex)

@@ -1,4 +1,5 @@
-﻿using MingYue.Models;
+﻿
+using MingYue.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -38,20 +39,38 @@ namespace MingYue.Services
         private static readonly Regex HdparmSettingRegex = new(@"^\s*([a-z_-]+)\s*=\s*(.+)\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
-        /// Check if an error indicates sudo permission issues and return appropriate error result
+        /// Check if an error indicates permission issues and return appropriate error result
         /// </summary>
-        private DiskOperationResult CheckSudoPermissionError(string error, string operation)
+        private DiskOperationResult CheckPermissionError(string error, string operation)
         {
-            // Check for specific sudo permission errors
-            if (error.Contains("sudo: a password is required") || 
+            // Check for specific sudo permission errors (legacy, when systemd uses sudo)
+            if (error.Contains("sudo: a password is required") ||
                 error.Contains("sudo: password is required") ||
                 (error.Contains("sudo") && error.Contains("not allowed to execute")))
             {
                 _logger.LogError("{Operation} failed due to sudo permission issue. Error: {Error}", operation, error);
-                return DiskOperationResult.Failed($"{operation}失败：需要配置 sudo 权限", 
+                return DiskOperationResult.Failed($"{operation}失败：需要配置 sudo 权限",
                     "请配置 sudoers 文件允许无密码执行 mount/umount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
             }
-            return null!; // Return null to indicate no sudo permission error detected
+
+            // Check for "no new privileges" error (legacy, should not occur with AmbientCapabilities)
+            if (error.Contains("no new privileges") || error.Contains("已设置'no new privileges'标志") || error.Contains("已设置\"no new privileges\"标志"))
+            {
+                _logger.LogError("{Operation} failed due to 'no new privileges' restriction. Error: {Error}", operation, error);
+                return DiskOperationResult.Failed($"{operation}失败：服务被 NoNewPrivileges 限制",
+                    "systemd 服务配置阻止了 sudo 权限提升。解决方法请参考 CONFIGURATION.md 中的 'Permission errors (disk mount, file operations, service management)' 章节");
+            }
+
+            // Check for capability/permission errors when using direct mount (without sudo)
+            if (error.Contains("Operation not permitted") || error.Contains("Permission denied") ||
+                error.Contains("不允许的操作") || error.Contains("权限不够"))
+            {
+                _logger.LogError("{Operation} failed due to insufficient capabilities. Error: {Error}", operation, error);
+                return DiskOperationResult.Failed($"{operation}失败：权限不足",
+                    "服务缺少必要的系统权限。请确保 systemd 服务配置中包含 AmbientCapabilities=CAP_SYS_ADMIN 并执行 'sudo systemctl daemon-reload && sudo systemctl restart mingyue'");
+            }
+
+            return null!; // Return null to indicate no permission error detected
         }
 
         public async Task<List<DiskInfo>> GetAllDisksAsync()
@@ -376,19 +395,19 @@ namespace MingYue.Services
 
                 // Build mount command arguments using ArgumentList for proper escaping
                 processInfo.ArgumentList.Add("mount");
-                
+
                 if (!string.IsNullOrEmpty(fileSystem))
                 {
                     processInfo.ArgumentList.Add("-t");
                     processInfo.ArgumentList.Add(fileSystem);
                 }
-                
+
                 if (!string.IsNullOrEmpty(options))
                 {
                     processInfo.ArgumentList.Add("-o");
                     processInfo.ArgumentList.Add(options);
                 }
-                
+
                 processInfo.ArgumentList.Add(devicePath);
                 processInfo.ArgumentList.Add(mountPoint);
 
@@ -405,11 +424,11 @@ namespace MingYue.Services
                     }
                     else
                     {
-                        // Check if the error is due to sudo requiring a password
-                        var sudoError = CheckSudoPermissionError(error, "挂载");
-                        if (sudoError != null)
+                        // Check if the error is due to permission issues
+                        var permError = CheckPermissionError(error, "挂载");
+                        if (permError != null)
                         {
-                            return sudoError;
+                            return permError;
                         }
                         return DiskOperationResult.Failed($"挂载失败", error);
                     }
@@ -455,7 +474,7 @@ namespace MingYue.Services
                 fstabEntry += $" {(string.IsNullOrEmpty(options) ? "defaults" : options)}";
                 fstabEntry += " 0 2";
 
-                // Use File.AppendAllText for safer file writing instead of shell command
+                // Use temp file approach for ProtectSystem=full compatibility
                 try
                 {
                     var fstabPath = "/etc/fstab";
@@ -478,15 +497,32 @@ namespace MingYue.Services
                         }
                     }
 
-                    await File.AppendAllTextAsync(fstabPath, fstabEntry + Environment.NewLine);
+                    // Create temp file in /tmp (writable with PrivateTmp=true)
+                    var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                    var newContent = string.Join(Environment.NewLine, existingLines) +
+                                   (existingLines.Length > 0 ? Environment.NewLine : "") +
+                                   fstabEntry + Environment.NewLine;
+
+                    await File.WriteAllTextAsync(tempPath, newContent);
+
+                    // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on read-only /etc)
+                    File.Move(tempPath, fstabPath, overwrite: true);
+
                     return DiskOperationResult.Successful($"成功将 {devicePath} 挂载到 {mountPoint} 并添加到 /etc/fstab");
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException ex)
                 {
+                    _logger.LogError(ex, "Permission denied when writing to /etc/fstab for device '{Device}'", devicePath);
                     return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时权限被拒绝。条目: {fstabEntry}");
+                }
+                catch (IOException ex)
+                {
+                    _logger.LogError(ex, "I/O error when writing to /etc/fstab for device '{Device}'", devicePath);
+                    return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error appending to /etc/fstab for device '{Device}' at mount point '{MountPoint}'", devicePath, mountPoint);
                     Debug.WriteLine($"Error appending to /etc/fstab for device '{devicePath}' at mount point '{mountPoint}'. Exception: {ex}");
                     return DiskOperationResult.Failed($"挂载成功但更新 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
@@ -538,11 +574,11 @@ namespace MingYue.Services
                     }
                     else
                     {
-                        // Check if the error is due to sudo requiring a password
-                        var sudoError = CheckSudoPermissionError(error, "卸载");
-                        if (sudoError != null)
+                        // Check if the error is due to permission issues
+                        var permError = CheckPermissionError(error, "卸载");
+                        if (permError != null)
                         {
-                            return sudoError;
+                            return permError;
                         }
                         return DiskOperationResult.Failed($"卸载失败", error);
                     }
@@ -1277,102 +1313,145 @@ namespace MingYue.Services
         public async Task<List<NetworkDiskInfo>> GetNetworkDisksAsync()
         {
             var networkDisks = new List<NetworkDiskInfo>();
-
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
                 return networkDisks;
-            }
 
+            var mounted = new List<NetworkDiskInfo>();
+            var mountedKeySet = new HashSet<string>();
             try
             {
-                // Read /proc/mounts to find network mounts
+                // 1. 读取 /proc/mounts，收集已挂载的网络磁盘
                 var mountsPath = "/proc/mounts";
-                if (!File.Exists(mountsPath))
+                if (File.Exists(mountsPath))
                 {
-                    return networkDisks;
-                }
-
-                var lines = await File.ReadAllLinesAsync(mountsPath);
-                foreach (var line in lines)
-                {
-                    var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length < 4)
-                        continue;
-
-                    var device = parts[0];
-                    var mountPoint = parts[1];
-                    var fsType = parts[2];
-                    var options = parts.Length > 3 ? parts[3] : "";
-
-                    // Check if it's a network filesystem
-                    if (fsType == "cifs" || fsType == "nfs" || fsType == "nfs4")
+                    var lines = await File.ReadAllLinesAsync(mountsPath);
+                    foreach (var line in lines)
                     {
-                        var diskInfo = new NetworkDiskInfo
+                        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4) continue;
+                        var device = parts[0];
+                        var mountPoint = parts[1];
+                        var fsType = parts[2];
+                        var options = parts.Length > 3 ? parts[3] : "";
+                        if (fsType == "cifs" || fsType == "nfs" || fsType == "nfs4")
                         {
-                            MountPoint = mountPoint,
-                            FileSystem = fsType,
-                            Options = options,
-                            IsReady = true
-                        };
-
-                        // Parse server and share path
-                        if (fsType == "cifs")
-                        {
-                            diskInfo.DiskType = NetworkDiskType.CIFS;
-                            // Format: //server/share
-                            if (device.StartsWith("//") && device.Length > 2)
+                            var diskInfo = new NetworkDiskInfo
                             {
-                                var pathParts = device[2..].Split('/', 2);
-                                if (pathParts.Length >= 1)
+                                MountPoint = mountPoint,
+                                FileSystem = fsType,
+                                Options = options,
+                                IsReady = true
+                            };
+                            if (fsType == "cifs")
+                            {
+                                diskInfo.DiskType = NetworkDiskType.CIFS;
+                                if (device.StartsWith("//") && device.Length > 2)
                                 {
-                                    diskInfo.Server = pathParts[0];
-                                    diskInfo.SharePath = pathParts.Length > 1 ? pathParts[1] : "";
+                                    var pathParts = device[2..].Split('/', 2);
+                                    if (pathParts.Length >= 1)
+                                    {
+                                        diskInfo.Server = pathParts[0];
+                                        diskInfo.SharePath = pathParts.Length > 1 ? pathParts[1] : "";
+                                    }
                                 }
                             }
-                        }
-                        else if (fsType == "nfs" || fsType == "nfs4")
-                        {
-                            diskInfo.DiskType = NetworkDiskType.NFS;
-                            // Format: server:/path
-                            var colonIndex = device.IndexOf(':');
-                            if (colonIndex > 0 && colonIndex < device.Length - 1)
+                            else if (fsType == "nfs" || fsType == "nfs4")
                             {
-                                diskInfo.Server = device[..colonIndex];
-                                diskInfo.SharePath = device[(colonIndex + 1)..];
-                            }
-                        }
-
-                        // Get usage information
-                        if (Directory.Exists(mountPoint))
-                        {
-                            try
-                            {
-                                var driveInfo = new DriveInfo(mountPoint);
-                                if (driveInfo.IsReady)
+                                diskInfo.DiskType = NetworkDiskType.NFS;
+                                var colonIndex = device.IndexOf(':');
+                                if (colonIndex > 0 && colonIndex < device.Length - 1)
                                 {
-                                    diskInfo.TotalBytes = driveInfo.TotalSize;
-                                    diskInfo.AvailableBytes = driveInfo.AvailableFreeSpace;
-                                    diskInfo.UsedBytes = driveInfo.TotalSize - driveInfo.AvailableFreeSpace;
-                                    diskInfo.UsagePercent = diskInfo.TotalBytes > 0
-                                        ? Math.Round((double)diskInfo.UsedBytes / diskInfo.TotalBytes * 100, 2)
-                                        : 0;
+                                    diskInfo.Server = device[..colonIndex];
+                                    diskInfo.SharePath = device[(colonIndex + 1)..];
                                 }
                             }
-                            catch
+                            // 获取空间信息
+                            if (Directory.Exists(mountPoint))
                             {
-                                // Ignore errors getting usage info
+                                try
+                                {
+                                    var driveInfo = new DriveInfo(mountPoint);
+                                    if (driveInfo.IsReady)
+                                    {
+                                        diskInfo.TotalBytes = driveInfo.TotalSize;
+                                        diskInfo.AvailableBytes = driveInfo.AvailableFreeSpace;
+                                        diskInfo.UsedBytes = driveInfo.TotalSize - driveInfo.AvailableFreeSpace;
+                                        diskInfo.UsagePercent = diskInfo.TotalBytes > 0
+                                            ? Math.Round((double)diskInfo.UsedBytes / diskInfo.TotalBytes * 100, 2)
+                                            : 0;
+                                    }
+                                }
+                                catch { }
                             }
+                            mounted.Add(diskInfo);
+                            // 用唯一 key 标记（mountPoint+fsType）
+                            mountedKeySet.Add($"{mountPoint}|{fsType}");
                         }
-
-                        networkDisks.Add(diskInfo);
                     }
                 }
             }
-            catch
-            {
-                // Return empty list on error
-            }
+            catch { }
 
+            // 2. 读取 /etc/fstab，收集所有配置的网络磁盘（包括未挂载/挂载失败的）
+            try
+            {
+                var fstabPath = "/etc/fstab";
+                if (File.Exists(fstabPath))
+                {
+                    var lines = await File.ReadAllLinesAsync(fstabPath);
+                    foreach (var line in lines)
+                    {
+                        var trimmed = line.Trim();
+                        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
+                        var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4) continue;
+                        var device = parts[0];
+                        var mountPoint = parts[1];
+                        var fsType = parts[2];
+                        var options = parts[3];
+                        if (fsType == "cifs" || fsType == "nfs" || fsType == "nfs4")
+                        {
+                            var key = $"{mountPoint}|{fsType}";
+                            if (mountedKeySet.Contains(key)) continue; // 已挂载的已在 mounted 列表
+                            var diskInfo = new NetworkDiskInfo
+                            {
+                                MountPoint = mountPoint,
+                                FileSystem = fsType,
+                                Options = options,
+                                IsReady = false // 未挂载/挂载失败
+                            };
+                            if (fsType == "cifs")
+                            {
+                                diskInfo.DiskType = NetworkDiskType.CIFS;
+                                if (device.StartsWith("//") && device.Length > 2)
+                                {
+                                    var pathParts = device[2..].Split('/', 2);
+                                    if (pathParts.Length >= 1)
+                                    {
+                                        diskInfo.Server = pathParts[0];
+                                        diskInfo.SharePath = pathParts.Length > 1 ? pathParts[1] : "";
+                                    }
+                                }
+                            }
+                            else if (fsType == "nfs" || fsType == "nfs4")
+                            {
+                                diskInfo.DiskType = NetworkDiskType.NFS;
+                                var colonIndex = device.IndexOf(':');
+                                if (colonIndex > 0 && colonIndex < device.Length - 1)
+                                {
+                                    diskInfo.Server = device[..colonIndex];
+                                    diskInfo.SharePath = device[(colonIndex + 1)..];
+                                }
+                            }
+                            networkDisks.Add(diskInfo);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 3. 合并已挂载和未挂载的网络磁盘
+            networkDisks.InsertRange(0, mounted);
             return networkDisks;
         }
 
@@ -1555,15 +1634,15 @@ namespace MingYue.Services
                         }
                         else
                         {
-                            // Check if the error is due to sudo requiring a password
-                            var sudoError = CheckSudoPermissionError(error, "挂载");
-                            if (sudoError != null)
+                            // Check if the error is due to permission issues
+                            var permError = CheckPermissionError(error, "挂载");
+                            if (permError != null)
                             {
-                                return sudoError;
+                                return permError;
                             }
-                            
+
                             // Log the error details to help with debugging
-                            _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}", 
+                            _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}",
                                 device, mountPoint, diskType, process.ExitCode, error);
                             return DiskOperationResult.Failed("挂载失败", error);
                         }
@@ -1590,7 +1669,7 @@ namespace MingYue.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error mounting network disk. Server: {Server}, SharePath: {SharePath}, MountPoint: {MountPoint}, DiskType: {DiskType}", 
+                _logger.LogError(ex, "Error mounting network disk. Server: {Server}, SharePath: {SharePath}, MountPoint: {MountPoint}, DiskType: {DiskType}",
                     server, sharePath, mountPoint, diskType);
                 return DiskOperationResult.Failed("挂载网络磁盘时出错", ex.Message);
             }
@@ -1628,7 +1707,24 @@ namespace MingYue.Services
                         var hashInput = $"{server}-{sharePath}";
                         var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(hashInput));
                         var hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant()[..32];
-                        var credFile = $"/etc/cifs-credentials-{hashString}";
+                        // Persist credentials in a safe, non-ephemeral location so fstab entries remain valid after reboot
+                        // Use /srv/mingyue to store persistent data
+                        var credsDir = "/srv/mingyue";
+                        var credFile = Path.Combine(credsDir, $"cifs-credentials-{hashString}");
+
+                        // Ensure the directory exists using temp + move pattern (works with CAP_DAC_OVERRIDE)
+                        try
+                        {
+                            if (!Directory.Exists(credsDir))
+                            {
+                                Directory.CreateDirectory(credsDir);
+                            }
+                        }
+                        catch
+                        {
+                            // Directory may already exist or be created by another process
+                        }
+
                         try
                         {
                             var credContent = $"username={username}\npassword={password}\n";
@@ -1637,7 +1733,10 @@ namespace MingYue.Services
                                 credContent += $"domain={domain}\n";
                             }
 
-                            // Create the credential file with secure permissions atomically
+                            // Use temp file approach for ProtectSystem=full compatibility
+                            // Create temp file in /tmp (writable with PrivateTmp=true)
+                            var tempCredFile = Path.Combine("/tmp", $"cifs-cred-{Guid.NewGuid():N}.tmp");
+
                             var fsOptions = new FileStreamOptions
                             {
                                 Mode = FileMode.Create,
@@ -1647,7 +1746,7 @@ namespace MingYue.Services
                                 UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite
                             };
 
-                            await using (var fs = new FileStream(credFile, fsOptions))
+                            await using (var fs = new FileStream(tempCredFile, fsOptions))
                             {
                                 await using (var writer = new StreamWriter(fs))
                                 {
@@ -1655,7 +1754,7 @@ namespace MingYue.Services
                                 }
                             }
 
-                            // Verify file permissions were set correctly
+                            // Ensure secure permissions on temp file
                             var chmodInfo = new ProcessStartInfo
                             {
                                 FileName = "chmod",
@@ -1665,7 +1764,7 @@ namespace MingYue.Services
                                 CreateNoWindow = true
                             };
                             chmodInfo.ArgumentList.Add("600");
-                            chmodInfo.ArgumentList.Add(credFile);
+                            chmodInfo.ArgumentList.Add(tempCredFile);
 
                             using var chmodProcess = Process.Start(chmodInfo);
                             if (chmodProcess == null)
@@ -1680,17 +1779,20 @@ namespace MingYue.Services
                                 // Remove potentially insecure credential file
                                 try
                                 {
-                                    if (File.Exists(credFile))
+                                    if (File.Exists(tempCredFile))
                                     {
-                                        File.Delete(credFile);
+                                        File.Delete(tempCredFile);
                                     }
                                 }
                                 catch
                                 {
                                     // Ignore file deletion errors
                                 }
-                                throw new InvalidOperationException($"chmod failed for credential file '{credFile}' with exit code {chmodProcess.ExitCode}: {errorOutput}");
+                                throw new InvalidOperationException($"chmod failed for credential file '{tempCredFile}' with exit code {chmodProcess.ExitCode}: {errorOutput}");
                             }
+
+                            // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on protected paths)
+                            File.Move(tempCredFile, credFile, overwrite: true);
 
                             fstabOptions.Add($"credentials={credFile}");
                         }
@@ -1756,6 +1858,7 @@ namespace MingYue.Services
 
                 var fstabEntry = $"{device} {mountPoint} {fsType} {string.Join(",", fstabOptions)} 0 0";
 
+                // Use temp file approach for ProtectSystem=full compatibility
                 try
                 {
                     var fstabPath = "/etc/fstab";
@@ -1783,15 +1886,32 @@ namespace MingYue.Services
                         return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint}；/etc/fstab 中已存在匹配条目");
                     }
 
-                    await File.AppendAllTextAsync(fstabPath, fstabEntry + Environment.NewLine);
+                    // Create temp file in /tmp (writable with PrivateTmp=true)
+                    var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                    var newContent = string.Join(Environment.NewLine, existingLines) +
+                                   (existingLines.Length > 0 ? Environment.NewLine : "") +
+                                   fstabEntry + Environment.NewLine;
+
+                    await File.WriteAllTextAsync(tempPath, newContent);
+
+                    // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on read-only /etc)
+                    File.Move(tempPath, fstabPath, overwrite: true);
+
                     return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint} 并添加到 /etc/fstab");
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException ex)
                 {
+                    _logger.LogError(ex, "Permission denied when writing to /etc/fstab for network disk '{Device}'", device);
                     return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时权限被拒绝。条目: {fstabEntry}");
+                }
+                catch (IOException ex)
+                {
+                    _logger.LogError(ex, "I/O error when writing to /etc/fstab for network disk '{Device}'", device);
+                    return DiskOperationResult.Failed($"挂载成功但写入 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error appending to /etc/fstab for network disk '{Device}' at mount point '{MountPoint}'", device, mountPoint);
                     Debug.WriteLine($"Error appending to /etc/fstab for network disk '{device}' at mount point '{mountPoint}'. Exception: {ex}");
                     return DiskOperationResult.Failed($"挂载成功但更新 /etc/fstab 时出错", $"{ex.Message}。条目: {fstabEntry}");
                 }
@@ -2054,7 +2174,7 @@ namespace MingYue.Services
 
                 string output = "";
                 string error = "";
-                
+
                 if (completed == process.WaitForExitAsync())
                 {
                     output = await outputTask;
@@ -2068,7 +2188,7 @@ namespace MingYue.Services
                         process.Kill();
                     }
                     catch { }
-                    
+
                     return new SmartInfo
                     {
                         Success = false,
@@ -2243,6 +2363,43 @@ namespace MingYue.Services
             }
 
             return smartInfo;
+        }
+
+        /// <summary>
+        /// Remove a network disk entry from /etc/fstab by mountPoint and fsType
+        /// </summary>
+        public async Task<DiskOperationResult> RemoveNetworkDiskFromFstabAsync(string mountPoint, string fsType)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return DiskOperationResult.Failed("仅支持 Linux");
+            var fstabPath = "/etc/fstab";
+            if (!File.Exists(fstabPath))
+                return DiskOperationResult.Failed("/etc/fstab 不存在");
+            try
+            {
+                var lines = (await File.ReadAllLinesAsync(fstabPath)).ToList();
+                var newLines = lines.Where(line =>
+                {
+                    var trimmed = line.Trim();
+                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) return true;
+                    var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 4) return true;
+                    var mp = parts[1];
+                    var type = parts[2];
+                    return !(mp == mountPoint && type == fsType);
+                }).ToList();
+                if (newLines.Count == lines.Count)
+                    return DiskOperationResult.Failed("未找到对应的 fstab 条目");
+                // 用 temp+move 方式写回
+                var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                await File.WriteAllLinesAsync(tempPath, newLines);
+                File.Move(tempPath, fstabPath, overwrite: true);
+                return DiskOperationResult.Successful("已从 /etc/fstab 移除网络磁盘配置");
+            }
+            catch (Exception ex)
+            {
+                return DiskOperationResult.Failed("移除 fstab 条目失败", ex.Message);
+            }
         }
     }
 

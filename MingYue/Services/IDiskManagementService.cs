@@ -1,4 +1,5 @@
-﻿using MingYue.Models;
+﻿
+    using MingYue.Models;
 
 namespace MingYue.Services
 {
@@ -18,6 +19,10 @@ namespace MingYue.Services
         Task<DiskPowerSettings> GetDiskPowerSettingsAsync(string devicePath);
 
         // Network disk management
+        /// <summary>
+        /// Remove a network disk entry from /etc/fstab by mountPoint and fsType
+        /// </summary>
+        Task<DiskOperationResult> RemoveNetworkDiskFromFstabAsync(string mountPoint, string fsType);
         Task<List<NetworkDiskInfo>> GetNetworkDisksAsync();
         Task<DiskOperationResult> MountNetworkDiskAsync(string server, string sharePath, string mountPoint, NetworkDiskType diskType, string? username = null, string? password = null, string? domain = null, string? options = null);
         Task<DiskOperationResult> MountNetworkDiskPermanentAsync(string server, string sharePath, string mountPoint, NetworkDiskType diskType, string? username = null, string? password = null, string? domain = null, string? options = null);

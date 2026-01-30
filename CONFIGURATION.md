@@ -218,6 +218,68 @@ sudo chown mingyue:mingyue /srv/mingyue/data/mingyue.db
    sudo journalctl -u mingyue -n 100
    ```
 
+### Permission errors (disk mount, file operations, service management)
+
+**For installations using the capability-based approach (recommended):**
+
+If you encounter permission errors when performing system operations (mounting disks, managing shares, restarting services), ensure the systemd service has the required capabilities.
+
+**Solution**: Verify the systemd service has all necessary capabilities:
+
+1. Edit the service file:
+   ```bash
+   sudo nano /etc/systemd/system/mingyue.service
+   ```
+
+2. Verify these lines are present in the `[Service]` section:
+   ```ini
+   # Required capabilities for system operations
+   AmbientCapabilities=CAP_DAC_OVERRIDE CAP_SYS_RAWIO
+   # NoNewPrivileges=true  # MUST BE DISABLED to allow sudo
+   ```
+
+3. Reload and restart the service:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart mingyue
+   ```
+
+**What each capability does:**
+- `CAP_DAC_OVERRIDE`: Write to system configuration files (/etc/samba/smb.conf, /etc/exports)
+- `CAP_SYS_RAWIO`: Direct disk I/O access for smartctl SMART monitoring
+
+**Important: Why NoNewPrivileges must be disabled:**
+- `NoNewPrivileges=true` prevents sudo from escalating privileges
+- This setting **blocks** mount.cifs and systemctl operations that require sudo
+- **Must be disabled or commented out** for the sudo-based operations to work
+- Trade-off: Less systemd hardening, but necessary for functionality
+
+**Sudo requirements:**
+- `mount`/`umount` operations require sudo (mount.cifs requires setuid root or sudo)
+- `systemctl` service restart operations require sudo (capabilities cannot control systemd)
+- `exportfs` command may require sudo on some systems
+- The installation script creates `/etc/sudoers.d/mingyue` with minimal permissions:
+  - `/bin/mount` and `/bin/umount`
+  - 4 specific `/bin/systemctl restart` commands (smbd, nmbd, nfs-server, nfs-kernel-server)
+
+**For installations with "no new privileges" errors:**
+
+If you encounter "sudo: 已设置'no new privileges'标志" errors:
+
+1. Edit `/etc/systemd/system/mingyue.service`
+2. Comment out or remove the `NoNewPrivileges=true` line
+3. Run `sudo systemctl daemon-reload && sudo systemctl restart mingyue`
+
+**Security trade-offs:**
+- ❌ Cannot use `NoNewPrivileges=true` (conflicts with sudo)
+- ✅ Uses Linux capabilities for file and disk I/O (reduces sudo usage)
+- ✅ Minimal sudo configuration (only 6 specific commands)
+- ✅ More secure than running entire application as root
+- ✅ All operations auditable through systemd
+
+
+
+
 ## Migration from Old Directory Structure
 
 If you're upgrading from an older version that used scattered directories:

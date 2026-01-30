@@ -1663,7 +1663,24 @@ namespace MingYue.Services
                         var hashInput = $"{server}-{sharePath}";
                         var hashBytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(hashInput));
                         var hashString = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant()[..32];
-                        var credFile = $"/tmp/cifs-credentials-{hashString}";
+                        // Persist credentials in a safe, non-ephemeral location so fstab entries remain valid after reboot
+                        // Use /srv/mingyue to store persistent data
+                        var credsDir = "/srv/mingyue";
+                        var credFile = Path.Combine(credsDir, $"cifs-credentials-{hashString}");
+                        
+                        // Ensure the directory exists using temp + move pattern (works with CAP_DAC_OVERRIDE)
+                        try
+                        {
+                            if (!Directory.Exists(credsDir))
+                            {
+                                Directory.CreateDirectory(credsDir);
+                            }
+                        }
+                        catch
+                        {
+                            // Directory may already exist or be created by another process
+                        }
+                        
                         try
                         {
                             var credContent = $"username={username}\npassword={password}\n";
@@ -1672,7 +1689,10 @@ namespace MingYue.Services
                                 credContent += $"domain={domain}\n";
                             }
 
-                            // Create the credential file with secure permissions atomically
+                            // Use temp file approach for ProtectSystem=full compatibility
+                            // Create temp file in /tmp (writable with PrivateTmp=true)
+                            var tempCredFile = Path.Combine("/tmp", $"cifs-cred-{Guid.NewGuid():N}.tmp");
+                            
                             var fsOptions = new FileStreamOptions
                             {
                                 Mode = FileMode.Create,
@@ -1682,7 +1702,7 @@ namespace MingYue.Services
                                 UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite
                             };
 
-                            await using (var fs = new FileStream(credFile, fsOptions))
+                            await using (var fs = new FileStream(tempCredFile, fsOptions))
                             {
                                 await using (var writer = new StreamWriter(fs))
                                 {
@@ -1690,7 +1710,7 @@ namespace MingYue.Services
                                 }
                             }
 
-                            // Verify file permissions were set correctly
+                            // Ensure secure permissions on temp file
                             var chmodInfo = new ProcessStartInfo
                             {
                                 FileName = "chmod",
@@ -1700,7 +1720,7 @@ namespace MingYue.Services
                                 CreateNoWindow = true
                             };
                             chmodInfo.ArgumentList.Add("600");
-                            chmodInfo.ArgumentList.Add(credFile);
+                            chmodInfo.ArgumentList.Add(tempCredFile);
 
                             using var chmodProcess = Process.Start(chmodInfo);
                             if (chmodProcess == null)
@@ -1715,18 +1735,21 @@ namespace MingYue.Services
                                 // Remove potentially insecure credential file
                                 try
                                 {
-                                    if (File.Exists(credFile))
+                                    if (File.Exists(tempCredFile))
                                     {
-                                        File.Delete(credFile);
+                                        File.Delete(tempCredFile);
                                     }
                                 }
                                 catch
                                 {
                                     // Ignore file deletion errors
                                 }
-                                throw new InvalidOperationException($"chmod failed for credential file '{credFile}' with exit code {chmodProcess.ExitCode}: {errorOutput}");
+                                throw new InvalidOperationException($"chmod failed for credential file '{tempCredFile}' with exit code {chmodProcess.ExitCode}: {errorOutput}");
                             }
 
+                            // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on protected paths)
+                            File.Move(tempCredFile, credFile, overwrite: true);
+                            
                             fstabOptions.Add($"credentials={credFile}");
                         }
                         catch (Exception ex)

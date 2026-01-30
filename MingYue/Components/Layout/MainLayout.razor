@@ -21,10 +21,10 @@
     <div class="bg-gradient-blob bg-gradient-blob-3"></div>
     <div class="bg-grid-pattern"></div>
 </div>
-    <!-- Standard layout for other pages -->
-    <FluentLayout>    
-        <!-- Header -->
-        <div class="home-header">
+<!-- Standard layout for other pages -->
+<FluentLayout>
+    <!-- Header -->
+    <div class="home-header">
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
             <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center" HorizontalGap="16">
                 <div class="home-logo" @onclick="@(() => Navigation.NavigateTo("/"))" style="cursor: pointer;">
@@ -34,8 +34,8 @@
                     <FluentLabel Typo="Typography.Body" Class="home-title-main">MingYue</FluentLabel>
                     <FluentLabel Typo="Typography.Body" Class="home-title-sub">Home Server</FluentLabel>
                 </FluentStack>
-            
-            <FluentSpacer></FluentSpacer>
+
+                <FluentSpacer></FluentSpacer>
 
                 <!-- Management Menu -->
                 <FluentMenuButton Text="@Localizer["Management"]" Appearance="Appearance.Lightweight">
@@ -82,20 +82,14 @@
                     <FluentIcon Value="@(new Icons.Regular.Size20.Wifi1())"></FluentIcon>
                 </FluentButton>
                 <!-- Notification Button with Badge -->
-                <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="OpenNotificationPanel" Title="@Localizer["Notifications"]" Style="position: relative;">
-                    <FluentIcon Value="@(new Icons.Regular.Size20.Alert())" />
-                    @if (unreadCount > 0)
-                    {
-                        <FluentBadge Appearance="Appearance.Accent" Style="position: absolute; top: 0; right: 0; min-width: 18px; height: 18px; padding: 0 4px; font-size: 10px;">
-                            @(unreadCount > 99 ? "99+" : unreadCount.ToString())
-                        </FluentBadge>
-                    }
-                </FluentButton>
+                <FluentCounterBadge Count="unreadCount" Appearance="Appearance.Lightweight" @onclick="OpenNotificationPanel">
+                    <FluentButton>
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Alert())" Color="@Color.Neutral" />
+                    </FluentButton>
+                </FluentCounterBadge>              
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="@Localizer["Settings"]">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
                 </FluentButton>
-                <!-- Language Selector -->
-                <LanguageSelector />
                 @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
                 {
                     <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>
@@ -107,14 +101,13 @@
                         <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
                     </FluentButton>
                 }
-            </FluentStack>            
-        </FluentStack>     
+            </FluentStack>
+        </FluentStack>
     </div>
-        <div class="home-content">
-            @Body
-        </div>        
-    </FluentLayout>
-
+    <div class="home-content">
+        @Body
+    </div>
+</FluentLayout>
 
 <FluentToastProvider />
 <FluentDialogProvider />

@@ -1,38 +1,4 @@
-﻿        /// <summary>
-        /// Remove a network disk entry from /etc/fstab by mountPoint and fsType
-        /// </summary>
-        public async Task<DiskOperationResult> RemoveNetworkDiskFromFstabAsync(string mountPoint, string fsType)
-        {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                return DiskOperationResult.Failed("仅支持 Linux");
-            var fstabPath = "/etc/fstab";
-            if (!File.Exists(fstabPath))
-                return DiskOperationResult.Failed("/etc/fstab 不存在");
-            try
-            {
-                var lines = (await File.ReadAllLinesAsync(fstabPath)).ToList();
-                var newLines = lines.Where(line => {
-                    var trimmed = line.Trim();
-                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) return true;
-                    var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length < 4) return true;
-                    var mp = parts[1];
-                    var type = parts[2];
-                    return !(mp == mountPoint && type == fsType);
-                }).ToList();
-                if (newLines.Count == lines.Count)
-                    return DiskOperationResult.Failed("未找到对应的 fstab 条目");
-                // 用 temp+move 方式写回
-                var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
-                await File.WriteAllLinesAsync(tempPath, newLines);
-                File.Move(tempPath, fstabPath, overwrite: true);
-                return DiskOperationResult.Successful("已从 /etc/fstab 移除网络磁盘配置");
-            }
-            catch (Exception ex)
-            {
-                return DiskOperationResult.Failed("移除 fstab 条目失败", ex.Message);
-            }
-        }
+﻿
 using MingYue.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -78,32 +44,32 @@ namespace MingYue.Services
         private DiskOperationResult CheckPermissionError(string error, string operation)
         {
             // Check for specific sudo permission errors (legacy, when systemd uses sudo)
-            if (error.Contains("sudo: a password is required") || 
+            if (error.Contains("sudo: a password is required") ||
                 error.Contains("sudo: password is required") ||
                 (error.Contains("sudo") && error.Contains("not allowed to execute")))
             {
                 _logger.LogError("{Operation} failed due to sudo permission issue. Error: {Error}", operation, error);
-                return DiskOperationResult.Failed($"{operation}失败：需要配置 sudo 权限", 
+                return DiskOperationResult.Failed($"{operation}失败：需要配置 sudo 权限",
                     "请配置 sudoers 文件允许无密码执行 mount/umount 命令。参考文档：sudo visudo -f /etc/sudoers.d/mingyue");
             }
-            
+
             // Check for "no new privileges" error (legacy, should not occur with AmbientCapabilities)
             if (error.Contains("no new privileges") || error.Contains("已设置'no new privileges'标志") || error.Contains("已设置\"no new privileges\"标志"))
             {
                 _logger.LogError("{Operation} failed due to 'no new privileges' restriction. Error: {Error}", operation, error);
-                return DiskOperationResult.Failed($"{operation}失败：服务被 NoNewPrivileges 限制", 
+                return DiskOperationResult.Failed($"{operation}失败：服务被 NoNewPrivileges 限制",
                     "systemd 服务配置阻止了 sudo 权限提升。解决方法请参考 CONFIGURATION.md 中的 'Permission errors (disk mount, file operations, service management)' 章节");
             }
-            
+
             // Check for capability/permission errors when using direct mount (without sudo)
-            if (error.Contains("Operation not permitted") || error.Contains("Permission denied") || 
+            if (error.Contains("Operation not permitted") || error.Contains("Permission denied") ||
                 error.Contains("不允许的操作") || error.Contains("权限不够"))
             {
                 _logger.LogError("{Operation} failed due to insufficient capabilities. Error: {Error}", operation, error);
-                return DiskOperationResult.Failed($"{operation}失败：权限不足", 
+                return DiskOperationResult.Failed($"{operation}失败：权限不足",
                     "服务缺少必要的系统权限。请确保 systemd 服务配置中包含 AmbientCapabilities=CAP_SYS_ADMIN 并执行 'sudo systemctl daemon-reload && sudo systemctl restart mingyue'");
             }
-            
+
             return null!; // Return null to indicate no permission error detected
         }
 
@@ -429,19 +395,19 @@ namespace MingYue.Services
 
                 // Build mount command arguments using ArgumentList for proper escaping
                 processInfo.ArgumentList.Add("mount");
-                
+
                 if (!string.IsNullOrEmpty(fileSystem))
                 {
                     processInfo.ArgumentList.Add("-t");
                     processInfo.ArgumentList.Add(fileSystem);
                 }
-                
+
                 if (!string.IsNullOrEmpty(options))
                 {
                     processInfo.ArgumentList.Add("-o");
                     processInfo.ArgumentList.Add(options);
                 }
-                
+
                 processInfo.ArgumentList.Add(devicePath);
                 processInfo.ArgumentList.Add(mountPoint);
 
@@ -533,15 +499,15 @@ namespace MingYue.Services
 
                     // Create temp file in /tmp (writable with PrivateTmp=true)
                     var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
-                    var newContent = string.Join(Environment.NewLine, existingLines) + 
-                                   (existingLines.Length > 0 ? Environment.NewLine : "") + 
+                    var newContent = string.Join(Environment.NewLine, existingLines) +
+                                   (existingLines.Length > 0 ? Environment.NewLine : "") +
                                    fstabEntry + Environment.NewLine;
-                    
+
                     await File.WriteAllTextAsync(tempPath, newContent);
-                    
+
                     // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on read-only /etc)
                     File.Move(tempPath, fstabPath, overwrite: true);
-                    
+
                     return DiskOperationResult.Successful($"成功将 {devicePath} 挂载到 {mountPoint} 并添加到 /etc/fstab");
                 }
                 catch (UnauthorizedAccessException ex)
@@ -1674,9 +1640,9 @@ namespace MingYue.Services
                             {
                                 return permError;
                             }
-                            
+
                             // Log the error details to help with debugging
-                            _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}", 
+                            _logger.LogError("Failed to mount network disk. Device: {Device}, MountPoint: {MountPoint}, DiskType: {DiskType}, ExitCode: {ExitCode}, Error: {Error}",
                                 device, mountPoint, diskType, process.ExitCode, error);
                             return DiskOperationResult.Failed("挂载失败", error);
                         }
@@ -1703,7 +1669,7 @@ namespace MingYue.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error mounting network disk. Server: {Server}, SharePath: {SharePath}, MountPoint: {MountPoint}, DiskType: {DiskType}", 
+                _logger.LogError(ex, "Error mounting network disk. Server: {Server}, SharePath: {SharePath}, MountPoint: {MountPoint}, DiskType: {DiskType}",
                     server, sharePath, mountPoint, diskType);
                 return DiskOperationResult.Failed("挂载网络磁盘时出错", ex.Message);
             }
@@ -1745,7 +1711,7 @@ namespace MingYue.Services
                         // Use /srv/mingyue to store persistent data
                         var credsDir = "/srv/mingyue";
                         var credFile = Path.Combine(credsDir, $"cifs-credentials-{hashString}");
-                        
+
                         // Ensure the directory exists using temp + move pattern (works with CAP_DAC_OVERRIDE)
                         try
                         {
@@ -1758,7 +1724,7 @@ namespace MingYue.Services
                         {
                             // Directory may already exist or be created by another process
                         }
-                        
+
                         try
                         {
                             var credContent = $"username={username}\npassword={password}\n";
@@ -1770,7 +1736,7 @@ namespace MingYue.Services
                             // Use temp file approach for ProtectSystem=full compatibility
                             // Create temp file in /tmp (writable with PrivateTmp=true)
                             var tempCredFile = Path.Combine("/tmp", $"cifs-cred-{Guid.NewGuid():N}.tmp");
-                            
+
                             var fsOptions = new FileStreamOptions
                             {
                                 Mode = FileMode.Create,
@@ -1827,7 +1793,7 @@ namespace MingYue.Services
 
                             // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on protected paths)
                             File.Move(tempCredFile, credFile, overwrite: true);
-                            
+
                             fstabOptions.Add($"credentials={credFile}");
                         }
                         catch (Exception ex)
@@ -1922,15 +1888,15 @@ namespace MingYue.Services
 
                     // Create temp file in /tmp (writable with PrivateTmp=true)
                     var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
-                    var newContent = string.Join(Environment.NewLine, existingLines) + 
-                                   (existingLines.Length > 0 ? Environment.NewLine : "") + 
+                    var newContent = string.Join(Environment.NewLine, existingLines) +
+                                   (existingLines.Length > 0 ? Environment.NewLine : "") +
                                    fstabEntry + Environment.NewLine;
-                    
+
                     await File.WriteAllTextAsync(tempPath, newContent);
-                    
+
                     // Use File.Move with overwrite (works with CAP_DAC_OVERRIDE even on read-only /etc)
                     File.Move(tempPath, fstabPath, overwrite: true);
-                    
+
                     return DiskOperationResult.Successful($"成功将 {device} 挂载到 {mountPoint} 并添加到 /etc/fstab");
                 }
                 catch (UnauthorizedAccessException ex)
@@ -2208,7 +2174,7 @@ namespace MingYue.Services
 
                 string output = "";
                 string error = "";
-                
+
                 if (completed == process.WaitForExitAsync())
                 {
                     output = await outputTask;
@@ -2222,7 +2188,7 @@ namespace MingYue.Services
                         process.Kill();
                     }
                     catch { }
-                    
+
                     return new SmartInfo
                     {
                         Success = false,
@@ -2397,6 +2363,43 @@ namespace MingYue.Services
             }
 
             return smartInfo;
+        }
+
+        /// <summary>
+        /// Remove a network disk entry from /etc/fstab by mountPoint and fsType
+        /// </summary>
+        public async Task<DiskOperationResult> RemoveNetworkDiskFromFstabAsync(string mountPoint, string fsType)
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                return DiskOperationResult.Failed("仅支持 Linux");
+            var fstabPath = "/etc/fstab";
+            if (!File.Exists(fstabPath))
+                return DiskOperationResult.Failed("/etc/fstab 不存在");
+            try
+            {
+                var lines = (await File.ReadAllLinesAsync(fstabPath)).ToList();
+                var newLines = lines.Where(line =>
+                {
+                    var trimmed = line.Trim();
+                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) return true;
+                    var parts = trimmed.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 4) return true;
+                    var mp = parts[1];
+                    var type = parts[2];
+                    return !(mp == mountPoint && type == fsType);
+                }).ToList();
+                if (newLines.Count == lines.Count)
+                    return DiskOperationResult.Failed("未找到对应的 fstab 条目");
+                // 用 temp+move 方式写回
+                var tempPath = Path.Combine("/tmp", $"fstab.{Guid.NewGuid():N}.tmp");
+                await File.WriteAllLinesAsync(tempPath, newLines);
+                File.Move(tempPath, fstabPath, overwrite: true);
+                return DiskOperationResult.Successful("已从 /etc/fstab 移除网络磁盘配置");
+            }
+            catch (Exception ex)
+            {
+                return DiskOperationResult.Failed("移除 fstab 条目失败", ex.Message);
+            }
         }
     }
 

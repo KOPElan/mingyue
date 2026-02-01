@@ -29,7 +29,7 @@
     {
         <!-- SMB Users Section -->
         <FluentLabel Typo="Typography.H3">SMB Users</FluentLabel>
-        <FluentGrid Spacing="5" class="sharemanagement-grid-fullwidth">
+        <FluentGrid Spacing="5" Style="width:100%;">
             @foreach (var user in sambaUsers)
             {
                 <FluentGridItem xs="12" sm="6" md="3">
@@ -82,7 +82,7 @@
             </FluentButton>
         </FluentStack>
 
-        <FluentGrid Spacing="5" class="sharemanagement-grid-fullwidth">
+        <FluentGrid Spacing="5" Style="width:100%;">
             @foreach (var share in sambaShares)
             {
                 <FluentGridItem xs="12" sm="6" md="4">
@@ -162,7 +162,7 @@
             </FluentButton>
         </FluentStack>
 
-        <FluentGrid Spacing="5" class="sharemanagement-grid-fullwidth">
+        <FluentGrid Spacing="5" Style="width:100%;">
             @foreach (var share in nfsShares)
             {
                 <FluentGridItem xs="12" sm="6" md="4">
@@ -252,18 +252,18 @@
                                  Label="@(currentShare.Type == ShareType.CIFS ? "Share Name" : "Export Name")"
                                  Required="true"
                                  Placeholder="@(currentShare.Type == ShareType.CIFS ? "MyShare" : "data")"
-                                 class="sharemanagement-grid-fullwidth" />
+                                 Style="width:100%;" />
 
                 <FluentTextField @bind-Value="currentShare.Path"
                                  Label="Directory Path"
                                  Required="true"
                                  Placeholder="/path/to/directory"
-                                 class="sharemanagement-grid-fullwidth" />
+                                 Style="width:100%;" />
 
                 <FluentTextField @bind-Value="currentShare.Comment"
                                  Label="Description"
                                  Placeholder="Optional description"
-                                 class="sharemanagement-grid-fullwidth" />
+                                 Style="width:100%;" />
 
                 <FluentCheckbox @bind-Value="currentShare.ReadOnly"
                                 Label="Read-only" />
@@ -335,14 +335,14 @@
                                      Label="Allowed Hosts"
                                      Required="true"
                                      Placeholder="* or 192.168.1.0/24"
-                                     class="sharemanagement-grid-fullwidth">
+                                     Style="width:100%;">
                         <FluentLabel Slot="help-text">IP addresses or networks allowed to access (use * for all)</FluentLabel>
                     </FluentTextField>
 
                     <FluentTextField @bind-Value="currentShare.NfsOptions"
                                      Label="NFS Options"
                                      Placeholder="rw,sync,no_subtree_check"
-                                     class="sharemanagement-grid-fullwidth">
+                                     Style="width:100%;">
                         <FluentLabel Slot="help-text">Comma-separated NFS export options</FluentLabel>
                     </FluentTextField>
                 }
@@ -408,7 +408,7 @@
                              Required="true"
                              Placeholder="Enter username"
                              Disabled="@(editingUser != null)"
-                             class="sharemanagement-grid-fullwidth">
+                             Style="width:100%;">
                 <FluentLabel Slot="help-text">@(editingUser == null ? "Username must exist as a system user" : "Username cannot be changed")</FluentLabel>
             </FluentTextField>
 
@@ -417,7 +417,7 @@
                              TextFieldType="TextFieldType.Password"
                              Required="true"
                              Placeholder="Enter password"
-                             class="sharemanagement-grid-fullwidth">
+                             Style="width:100%;">
                 <FluentLabel Slot="help-text">Set the Samba password for this user</FluentLabel>
             </FluentTextField>
 
@@ -426,7 +426,7 @@
                              TextFieldType="TextFieldType.Password"
                              Required="true"
                              Placeholder="Re-enter password"
-                             class="sharemanagement-grid-fullwidth" />
+                             Style="width:100%;" />
         </FluentStack>
     </FluentDialogBody>
 

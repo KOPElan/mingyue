@@ -86,20 +86,43 @@
                     <FluentButton>
                         <FluentIcon Value="@(new Icons.Regular.Size24.Alert())" Color="@Color.Neutral" />
                     </FluentButton>
-                </FluentCounterBadge>              
+                </FluentCounterBadge>
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="@Localizer["Settings"]">
                     <FluentIcon Value="@(new Icons.Regular.Size20.Settings())" />
                 </FluentButton>
                 @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
                 {
-                    <FluentLabel>@AuthStateService.CurrentUser.Username</FluentLabel>
-                    @if (AuthStateService.IsAdmin)
-                    {
-                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">Admin</FluentBadge>
-                    }
-                    <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="Logout">
-                        <FluentIcon Value="@(new Icons.Regular.Size20.SignOut())" />
-                    </FluentButton>
+                    <FluentProfileMenu Initials="BG"
+                                       Style="--fluent-profile-menu-hover: var(--neutral-stroke-focus); padding: 4px;">
+                        <StartTemplate>
+                            @AuthStateService.CurrentUser.Username
+                        </StartTemplate>
+                        <HeaderTemplate>
+                            <FluentStack Orientation="Orientation.Horizontal">
+                                <FluentSpacer></FluentSpacer>
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="Logout" IconStart="@(new Icons.Regular.Size20.SignOut())">
+                                    Sign Out
+                                </FluentButton>
+                            </FluentStack>
+                        </HeaderTemplate>
+                        <ChildContent>
+                            <div style="width: 250px; height: 80px">
+                                <FluentLabel Typo="@Typography.Header" Style="font-weight: bold;">@AuthStateService.CurrentUser.Username</FluentLabel>
+                                @if (AuthStateService.IsAdmin)
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Admin</FluentBadge>
+                                }
+                            </div>
+                        </ChildContent>
+                        <FooterTemplate>
+                            <FluentStack>
+                                <FluentSpacer />
+                                <FluentAnchor Appearance="@Appearance.Hypertext"
+                                              Href="https://microsoft.com"
+                                              Target="_blank">Account</FluentAnchor>
+                            </FluentStack>
+                        </FooterTemplate>
+                    </FluentProfileMenu>
                 }
             </FluentStack>
         </FluentStack>

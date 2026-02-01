@@ -280,7 +280,7 @@
         @if (selectedItems.Any())
         {
             <FluentToolbar>
-                <FluentStack Orientation="Orientation.Horizontal">
+                <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
                     <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.CheckmarkCircle())" Color="@Color.Accent" />
                     <FluentLabel>@selectedItems.Count @(selectedItems.Count == 1 ? "item" : "items") selected</FluentLabel>
                     <FluentSpacer></FluentSpacer>
@@ -642,8 +642,7 @@
                               Placeholder="Enter search pattern (e.g., *.txt, file*, etc.)..."
                               Class="full-width"
                               Style="flex: 1;" />
-                <FluentButton Appearance="Appearance.Accent" OnClick="@PerformAdvancedSearch">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Search())" />
+                <FluentButton Appearance="Appearance.Accent" OnClick="@PerformAdvancedSearch" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Search())">
                     Search
                 </FluentButton>
             </FluentStack>

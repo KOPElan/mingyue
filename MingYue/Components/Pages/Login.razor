@@ -16,7 +16,7 @@
             <p>Please sign in to continue</p>
         </div>
 
-        <EditForm Model="@loginRequest" OnValidSubmit="@HandleLogin">
+        <EditForm Model="@loginRequest" OnValidSubmit="@HandleLogin" FormName="login">
             <DataAnnotationsValidator />
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
                 <FluentTextField 

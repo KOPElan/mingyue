@@ -1,0 +1,26 @@
+﻿.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+    .login-header h2 {
+        margin: 16px 0 8px 0;
+        color: var(--neutral-foreground-rest);
+    }
+
+    .login-header p {
+        margin: 0;
+        color: var(--neutral-foreground-hint);
+    }

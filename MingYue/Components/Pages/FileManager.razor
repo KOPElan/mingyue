@@ -449,7 +449,7 @@
 </FluentDialog>
 
 <!-- File Preview Dialog -->
-<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 80vw; min-height: 80vh;">
+<FluentDialog @ref="previewDialog" @bind-Hidden="@isPreviewDialogHidden" TrapFocus="true" Modal="true" Style="--dialog-width: 80vw;">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@GetPreviewIcon()" />
@@ -490,8 +490,7 @@
         <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.Right" HorizontalGap="10">
             @if (previewFile != null)
             {
-                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DownloadFile(previewFile))">
-                    <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())" Slot="start" />
+                <FluentButton Appearance="Appearance.Accent" OnClick="@(() => DownloadFile(previewFile))" IconStart="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowDownload())">
                     @Localizer["Download"]
                 </FluentButton>
             }

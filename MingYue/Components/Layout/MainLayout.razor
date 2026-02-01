@@ -83,8 +83,8 @@
                 </FluentButton>
                 <!-- Notification Button with Badge -->
                 <FluentCounterBadge Count="unreadCount" Appearance="Appearance.Lightweight" @onclick="OpenNotificationPanel">
-                    <FluentButton>
-                        <FluentIcon Value="@(new Icons.Regular.Size24.Alert())" Color="@Color.Neutral" />
+                    <FluentButton Appearance="Appearance.Lightweight">
+                        <FluentIcon Value="@(new Icons.Regular.Size24.Alert())" />
                     </FluentButton>
                 </FluentCounterBadge>
                 <FluentButton Appearance="Appearance.Lightweight" IconOnly="true" @onclick="@(() => Navigation.NavigateTo("/settings"))" Title="@Localizer["Settings"]">
@@ -92,7 +92,7 @@
                 </FluentButton>
                 @if (AuthStateService.IsAuthenticated && AuthStateService.CurrentUser != null)
                 {
-                    <FluentProfileMenu Initials="BG"
+                    <FluentProfileMenu FullName="@AuthStateService.CurrentUser.Username"
                                        Style="--fluent-profile-menu-hover: var(--neutral-stroke-focus); padding: 4px;">
                         <StartTemplate>
                             @AuthStateService.CurrentUser.Username

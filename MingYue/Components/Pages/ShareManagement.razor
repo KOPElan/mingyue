@@ -29,12 +29,12 @@
     {
         <!-- SMB Users Section -->
         <FluentLabel Typo="Typography.H3">SMB Users</FluentLabel>
-        <FluentGrid Spacing="5" Style="width:100%;">
+        <FluentGrid Spacing="5" class="sharemanagement-grid-fullwidth">
             @foreach (var user in sambaUsers)
             {
                 <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard>
-                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                    <FluentCard Class="sharemanagement-card">
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
                             <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
                                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
                                     <FluentIcon Value="@(new Icons.Regular.Size24.Person())" Color="Color.Accent" />
@@ -65,7 +65,7 @@
                 </FluentGridItem>
             }
             <FluentGridItem xs="12" sm="6" md="3">
-                <FluentCard MinimalStyle="true" @onclick="OpenAddUserDialog">
+                <FluentCard MinimalStyle="true" @onclick="OpenAddUserDialog" Class="sharemanagement-card">
                     <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
                         <FluentIcon Value="new Icons.Regular.Size16.Add()"></FluentIcon>
                         <FluentLabel Typo="Typography.Body">Add User</FluentLabel>
@@ -74,194 +74,166 @@
             </FluentGridItem>
         </FluentGrid>
 
-
-
         <!-- Samba Shares Section -->
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
             <FluentLabel Typo="Typography.H3">Samba Shares</FluentLabel>
-            <FluentSpacer />
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
-                    Restart Service
-                </FluentButton>
-            </FluentStack>
+            <FluentButton Appearance="Appearance.Outline" OnClick="@RestartSambaService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
+                Restart Service
+            </FluentButton>
         </FluentStack>
 
-        @if (sambaShares.Count == 0)
-        {
-            <FluentMessageBar Intent="MessageIntent.Info">
-                No Samba shares configured. Click "Add" to create one.
-            </FluentMessageBar>
-        }
-        else
-        {
-            <FluentGrid Spacing="5" Style="width:100%;">
-                @foreach (var share in sambaShares)
-                {
-                    <FluentGridItem xs="12" sm="6" md="4">
-                        <FluentCard>
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                                <!-- Header with Name and Actions -->
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                                        <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
-                                        <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
-                                    </FluentStack>
-                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
-                                            <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
-                                        </FluentButton>
-                                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
-                                            <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                        </FluentButton>
-                                    </FluentStack>
+        <FluentGrid Spacing="5" class="sharemanagement-grid-fullwidth">
+            @foreach (var share in sambaShares)
+            {
+                <FluentGridItem xs="12" sm="6" md="4">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
+                            <!-- Header with Name and Actions -->
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                    <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
+                                    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
                                 </FluentStack>
-
-                                <!-- Path -->
-                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
-                                    <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                    </FluentButton>
+                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                    </FluentButton>
                                 </FluentStack>
+                            </FluentStack>
 
-                                <!-- Badges -->
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
-                                    @if (share.ReadOnly)
-                                    {
-                                        <FluentBadge Fill="neutral">Read-Only</FluentBadge>
-                                    }
-                                    else
-                                    {
-                                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
-                                    }
+                            <!-- Path -->
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                            </FluentStack>
 
-                                    @if (share.GuestOk)
-                                    {
-                                        <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Guest Access</FluentBadge>
-                                    }
-
-                                    @if (share.Browseable)
-                                    {
-                                        <FluentBadge Fill="info" BackgroundColor="blue" Color="white">Browseable</FluentBadge>
-                                    }
-                                </FluentStack>
-
-                                <!-- Description -->
-                                @if (!string.IsNullOrEmpty(share.Comment))
+                            <!-- Badges -->
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
+                                @if (share.ReadOnly)
                                 {
-                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
-                                        <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
-                                    </FluentStack>
+                                    <FluentBadge Fill="neutral">Read-Only</FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
+                                }
+
+                                @if (share.GuestOk)
+                                {
+                                    <FluentBadge Fill="highlight" BackgroundColor="orange" Color="white">Guest Access</FluentBadge>
+                                }
+
+                                @if (share.Browseable)
+                                {
+                                    <FluentBadge Fill="info" BackgroundColor="blue" Color="white">Browseable</FluentBadge>
                                 }
                             </FluentStack>
-                        </FluentCard>
-                    </FluentGridItem>
-                }
-                <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard MinimalStyle="true" @onclick="(() => OpenAddDialog(ShareType.CIFS))">
-                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="new Icons.Regular.Size16.Add()"></FluentIcon>
-                            <FluentLabel Typo="Typography.Body">Add</FluentLabel>
+
+                            <!-- Description -->
+                            @if (!string.IsNullOrEmpty(share.Comment))
+                            {
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
+                                    <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
+                                </FluentStack>
+                            }
                         </FluentStack>
                     </FluentCard>
                 </FluentGridItem>
-            </FluentGrid>
-        }
-
+            }
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard MinimalStyle="true" @onclick="(() => OpenAddDialog(ShareType.CIFS))" Class="sharemanagement-card">
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentIcon Value="new Icons.Regular.Size16.Add()"></FluentIcon>
+                        <FluentLabel Typo="Typography.Body">Add</FluentLabel>
+                    </FluentStack>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
 
         <!-- NFS Shares Section -->
-
         <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
             <FluentLabel Typo="Typography.H3">NFS Shares</FluentLabel>
-            <FluentSpacer />
-            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="10">
-                <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
-                    Restart Service
-                </FluentButton>
-            </FluentStack>
+            <FluentButton Appearance="Appearance.Outline" OnClick="@RestartNfsService" IconStart="@(new Icons.Regular.Size16.ArrowSync())">
+                Restart Service
+            </FluentButton>
         </FluentStack>
 
-        @if (nfsShares.Count == 0)
-        {
-            <FluentMessageBar Intent="MessageIntent.Info">
-                No NFS shares configured. Click "Add" to create one.
-            </FluentMessageBar>
-        }
-        else
-        {
-            <FluentGrid Spacing="5" Style="width:100%;">
-                @foreach (var share in nfsShares)
-                {
-                    <FluentGridItem xs="12" sm="6" md="4">
-                        <FluentCard>
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
-                                <!-- Header with Name and Actions -->
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
-                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
-                                        <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
-                                        <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
-                                    </FluentStack>
-                                    <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
-                                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
-                                            <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
-                                        </FluentButton>
-                                        <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
-                                            <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
-                                        </FluentButton>
-                                    </FluentStack>
+        <FluentGrid Spacing="5" class="sharemanagement-grid-fullwidth">
+            @foreach (var share in nfsShares)
+            {
+                <FluentGridItem xs="12" sm="6" md="4">
+                    <FluentCard>
+                        <FluentStack Orientation="Orientation.Vertical" VerticalGap="12">
+                            <!-- Header with Name and Actions -->
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween" VerticalAlignment="VerticalAlignment.Center">
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" VerticalAlignment="VerticalAlignment.Center">
+                                    <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" Color="Color.Accent" />
+                                    <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@share.Name</FluentLabel>
                                 </FluentStack>
-
-                                <!-- Path -->
-                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
-                                    <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="4">
+                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(share))" title="Edit">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" />
+                                    </FluentButton>
+                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteShare(share))" title="Delete">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="@Color.Error" />
+                                    </FluentButton>
                                 </FluentStack>
+                            </FluentStack>
 
-                                <!-- Allowed Hosts -->
-                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Allowed Hosts</FluentLabel>
-                                    <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.AllowedHosts</FluentLabel>
-                                </FluentStack>
+                            <!-- Path -->
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Path</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.Path</FluentLabel>
+                            </FluentStack>
 
-                                <!-- Badges -->
-                                <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
-                                    @if (share.ReadOnly)
-                                    {
-                                        <FluentBadge Fill="neutral">Read-Only</FluentBadge>
-                                    }
-                                    else
-                                    {
-                                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
-                                    }
-                                </FluentStack>
+                            <!-- Allowed Hosts -->
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Allowed Hosts</FluentLabel>
+                                <FluentLabel Typo="Typography.Body" Style="font-family: monospace; font-size: 13px;">@share.AllowedHosts</FluentLabel>
+                            </FluentStack>
 
-                                <!-- Description -->
-                                @if (!string.IsNullOrEmpty(share.Comment))
+                            <!-- Badges -->
+                            <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="8" Wrap="true">
+                                @if (share.ReadOnly)
                                 {
-                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
-                                        <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
-                                        <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
-                                    </FluentStack>
+                                    <FluentBadge Fill="neutral">Read-Only</FluentBadge>
+                                }
+                                else
+                                {
+                                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">Read-Write</FluentBadge>
                                 }
                             </FluentStack>
-                        </FluentCard>
-                    </FluentGridItem>
-                }
-                <FluentGridItem xs="12" sm="6" md="3">
-                    <FluentCard MinimalStyle="true" @onclick="(() => OpenAddDialog(ShareType.NFS))">
-                        <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
-                            <FluentIcon Value="new Icons.Regular.Size16.Add()"></FluentIcon>
-                            <FluentLabel Typo="Typography.Body">Add</FluentLabel>
+
+                            <!-- Description -->
+                            @if (!string.IsNullOrEmpty(share.Comment))
+                            {
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="4">
+                                    <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Description</FluentLabel>
+                                    <FluentLabel Typo="Typography.Body" Style="font-size: 13px;">@share.Comment</FluentLabel>
+                                </FluentStack>
+                            }
                         </FluentStack>
                     </FluentCard>
                 </FluentGridItem>
-            </FluentGrid>
-        }
+            }
+            <FluentGridItem xs="12" sm="6" md="3">
+                <FluentCard MinimalStyle="true" @onclick="(() => OpenAddDialog(ShareType.NFS))" Class="sharemanagement-card">
+                    <FluentStack Orientation="Orientation.Vertical" HorizontalAlignment="HorizontalAlignment.Center" VerticalAlignment="VerticalAlignment.Center">
+                        <FluentIcon Value="new Icons.Regular.Size16.Add()"></FluentIcon>
+                        <FluentLabel Typo="Typography.Body">Add</FluentLabel>
+                    </FluentStack>
+                </FluentCard>
+            </FluentGridItem>
+        </FluentGrid>
     }
 </FluentStack>
 
 <!-- Add/Edit Share Dialog -->
-<FluentDialog @ref="shareDialog" @bind-Hidden="@isShareDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 600px;">
+<FluentDialog @ref="shareDialog" @bind-Hidden="@isShareDialogHidden" TrapFocus="true" Modal="true" class="sharemanagement-dialog-minwidth-600">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Icons.Regular.Size24.FolderOpen())" />
@@ -280,18 +252,18 @@
                                  Label="@(currentShare.Type == ShareType.CIFS ? "Share Name" : "Export Name")"
                                  Required="true"
                                  Placeholder="@(currentShare.Type == ShareType.CIFS ? "MyShare" : "data")"
-                                 Style="width: 100%;" />
+                                 class="sharemanagement-grid-fullwidth" />
 
                 <FluentTextField @bind-Value="currentShare.Path"
                                  Label="Directory Path"
                                  Required="true"
                                  Placeholder="/path/to/directory"
-                                 Style="width: 100%;" />
+                                 class="sharemanagement-grid-fullwidth" />
 
                 <FluentTextField @bind-Value="currentShare.Comment"
                                  Label="Description"
                                  Placeholder="Optional description"
-                                 Style="width: 100%;" />
+                                 class="sharemanagement-grid-fullwidth" />
 
                 <FluentCheckbox @bind-Value="currentShare.ReadOnly"
                                 Label="Read-only" />
@@ -310,8 +282,8 @@
                     {
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                             <FluentLabel Weight="FontWeight.Bold">Valid Users</FluentLabel>
-                            <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Select users who can access this share</FluentLabel>
-                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" Style="max-height: 200px; overflow-y: auto; padding: 10px; border: 1px solid var(--neutral-stroke-rest); border-radius: 4px;">
+                            <FluentLabel Typo="Typography.Body" class="sharemanagement-label-hint">Select users who can access this share</FluentLabel>
+                            <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" class="sharemanagement-stack-scrollbox">
                                 @foreach (var user in sambaUsers)
                                 {
                                     <FluentCheckbox Value="@selectedValidUsers.Contains(user.Username)"
@@ -325,8 +297,8 @@
                         {
                             <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
                                 <FluentLabel Weight="FontWeight.Bold">Write Permissions</FluentLabel>
-                                <FluentLabel Typo="Typography.Body" Style="color: var(--neutral-foreground-hint); font-size: 12px;">Select users who can write to this share</FluentLabel>
-                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" Style="max-height: 200px; overflow-y: auto; padding: 10px; border: 1px solid var(--neutral-stroke-rest); border-radius: 4px;">
+                                <FluentLabel Typo="Typography.Body" class="sharemanagement-label-hint">Select users who can write to this share</FluentLabel>
+                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="8" class="sharemanagement-stack-scrollbox">
                                     @foreach (var user in sambaUsers.Where(u => selectedValidUsers.Contains(u.Username)))
                                     {
                                         <FluentCheckbox Value="@selectedWriteUsers.Contains(user.Username)"
@@ -348,12 +320,12 @@
                         <FluentTextField @bind-Value="currentShare.CreateMask"
                                          Label="Create Mask"
                                          Placeholder="0744"
-                                         Style="flex: 1;" />
+                                         class="sharemanagement-flex-1" />
 
                         <FluentTextField @bind-Value="currentShare.DirectoryMask"
                                          Label="Directory Mask"
                                          Placeholder="0755"
-                                         Style="flex: 1;" />
+                                         class="sharemanagement-flex-1" />
                     </FluentStack>
                 }
                 else
@@ -363,14 +335,14 @@
                                      Label="Allowed Hosts"
                                      Required="true"
                                      Placeholder="* or 192.168.1.0/24"
-                                     Style="width: 100%;">
+                                     class="sharemanagement-grid-fullwidth">
                         <FluentLabel Slot="help-text">IP addresses or networks allowed to access (use * for all)</FluentLabel>
                     </FluentTextField>
 
                     <FluentTextField @bind-Value="currentShare.NfsOptions"
                                      Label="NFS Options"
                                      Placeholder="rw,sync,no_subtree_check"
-                                     Style="width: 100%;">
+                                     class="sharemanagement-grid-fullwidth">
                         <FluentLabel Slot="help-text">Comma-separated NFS export options</FluentLabel>
                     </FluentTextField>
                 }
@@ -419,7 +391,7 @@
 </FluentDialog>
 
 <!-- Add/Edit User Dialog -->
-<FluentDialog @ref="userDialog" @bind-Hidden="@isUserDialogHidden" TrapFocus="true" Modal="true" Style="min-width: 500px;">
+<FluentDialog @ref="userDialog" @bind-Hidden="@isUserDialogHidden" TrapFocus="true" Modal="true" class="sharemanagement-dialog-minwidth-500">
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Icons.Regular.Size24.Person())" />
@@ -436,7 +408,7 @@
                              Required="true"
                              Placeholder="Enter username"
                              Disabled="@(editingUser != null)"
-                             Style="width: 100%;">
+                             class="sharemanagement-grid-fullwidth">
                 <FluentLabel Slot="help-text">@(editingUser == null ? "Username must exist as a system user" : "Username cannot be changed")</FluentLabel>
             </FluentTextField>
 
@@ -445,7 +417,7 @@
                              TextFieldType="TextFieldType.Password"
                              Required="true"
                              Placeholder="Enter password"
-                             Style="width: 100%;">
+                             class="sharemanagement-grid-fullwidth">
                 <FluentLabel Slot="help-text">Set the Samba password for this user</FluentLabel>
             </FluentTextField>
 
@@ -454,7 +426,7 @@
                              TextFieldType="TextFieldType.Password"
                              Required="true"
                              Placeholder="Re-enter password"
-                             Style="width: 100%;" />
+                             class="sharemanagement-grid-fullwidth" />
         </FluentStack>
     </FluentDialogBody>
 
@@ -483,7 +455,7 @@
         <FluentLabel Typo="Typography.Body">
             Are you sure you want to delete the SMB user "@userToDelete?.Username"?
         </FluentLabel>
-        <FluentMessageBar Intent="MessageIntent.Warning" Style="margin-top: 15px;">
+        <FluentMessageBar Intent="MessageIntent.Warning" class="sharemanagement-margin-top-15">
             This will remove the user's Samba password. The system user account will not be deleted.
         </FluentMessageBar>
     </FluentDialogBody>

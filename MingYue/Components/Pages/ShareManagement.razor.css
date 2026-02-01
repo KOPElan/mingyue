@@ -1,0 +1,49 @@
+.sharemanagement-grid-fullwidth {
+    width: 100%;
+}
+
+.sharemanagement-dialog-minwidth-600 {
+    min-width: 600px;
+}
+
+.sharemanagement-dialog-minwidth-500 {
+    min-width: 500px;
+}
+
+.sharemanagement-margin-top-15 {
+    margin-top: 15px;
+}
+
+.sharemanagement-label-hint {
+    color: var(--neutral-foreground-hint);
+    font-size: 12px;
+}
+
+.sharemanagement-label-monospace {
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.sharemanagement-stack-scrollbox {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+}
+
+.sharemanagement-flex-1 {
+    flex: 1;
+}
+.sharemanagement-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    padding: 1rem !important;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s var(--curve-decelerate-mid, cubic-bezier(0.1, 0.9, 0.2, 1));
+    cursor: pointer;
+}

@@ -71,7 +71,7 @@ namespace MingYue.Services
             await SetCultureAsync(culture, null);
         }
 
-        public async Task SetCultureAsync(string culture, IJSRuntime? jsRuntime = null)
+        public async Task SetCultureAsync(string culture, IJSRuntime? jsRuntime)
         {
             if (string.IsNullOrEmpty(culture))
             {

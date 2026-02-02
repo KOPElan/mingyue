@@ -16,7 +16,7 @@ namespace MingYue.Services
         /// </summary>
         /// <param name="culture">Culture code (e.g., "zh-CN", "en-US")</param>
         Task SetCultureAsync(string culture);
-        Task SetCultureAsync(string culture, IJSRuntime? jsRuntime = null)
+        Task SetCultureAsync(string culture, IJSRuntime? jsRuntime);
 
         /// <summary>
         /// Get localized string by key

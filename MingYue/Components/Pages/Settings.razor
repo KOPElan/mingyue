@@ -251,57 +251,57 @@
             </FluentAccordionItem>
 
             <!-- Docker设置 -->
-            <FluentAccordionItem Heading="Docker设置">
+            <FluentAccordionItem Heading="@Localizer["DockerSettings"]">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">Docker Host</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["DockerHost"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@dockerSettings.DockerHost"
                                 Style="width: 100%; max-width: 500px;" 
                                 Placeholder="unix:///var/run/docker.sock" />
                             <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">
-                                Unix Socket: unix:///var/run/docker.sock 或 TCP: tcp://localhost:2375
+                                @Localizer["DockerHostHint"]
                             </FluentLabel>
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.host", dockerSettings.DockerHost, "Docker设置", "Docker守护进程地址"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.host", dockerSettings.DockerHost, Localizer["DockerSettings"], Localizer["DockerHost"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">Docker API版本</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["DockerApiVersion"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@dockerSettings.ApiVersion"
                                 Style="width: 100%; max-width: 300px;" 
                                 Placeholder="1.43" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.apiVersion", dockerSettings.ApiVersion, "Docker设置", "Docker API版本"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.apiVersion", dockerSettings.ApiVersion, Localizer["DockerSettings"], Localizer["DockerApiVersion"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">自动更新容器</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["AutoUpdateContainers"]</FluentLabel>
                             <FluentCheckbox 
                                 @bind-Value="@dockerSettings.AutoUpdateContainers"
-                                @bind-Value:after="@(() => SaveSettingAsync("docker.autoUpdateContainers", dockerSettings.AutoUpdateContainers.ToString().ToLower(), "Docker设置", "是否自动更新容器"))"
-                                Label="启用容器自动更新检查" />
+                                @bind-Value:after="@(() => SaveSettingAsync("docker.autoUpdateContainers", dockerSettings.AutoUpdateContainers.ToString().ToLower(), Localizer["DockerSettings"], Localizer["AutoUpdateContainers"]))"
+                                Label="@Localizer["EnableAutoUpdateCheck"]" />
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">容器日志最大行数</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["ContainerLogMaxLines"]</FluentLabel>
                             <FluentNumberField 
                                 @bind-Value="@dockerSettings.LogMaxLines"
                                 Min="100"
                                 Max="10000"
                                 Style="width: 100%; max-width: 300px;" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.logMaxLines", dockerSettings.LogMaxLines.ToString(), "Docker设置", "容器日志显示最大行数"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("docker.logMaxLines", dockerSettings.LogMaxLines.ToString(), Localizer["DockerSettings"], Localizer["ContainerLogMaxLines"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
@@ -316,29 +316,29 @@
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.ArrowDownload())" />
-            <FluentLabel Typo="Typography.PaneHeader">导入设置</FluentLabel>
+            <FluentLabel Typo="Typography.PaneHeader">@Localizer["ImportSettings"]</FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
 
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
             <FluentLabel Typo="Typography.Body">
-                请粘贴之前导出的JSON设置内容：
+                @Localizer["PasteJsonContent"]
             </FluentLabel>
             <FluentTextArea 
                 @bind-Value="@importJson"
                 Rows="15"
                 Style="width: 100%; font-family: monospace; font-size: 12px;" 
-                Placeholder="粘贴JSON内容..." />
+                Placeholder="@Localizer["PasteJsonPlaceholder"]" />
         </FluentStack>
     </FluentDialogBody>
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@ImportSettings">
-            导入
+            @Localizer["Import"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseImportDialog">
-            取消
+            @Localizer["Cancel"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -348,22 +348,22 @@
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Warning())" Color="Color.Error" />
-            <FluentLabel Typo="Typography.PaneHeader">重置确认</FluentLabel>
+            <FluentLabel Typo="Typography.PaneHeader">@Localizer["ResetConfirmTitle"]</FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
 
     <FluentDialogBody>
         <FluentMessageBar Intent="MessageIntent.Warning">
-            <p>您确定要将所有设置重置为默认值吗？此操作无法撤销。</p>
+            <p>@Localizer["ResetConfirmMessage"]</p>
         </FluentMessageBar>
     </FluentDialogBody>
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@ResetSettings">
-            确认重置
+            @Localizer["ConfirmReset"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseResetDialog">
-            取消
+            @Localizer["Cancel"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -464,7 +464,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading settings");
-            ToastService.ShowError("加载设置失败");
+            ToastService.ShowError(Localizer["LoadSettingsFailed"]);
         }
         finally
         {
@@ -477,12 +477,12 @@
         try
         {
             await SettingService.SetSettingAsync(key, value, category, description);
-            ToastService.ShowSuccess("设置已保存");
+            ToastService.ShowSuccess(Localizer["SettingsSaved"]);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving setting {Key}", key);
-            ToastService.ShowError($"保存设置失败: {key}");
+            ToastService.ShowError(Localizer["SaveSettingsFailed"]);
         }
     }
 
@@ -492,17 +492,18 @@
         
         try
         {
-            await LocalizationService.SetCultureAsync(selectedCulture.Code, JSRuntime);
-            ToastService.ShowSuccess("语言设置已保存，页面即将刷新");
+            // Save the language setting to database
+            await LocalizationService.SetCultureAsync(selectedCulture.Code);
             
-            // Wait a moment for the toast to show, then reload
-            await Task.Delay(1000);
-            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+            // Navigate to the culture controller to set the cookie and redirect back
+            // This ensures the RequestLocalizationMiddleware picks up the new culture
+            var redirectUri = Uri.EscapeDataString(Navigation.Uri);
+            Navigation.NavigateTo($"/api/Culture/set?culture={selectedCulture.Code}&redirectUri={redirectUri}", forceLoad: true);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error changing language");
-            ToastService.ShowError("更改语言失败");
+            ToastService.ShowError(Localizer["LanguageChangeFailed"]);
         }
     }
 
@@ -519,12 +520,12 @@
             
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64);
             
-            ToastService.ShowSuccess("设置已导出");
+            ToastService.ShowSuccess(Localizer["SettingsExported"]);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error exporting settings");
-            ToastService.ShowError("导出设置失败");
+            ToastService.ShowError(Localizer["ExportSettingsFailed"]);
         }
     }
 
@@ -538,7 +539,7 @@
     {
         if (string.IsNullOrWhiteSpace(importJson))
         {
-            ToastService.ShowWarning("请输入JSON内容");
+            ToastService.ShowWarning(Localizer["PleaseEnterJson"]);
             return;
         }
 
@@ -548,19 +549,19 @@
             JsonDocument.Parse(importJson);
             
             await SettingService.ImportSettingsAsync(importJson);
-            ToastService.ShowSuccess("设置导入成功");
+            ToastService.ShowSuccess(Localizer["SettingsImported"]);
             
             CloseImportDialog();
             await LoadAllSettings();
         }
         catch (JsonException)
         {
-            ToastService.ShowError("JSON格式无效");
+            ToastService.ShowError(Localizer["InvalidJsonFormat"]);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error importing settings");
-            ToastService.ShowError("导入设置失败");
+            ToastService.ShowError(Localizer["ImportSettingsFailed"]);
         }
     }
 
@@ -582,7 +583,7 @@
             // Delete all settings using a bulk operation for better performance
             await SettingService.DeleteAllSettingsAsync();
             
-            ToastService.ShowSuccess("所有设置已重置为默认值");
+            ToastService.ShowSuccess(Localizer["SettingsResetSuccess"]);
             
             CloseResetDialog();
             await LoadAllSettings();
@@ -590,7 +591,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error resetting settings");
-            ToastService.ShowError("重置设置失败");
+            ToastService.ShowError(Localizer["ResetSettingsFailed"]);
         }
     }
 

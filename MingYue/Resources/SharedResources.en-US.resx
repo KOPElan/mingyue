@@ -859,4 +859,286 @@
   <data name="AllowedExtensionsPlaceholder" xml:space="preserve">
     <value>Leave blank to allow all types, or enter like: .jpg,.png,.pdf</value>
   </data>
+
+  <!-- Toast Messages -->
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="SaveSettingsFailed" xml:space="preserve">
+    <value>Failed to save settings</value>
+  </data>
+  <data name="LoadSettingsFailed" xml:space="preserve">
+    <value>Failed to load settings</value>
+  </data>
+  <data name="SettingsExported" xml:space="preserve">
+    <value>Settings exported</value>
+  </data>
+  <data name="ExportSettingsFailed" xml:space="preserve">
+    <value>Failed to export settings</value>
+  </data>
+  <data name="SettingsImported" xml:space="preserve">
+    <value>Settings imported successfully</value>
+  </data>
+  <data name="ImportSettingsFailed" xml:space="preserve">
+    <value>Failed to import settings</value>
+  </data>
+  <data name="InvalidJsonFormat" xml:space="preserve">
+    <value>Invalid JSON format</value>
+  </data>
+  <data name="PleaseEnterJson" xml:space="preserve">
+    <value>Please enter JSON content</value>
+  </data>
+  <data name="SettingsResetSuccess" xml:space="preserve">
+    <value>Settings reset to defaults</value>
+  </data>
+  <data name="ResetSettingsFailed" xml:space="preserve">
+    <value>Failed to reset settings</value>
+  </data>
+  <data name="LanguageChangeFailed" xml:space="preserve">
+    <value>Failed to change language</value>
+  </data>
+  <data name="LanguageSavedRefreshing" xml:space="preserve">
+    <value>Language saved, page will refresh</value>
+  </data>
+
+  <!-- Disk Management -->
+  <data name="FailedToLoadDisks" xml:space="preserve">
+    <value>Failed to load disks</value>
+  </data>
+  <data name="DisksRefreshed" xml:space="preserve">
+    <value>Disks refreshed</value>
+  </data>
+  <data name="FailedToToggleDiskMount" xml:space="preserve">
+    <value>Failed to toggle disk mount</value>
+  </data>
+  <data name="FailedToToggleNetworkDiskMount" xml:space="preserve">
+    <value>Failed to toggle network disk mount</value>
+  </data>
+  <data name="FailedToDeleteNetworkDisk" xml:space="preserve">
+    <value>Failed to delete network disk</value>
+  </data>
+  <data name="FailedToMountNetworkDisk" xml:space="preserve">
+    <value>Failed to mount network disk</value>
+  </data>
+  <data name="PowerManagementApplied" xml:space="preserve">
+    <value>Power management settings applied</value>
+  </data>
+  <data name="PowerSettingsFailed" xml:space="preserve">
+    <value>Failed to apply power settings</value>
+  </data>
+  <data name="ServerIPOrHostname" xml:space="preserve">
+    <value>Server (IP or hostname)</value>
+  </data>
+  <data name="UsernameOptional" xml:space="preserve">
+    <value>Username (optional)</value>
+  </data>
+  <data name="PasswordOptional" xml:space="preserve">
+    <value>Password (optional)</value>
+  </data>
+  <data name="DomainOptional" xml:space="preserve">
+    <value>Domain (optional)</value>
+  </data>
+  <data name="AutoMountOnBoot" xml:space="preserve">
+    <value>Auto mount on boot (permanent)</value>
+  </data>
+  <data name="StandbyTimeout" xml:space="preserve">
+    <value>Standby timeout (minutes)</value>
+  </data>
+  <data name="APMLevel" xml:space="preserve">
+    <value>APM power management level</value>
+  </data>
+
+  <!-- Scheduled Tasks -->
+  <data name="LoadTasksFailed" xml:space="preserve">
+    <value>Failed to load scheduled tasks</value>
+  </data>
+  <data name="TaskDataMustBeValidJson" xml:space="preserve">
+    <value>Task data must be valid JSON format</value>
+  </data>
+  <data name="TaskCreatedSuccess" xml:space="preserve">
+    <value>Task created successfully</value>
+  </data>
+  <data name="TaskUpdatedSuccess" xml:space="preserve">
+    <value>Task updated successfully</value>
+  </data>
+  <data name="SaveTaskFailed" xml:space="preserve">
+    <value>Failed to save task</value>
+  </data>
+  <data name="TaskDeletedSuccess" xml:space="preserve">
+    <value>Task deleted successfully</value>
+  </data>
+  <data name="DeleteTaskFailed" xml:space="preserve">
+    <value>Failed to delete task</value>
+  </data>
+  <data name="TaskEnabled" xml:space="preserve">
+    <value>Task enabled</value>
+  </data>
+  <data name="TaskDisabled" xml:space="preserve">
+    <value>Task disabled</value>
+  </data>
+  <data name="ToggleTaskStatusFailed" xml:space="preserve">
+    <value>Failed to toggle task status</value>
+  </data>
+  <data name="LoadHistoryFailed" xml:space="preserve">
+    <value>Failed to load execution history</value>
+  </data>
+  <data name="TaskType" xml:space="preserve">
+    <value>Task Type</value>
+  </data>
+  <data name="TaskData" xml:space="preserve">
+    <value>Task Data (JSON format)</value>
+  </data>
+  <data name="EnableTask" xml:space="preserve">
+    <value>Enable task</value>
+  </data>
+
+  <!-- Share Management -->
+  <data name="FailedToLoadData" xml:space="preserve">
+    <value>Failed to load data</value>
+  </data>
+  <data name="FailedToLoadShares" xml:space="preserve">
+    <value>Failed to load shares</value>
+  </data>
+  <data name="FailedToLoadUsers" xml:space="preserve">
+    <value>Failed to load users</value>
+  </data>
+  <data name="ShareNameRequired" xml:space="preserve">
+    <value>Share name is required</value>
+  </data>
+  <data name="DirectoryPathRequired" xml:space="preserve">
+    <value>Directory path is required</value>
+  </data>
+  <data name="AllowedHostsRequired" xml:space="preserve">
+    <value>Allowed hosts is required for NFS shares</value>
+  </data>
+  <data name="AtLeastOneValidUser" xml:space="preserve">
+    <value>At least one valid user must be selected for CIFS shares without guest access</value>
+  </data>
+  <data name="ShareCreatedSuccess" xml:space="preserve">
+    <value>Share created successfully</value>
+  </data>
+  <data name="ShareUpdatedSuccess" xml:space="preserve">
+    <value>Share updated successfully</value>
+  </data>
+  <data name="SaveShareFailed" xml:space="preserve">
+    <value>Failed to save share</value>
+  </data>
+  <data name="ShareDeletedSuccess" xml:space="preserve">
+    <value>Share deleted successfully</value>
+  </data>
+  <data name="DeleteShareFailed" xml:space="preserve">
+    <value>Failed to delete share</value>
+  </data>
+  <data name="SambaRestartSuccess" xml:space="preserve">
+    <value>Samba service restarted successfully</value>
+  </data>
+  <data name="FailedToRestartSamba" xml:space="preserve">
+    <value>Failed to restart Samba service</value>
+  </data>
+  <data name="NFSRestartSuccess" xml:space="preserve">
+    <value>NFS service restarted successfully</value>
+  </data>
+  <data name="FailedToRestartNFS" xml:space="preserve">
+    <value>Failed to restart NFS service</value>
+  </data>
+  <data name="DirectoryPath" xml:space="preserve">
+    <value>Directory Path</value>
+  </data>
+  <data name="Browseable" xml:space="preserve">
+    <value>Browseable</value>
+  </data>
+  <data name="AllowGuestAccess" xml:space="preserve">
+    <value>Allow guest access (no password required)</value>
+  </data>
+  <data name="CreateMask" xml:space="preserve">
+    <value>Create Mask</value>
+  </data>
+  <data name="DirectoryMask" xml:space="preserve">
+    <value>Directory Mask</value>
+  </data>
+  <data name="AllowedHosts" xml:space="preserve">
+    <value>Allowed Hosts</value>
+  </data>
+  <data name="NFSOptions" xml:space="preserve">
+    <value>NFS Options</value>
+  </data>
+
+  <!-- Docker Settings -->
+  <data name="DockerSettings" xml:space="preserve">
+    <value>Docker Settings</value>
+  </data>
+  <data name="DockerHost" xml:space="preserve">
+    <value>Docker Host</value>
+  </data>
+  <data name="DockerHostHint" xml:space="preserve">
+    <value>Unix Socket: unix:///var/run/docker.sock or TCP: tcp://localhost:2375</value>
+  </data>
+  <data name="DockerApiVersion" xml:space="preserve">
+    <value>Docker API Version</value>
+  </data>
+  <data name="AutoUpdateContainers" xml:space="preserve">
+    <value>Auto Update Containers</value>
+  </data>
+  <data name="EnableAutoUpdateCheck" xml:space="preserve">
+    <value>Enable container auto-update check</value>
+  </data>
+  <data name="ContainerLogMaxLines" xml:space="preserve">
+    <value>Container Log Max Lines</value>
+  </data>
+
+  <!-- File Manager -->
+  <data name="FolderName" xml:space="preserve">
+    <value>Folder Name</value>
+  </data>
+  <data name="NewName" xml:space="preserve">
+    <value>New Name</value>
+  </data>
+  <data name="DestinationPath" xml:space="preserve">
+    <value>Destination Path</value>
+  </data>
+  <data name="IncludeSubdirectories" xml:space="preserve">
+    <value>Include subdirectories (recursive)</value>
+  </data>
+  <data name="GenerateThumbnails" xml:space="preserve">
+    <value>Generate Thumbnails</value>
+  </data>
+  <data name="BuildSearchIndex" xml:space="preserve">
+    <value>Build Search Index</value>
+  </data>
+  <data name="CronExpressionOptional" xml:space="preserve">
+    <value>Cron Expression (optional)</value>
+  </data>
+  <data name="IncludeFolders" xml:space="preserve">
+    <value>Include Folders</value>
+  </data>
+
+  <!-- Anydrop -->
+  <data name="MessageContent" xml:space="preserve">
+    <value>Message Content</value>
+  </data>
+
+  <!-- Import/Export Dialog -->
+  <data name="PasteJsonContent" xml:space="preserve">
+    <value>Please paste the previously exported JSON settings:</value>
+  </data>
+  <data name="PasteJsonPlaceholder" xml:space="preserve">
+    <value>Paste JSON content...</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="ResetConfirmTitle" xml:space="preserve">
+    <value>Confirm Reset</value>
+  </data>
+  <data name="ResetConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to reset all settings to defaults? This action cannot be undone.</value>
+  </data>
+  <data name="ConfirmReset" xml:space="preserve">
+    <value>Confirm Reset</value>
+  </data>
+
+  <!-- User Management Dialog -->
+  <data name="SelectRole" xml:space="preserve">
+    <value>Select Role</value>
+  </data>
 </root>

@@ -1227,4 +1227,24 @@
   <data name="Details" xml:space="preserve">
     <value>详情</value>
   </data>
+
+  <!-- User Management -->
+  <data name="User" xml:space="preserve">
+    <value>用户</value>
+  </data>
+  <data name="UserRoleUpdated" xml:space="preserve">
+    <value>用户角色更新成功</value>
+  </data>
+  <data name="UpdateUserRoleFailed" xml:space="preserve">
+    <value>更新用户角色失败</value>
+  </data>
+  <data name="CannotDeleteSelf" xml:space="preserve">
+    <value>不能删除当前登录的用户</value>
+  </data>
+  <data name="UserDeleted" xml:space="preserve">
+    <value>用户删除成功</value>
+  </data>
+  <data name="DeleteUserFailed" xml:space="preserve">
+    <value>删除用户失败</value>
+  </data>
 </root>

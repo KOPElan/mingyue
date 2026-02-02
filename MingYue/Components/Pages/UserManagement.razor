@@ -72,10 +72,10 @@
 
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-            <FluentLabel>用户: <b>@selectedUser?.Username</b></FluentLabel>
+            <FluentLabel>@Localizer["User"]: <b>@selectedUser?.Username</b></FluentLabel>
 
             <FluentSelect TOption="string"
-                          Label="角色"
+                          Label="@Localizer["Role"]"
                           @bind-Value="@newRole"
                           Items="@roles" />
         </FluentStack>
@@ -83,10 +83,10 @@
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@SaveUserRole">
-            保存
+            @Localizer["Save"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDialog">
-            取消
+            @Localizer["Cancel"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -125,7 +125,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading users");
-            ToastService.ShowError("加载用户失败");
+            ToastService.ShowError(Localizer["FailedToLoadUsers"]);
         }
         finally
         {
@@ -149,19 +149,19 @@
             var success = await AuthService.UpdateUserRoleAsync(selectedUser.Id, newRole);
             if (success)
             {
-                ToastService.ShowSuccess("用户角色更新成功");
+                ToastService.ShowSuccess(Localizer["UserRoleUpdated"]);
                 await LoadUsers();
                 CloseDialog();
             }
             else
             {
-                ToastService.ShowError("更新用户角色失败");
+                ToastService.ShowError(Localizer["UpdateUserRoleFailed"]);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving user role");
-            ToastService.ShowError("更新用户角色时发生错误");
+            ToastService.ShowError(Localizer["UpdateUserRoleFailed"]);
         }
     }
 
@@ -169,7 +169,7 @@
     {
         if (AuthStateService.CurrentUser?.Id == user.Id)
         {
-            ToastService.ShowWarning("不能删除当前登录的用户");
+            ToastService.ShowWarning(Localizer["CannotDeleteSelf"]);
             return;
         }
 
@@ -178,18 +178,18 @@
             var success = await AuthService.DeleteUserAsync(user.Id);
             if (success)
             {
-                ToastService.ShowSuccess("用户删除成功");
+                ToastService.ShowSuccess(Localizer["UserDeleted"]);
                 await LoadUsers();
             }
             else
             {
-                ToastService.ShowError("删除用户失败");
+                ToastService.ShowError(Localizer["DeleteUserFailed"]);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error deleting user");
-            ToastService.ShowError("删除用户时发生错误");
+            ToastService.ShowError(Localizer["DeleteUserFailed"]);
         }
     }
 

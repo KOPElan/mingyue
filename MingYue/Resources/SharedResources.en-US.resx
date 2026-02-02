@@ -1227,4 +1227,24 @@
   <data name="Details" xml:space="preserve">
     <value>Details</value>
   </data>
+
+  <!-- User Management -->
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="UserRoleUpdated" xml:space="preserve">
+    <value>User role updated successfully</value>
+  </data>
+  <data name="UpdateUserRoleFailed" xml:space="preserve">
+    <value>Failed to update user role</value>
+  </data>
+  <data name="CannotDeleteSelf" xml:space="preserve">
+    <value>Cannot delete currently logged in user</value>
+  </data>
+  <data name="UserDeleted" xml:space="preserve">
+    <value>User deleted successfully</value>
+  </data>
+  <data name="DeleteUserFailed" xml:space="preserve">
+    <value>Failed to delete user</value>
+  </data>
 </root>

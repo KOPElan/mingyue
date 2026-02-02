@@ -1,29 +1,32 @@
 @page "/scheduled-tasks"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IScheduledTaskService TaskService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<ScheduledTasks> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>计划任务 - MingYue</PageTitle>
+<PageTitle>@Localizer["ScheduledTasks"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">计划任务</h2>
+        <h2 style="margin: 0;">@Localizer["ScheduledTasks"]</h2>
         <FluentSpacer />
         <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
-            添加任务
+            @Localizer["AddTask"]
         </FluentButton>
     </FluentStack>
 
@@ -34,38 +37,38 @@
     else if (tasks.Count == 0)
     {
         <FluentMessageBar Intent="MessageIntent.Info">
-            未找到任务。点击"添加任务"创建您的第一个计划任务。
+            @Localizer["NoTasks"]
         </FluentMessageBar>
     }
     else
     {
         <FluentDataGrid Items="@tasks.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1.2fr 1fr 1fr 1.5fr">
-            <PropertyColumn Property="@(t => t.Name)" Title="名称" Sortable="true" />
-            <TemplateColumn Title="描述">
+            <PropertyColumn Property="@(t => t.Name)" Title="@Localizer["Name"]" Sortable="true" />
+            <TemplateColumn Title="@Localizer["Description"]">
                 <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@context.Description">
                     @context.Description
                 </div>
             </TemplateColumn>
-            <PropertyColumn Property="@(t => t.TaskType)" Title="类型" Sortable="true" />
-            <PropertyColumn Property="@(t => t.CronExpression)" Title="Cron表达式" Sortable="true" />
-            <TemplateColumn Title="状态" Sortable="true">
+            <PropertyColumn Property="@(t => t.TaskType)" Title="@Localizer["Type"]" Sortable="true" />
+            <PropertyColumn Property="@(t => t.CronExpression)" Title="@Localizer["CronExpression"]" Sortable="true" />
+            <TemplateColumn Title="@Localizer["Status"]" Sortable="true">
                 @if (context.IsEnabled)
                 {
-                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">启用</FluentBadge>
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">@Localizer["Enabled"]</FluentBadge>
                 }
                 else
                 {
-                    <FluentBadge Fill="neutral">禁用</FluentBadge>
+                    <FluentBadge Fill="neutral">@Localizer["Disabled"]</FluentBadge>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="上次运行">
+            <TemplateColumn Title="@Localizer["LastRun"]">
                 @if (context.LastRunAt.HasValue)
                 {
                     <span>@context.LastRunAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
                 }
                 else
                 {
-                    <span style="color: gray;">从未运行</span>
+                    <span style="color: gray;">-</span>
                 }
             </TemplateColumn>
             <TemplateColumn Title="操作">

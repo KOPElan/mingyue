@@ -100,8 +100,8 @@
                         <HeaderTemplate>
                             <FluentStack Orientation="Orientation.Horizontal">
                                 <FluentSpacer></FluentSpacer>
-                                <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="Logout" IconStart="@(new Icons.Regular.Size20.SignOut())">
-                                    Sign Out
+                                <FluentButton Appearance="Appearance.Lightweight" OnClick="Logout" Title="@Localizer["SignOut"]" IconStart="@(new Icons.Regular.Size20.SignOut())">
+                                    @Localizer["SignOut"]
                                 </FluentButton>
                             </FluentStack>
                         </HeaderTemplate>
@@ -119,7 +119,7 @@
                                 <FluentSpacer />
                                 <FluentAnchor Appearance="@Appearance.Hypertext"
                                               Href="https://microsoft.com"
-                                              Target="_blank">Account</FluentAnchor>
+                                              Target="_blank">@Localizer["Account"]</FluentAnchor>
                             </FluentStack>
                         </FooterTemplate>
                     </FluentProfileMenu>

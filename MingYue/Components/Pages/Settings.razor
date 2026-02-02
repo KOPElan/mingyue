@@ -1,6 +1,8 @@
 @page "/settings"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using System.Text.Json
 @inject ISystemSettingService SettingService
 @inject ILocalizationService LocalizationService
@@ -9,32 +11,33 @@
 @inject ILogger<Settings> Logger
 @inject IToastService ToastService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>系统设置 - MingYue</PageTitle>
+<PageTitle>@Localizer["SystemSettings"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">系统设置</h2>
+        <h2 style="margin: 0;">@Localizer["SystemSettings"]</h2>
         <FluentSpacer />
         <FluentButton Appearance="Appearance.Neutral" OnClick="@OpenImportDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
-            导入设置
+            @Localizer["ImportSettings"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@ExportSettings">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())" />
-            导出设置
+            @Localizer["ExportSettings"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@OpenResetDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowReset())" />
-            重置为默认值
+            @Localizer["ResetToDefault"]
         </FluentButton>
     </FluentStack>
 
@@ -46,11 +49,11 @@
     {
         <FluentAccordion>
             <!-- 常规设置 -->
-            <FluentAccordionItem Heading="常规设置" Expanded="true">
+            <FluentAccordionItem Heading="@Localizer["GeneralSettings"]" Expanded="true">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">语言</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["Language"]</FluentLabel>
                             <FluentSelect 
                                 TOption="MingYue.Services.CultureInfo"
                                 Items="@availableCultures"
@@ -60,33 +63,33 @@
                                 OptionText="@(c => c.DisplayName)"
                                 Style="width: 100%; max-width: 300px;" />
                             <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">
-                                更改语言后，页面将自动刷新以应用新语言
+                                @Localizer["LanguageChangeHint"]
                             </FluentLabel>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">时区</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["TimeZone"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@generalSettings.TimeZone"
                                 Style="width: 100%; max-width: 300px;" 
                                 Placeholder="Asia/Shanghai" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("system.timezone", generalSettings.TimeZone, "常规设置", "系统时区"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("system.timezone", generalSettings.TimeZone, Localizer["GeneralSettings"], Localizer["TimeZone"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">系统名称</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["SystemName"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@generalSettings.SystemName"
                                 Style="width: 100%; max-width: 300px;" 
                                 Placeholder="MingYue" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("system.name", generalSettings.SystemName, "常规设置", "系统显示名称"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("system.name", generalSettings.SystemName, Localizer["GeneralSettings"], Localizer["SystemName"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
@@ -94,45 +97,45 @@
             </FluentAccordionItem>
 
             <!-- 外观设置 -->
-            <FluentAccordionItem Heading="外观设置">
+            <FluentAccordionItem Heading="@Localizer["AppearanceSettings"]">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">主题模式</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["ThemeMode"]</FluentLabel>
                             <FluentSelect 
                                 TOption="string"
                                 @bind-Value="@appearanceSettings.ThemeMode"
-                                @bind-Value:after="@(() => SaveSettingAsync("theme.mode", appearanceSettings.ThemeMode, "外观设置", "主题模式 (light/dark/auto)"))"
+                                @bind-Value:after="@(() => SaveSettingAsync("theme.mode", appearanceSettings.ThemeMode, Localizer["AppearanceSettings"], Localizer["ThemeMode"]))"
                                 Items="@themeModeOptions"
                                 OptionValue="@(i => i)"
-                                OptionText="@(i => i == "light" ? "浅色" : i == "dark" ? "深色" : "自动")"
+                                OptionText="@(i => i == "light" ? Localizer["Light"] : i == "dark" ? Localizer["Dark"] : Localizer["Auto"])"
                                 Style="width: 100%; max-width: 300px;" />
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">主题色</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["AccentColor"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@appearanceSettings.AccentColor"
                                 Style="width: 100%; max-width: 300px;" 
                                 Placeholder="#0078d4" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("theme.accentColor", appearanceSettings.AccentColor, "外观设置", "主题强调色"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("theme.accentColor", appearanceSettings.AccentColor, Localizer["AppearanceSettings"], Localizer["AccentColor"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">卡片圆角</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["BorderRadius"]</FluentLabel>
                             <FluentNumberField 
                                 @bind-Value="@appearanceSettings.BorderRadius"
                                 Min="0"
                                 Max="20"
                                 Style="width: 100%; max-width: 300px;" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("theme.borderRadius", appearanceSettings.BorderRadius.ToString(), "外观设置", "卡片圆角大小(px)"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("theme.borderRadius", appearanceSettings.BorderRadius.ToString(), Localizer["AppearanceSettings"], Localizer["BorderRadius"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
@@ -140,107 +143,107 @@
             </FluentAccordionItem>
 
             <!-- 安全设置 -->
-            <FluentAccordionItem Heading="安全设置">
+            <FluentAccordionItem Heading="@Localizer["SecuritySettings"]">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">会话超时（分钟）</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["SessionTimeout"]</FluentLabel>
                             <FluentNumberField 
                                 @bind-Value="@securitySettings.SessionTimeout"
                                 Min="5"
                                 Max="1440"
                                 Style="width: 100%; max-width: 300px;" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("security.sessionTimeout", securitySettings.SessionTimeout.ToString(), "安全设置", "会话超时时间（分钟）"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("security.sessionTimeout", securitySettings.SessionTimeout.ToString(), Localizer["SecuritySettings"], Localizer["SessionTimeout"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">密码策略</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["PasswordPolicy"]</FluentLabel>
                             <FluentCheckbox 
                                 @bind-Value="@securitySettings.RequireStrongPassword"
-                                @bind-Value:after="@(() => SaveSettingAsync("security.requireStrongPassword", securitySettings.RequireStrongPassword.ToString().ToLower(), "安全设置", "是否要求强密码"))"
-                                Label="要求强密码" />
+                                @bind-Value:after="@(() => SaveSettingAsync("security.requireStrongPassword", securitySettings.RequireStrongPassword.ToString().ToLower(), Localizer["SecuritySettings"], Localizer["PasswordPolicy"]))"
+                                Label="@Localizer["RequireStrongPassword"]" />
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">最小密码长度</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["MinPasswordLength"]</FluentLabel>
                             <FluentNumberField 
                                 @bind-Value="@securitySettings.MinPasswordLength"
                                 Min="6"
                                 Max="32"
                                 Style="width: 100%; max-width: 300px;" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("security.minPasswordLength", securitySettings.MinPasswordLength.ToString(), "安全设置", "最小密码长度"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("security.minPasswordLength", securitySettings.MinPasswordLength.ToString(), Localizer["SecuritySettings"], Localizer["MinPasswordLength"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">登录失败锁定</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["LoginLockout"]</FluentLabel>
                             <FluentCheckbox 
                                 @bind-Value="@securitySettings.EnableLoginLockout"
-                                @bind-Value:after="@(() => SaveSettingAsync("security.enableLoginLockout", securitySettings.EnableLoginLockout.ToString().ToLower(), "安全设置", "启用登录失败锁定"))"
-                                Label="启用登录失败锁定" />
+                                @bind-Value:after="@(() => SaveSettingAsync("security.enableLoginLockout", securitySettings.EnableLoginLockout.ToString().ToLower(), Localizer["SecuritySettings"], Localizer["LoginLockout"]))"
+                                Label="@Localizer["EnableLoginLockout"]" />
                         </FluentStack>
                     </FluentCard>
                 </FluentStack>
             </FluentAccordionItem>
 
             <!-- 文件管理设置 -->
-            <FluentAccordionItem Heading="文件管理设置">
+            <FluentAccordionItem Heading="@Localizer["FileManagementSettings"]">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">最大上传大小（MB）</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["MaxFileSizeMB"]</FluentLabel>
                             <FluentNumberField 
                                 @bind-Value="@fileSettings.MaxUploadSize"
                                 Min="1"
                                 Max="10240"
                                 Style="width: 100%; max-width: 300px;" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.maxUploadSize", fileSettings.MaxUploadSize.ToString(), "文件管理设置", "最大上传文件大小（MB）"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.maxUploadSize", fileSettings.MaxUploadSize.ToString(), Localizer["FileManagementSettings"], Localizer["MaxFileSizeMB"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">默认路径</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["DefaultPath"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@fileSettings.DefaultPath"
                                 Style="width: 100%; max-width: 500px;" 
                                 Placeholder="/data" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.defaultPath", fileSettings.DefaultPath, "文件管理设置", "文件管理器默认路径"))">
-                                保存
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.defaultPath", fileSettings.DefaultPath, Localizer["FileManagementSettings"], Localizer["DefaultPath"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">显示隐藏文件</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["ShowHiddenFiles"]</FluentLabel>
                             <FluentCheckbox 
                                 @bind-Value="@fileSettings.ShowHiddenFiles"
-                                @bind-Value:after="@(() => SaveSettingAsync("filemanager.showHiddenFiles", fileSettings.ShowHiddenFiles.ToString().ToLower(), "文件管理设置", "是否显示隐藏文件"))"
-                                Label="显示以 . 开头的隐藏文件" />
+                                @bind-Value:after="@(() => SaveSettingAsync("filemanager.showHiddenFiles", fileSettings.ShowHiddenFiles.ToString().ToLower(), Localizer["FileManagementSettings"], Localizer["ShowHiddenFiles"]))"
+                                Label="@Localizer["ShowHiddenFiles"]" />
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">允许的文件类型</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["AllowedExtensions"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@fileSettings.AllowedFileTypes"
                                 Style="width: 100%; max-width: 500px;" 
-                                Placeholder="留空表示允许所有类型，或输入如: .jpg,.png,.pdf" />
-                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.allowedFileTypes", fileSettings.AllowedFileTypes, "文件管理设置", "允许上传的文件类型"))">
-                                保存
+                                Placeholder=".jpg,.png,.pdf" />
+                            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.allowedFileTypes", fileSettings.AllowedFileTypes, Localizer["FileManagementSettings"], Localizer["AllowedExtensions"]))">
+                                @Localizer["Save"]
                             </FluentButton>
                         </FluentStack>
                     </FluentCard>

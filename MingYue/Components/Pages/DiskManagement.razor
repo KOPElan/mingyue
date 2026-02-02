@@ -1,19 +1,22 @@
 @page "/disk-management"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject IDiskManagementService DiskService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<DiskManagement> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>Disk Management - MingYue</PageTitle>
+<PageTitle>@Localizer["DiskManagement"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>Access denied. You must be an administrator to access this page.</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
@@ -22,11 +25,11 @@
     <!-- Header -->
     <div class="page-header">
         <FluentIcon Value="@(new Icons.Regular.Size24.HardDrive())" Color="@Color.Accent" />
-        <h1 class="page-title">磁盘管理</h1>
+        <h1 class="page-title">@Localizer["DiskManagement"]</h1>
         <div class="header-actions">
             <FluentButton Appearance="Appearance.Neutral" OnClick="@RefreshDisks">
                 <FluentIcon Value="@(new Icons.Regular.Size20.ArrowSync())" Slot="start" />
-                刷新
+                @Localizer["Refresh"]
             </FluentButton>
         </div>
     </div>
@@ -43,7 +46,7 @@
         <div class="disk-section">
             <div class="section-header">
                 <FluentIcon Value="@(new Icons.Regular.Size20.HardDrive())" Color="@Color.Accent" />
-                <h2 class="section-title">所有磁盘设备</h2>
+                <h2 class="section-title">@Localizer["AllDiskDevices"]</h2>
             </div>
 
             @if (localDisks.Count == 0)
@@ -52,7 +55,7 @@
                     <div class="empty-icon">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.HardDrive())" />
                     </div>
-                    <p class="empty-text">未找到本地磁盘。</p>
+                    <p class="empty-text">@Localizer["NoLocalDisks"]</p>
                 </div>
             }
             else

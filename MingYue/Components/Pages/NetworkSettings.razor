@@ -1,5 +1,7 @@
 @page "/network"
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using ApexCharts
 @using FluentOrientation = Microsoft.FluentUI.AspNetCore.Components.Orientation
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
@@ -7,17 +9,18 @@
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 @inject AuthenticationStateService AuthStateService
+@inject IStringLocalizer<SharedResources> Localizer
 @implements IDisposable
 
-<PageTitle>网络管理 - MingYue</PageTitle>
+<PageTitle>@Localizer["NetworkManagement"] - MingYue</PageTitle>
 
 @if (!AuthStateService.IsAuthenticated)
 {
     <FluentCard>
-        <h3>未授权</h3>
-        <p>您需要登录才能访问此页面。</p>
+        <h3>@Localizer["Unauthorized"]</h3>
+        <p>@Localizer["NeedLoginToAccess"]</p>
         <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Navigation.NavigateTo("/login"))">
-            前往登录
+            @Localizer["GoToLoginPage"]
         </FluentButton>
     </FluentCard>
 }
@@ -27,10 +30,10 @@ else
         <FluentStack Orientation="FluentOrientation.Vertical" VerticalGap="24">
             <!-- Header -->
             <FluentStack Orientation="FluentOrientation.Horizontal" HorizontalAlignment="HorizontalAlignment.SpaceBetween">
-                <FluentLabel Typo="Typography.H3">网络管理</FluentLabel>
+                <FluentLabel Typo="Typography.H3">@Localizer["NetworkManagement"]</FluentLabel>
                 <FluentButton Appearance="Appearance.Accent" OnClick="RefreshData">
                     <FluentIcon Value="@(new Icons.Regular.Size20.ArrowClockwise())" Slot="start" />
-                    刷新
+                    @Localizer["Refresh"]
                 </FluentButton>
             </FluentStack>
 
@@ -38,20 +41,20 @@ else
             @if (statistics != null)
             {
                 <FluentCard>
-                    <FluentLabel Typo="Typography.H5">网络统计</FluentLabel>
+                    <FluentLabel Typo="Typography.H5">@Localizer["NetworkStatistics"]</FluentLabel>
                     <FluentDivider />
                     
                     <!-- Real-time Traffic Chart -->
                     <div style="margin: 16px 0;">
-                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 8px; display: block;">实时流量趋势 (每5秒更新)</FluentLabel>
+                        <FluentLabel Typo="Typography.Body" Style="margin-bottom: 8px; display: block;">@Localizer["RealTimeTraffic"]</FluentLabel>
                         <ApexChart TItem="ChartDataPoint"
-                                   Title="网络流量监控"
+                                   Title="@Localizer["NetworkTrafficMonitor"]"
                                    @ref="chart"
                                    Height="300"
                                    Options="chartOptions">
                             <ApexPointSeries TItem="ChartDataPoint"
                                            Items="receivedDataPoints"
-                                           Name="接收速率"
+                                           Name="@Localizer["ReceiveRate"]"
                                            SeriesType="SeriesType.Line"
                                            XValue="@(e => e.X)"
                                            YValue="@(e => e.Y)"
@@ -59,7 +62,7 @@ else
                                            Color="#0078d4" />
                             <ApexPointSeries TItem="ChartDataPoint"
                                            Items="sentDataPoints"
-                                           Name="发送速率"
+                                           Name="@Localizer["TransmitRate"]"
                                            SeriesType="SeriesType.Line"
                                            XValue="@(e => e.X)"
                                            YValue="@(e => e.Y)"

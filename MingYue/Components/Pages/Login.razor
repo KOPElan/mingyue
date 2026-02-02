@@ -1,19 +1,22 @@
 @page "/login"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IAuthenticationService AuthService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<Login> Logger
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>Login - MingYue</PageTitle>
+<PageTitle>@Localizer["Login"] - MingYue</PageTitle>
 
 <div class="login-container">
     <FluentCard Class="login-card">
         <div class="login-header">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size48.LockClosed())" Color="@Color.Accent" />
-            <h2>Welcome to MingYue</h2>
-            <p>Please sign in to continue</p>
+            <h2>@Localizer["WelcomeToMingYue"]</h2>
+            <p>@Localizer["PleaseSignIn"]</p>
         </div>
 
         <EditForm Model="@loginRequest" OnValidSubmit="@HandleLogin" FormName="login">
@@ -21,16 +24,16 @@
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
                 <FluentTextField 
                     @bind-Value="loginRequest.Username"
-                    Label="Username"
-                    Placeholder="Enter your username"
+                    Label="@Localizer["Username"]"
+                    Placeholder="@Localizer["EnterUsername"]"
                     Required="true"
                     Style="width: 100%;" />
                 <ValidationMessage For="@(() => loginRequest.Username)" />
 
                 <FluentTextField 
                     @bind-Value="loginRequest.Password"
-                    Label="Password"
-                    Placeholder="Enter your password"
+                    Label="@Localizer["Password"]"
+                    Placeholder="@Localizer["EnterPassword"]"
                     TextFieldType="TextFieldType.Password"
                     Required="true"
                     Style="width: 100%;" />
@@ -48,7 +51,7 @@
                     Appearance="Appearance.Accent"
                     Loading="@isLoading"
                     Style="width: 100%;">
-                    Sign In
+                    @Localizer["SignIn"]
                 </FluentButton>
             </FluentStack>
         </EditForm>
@@ -57,13 +60,13 @@
 
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
             <p style="text-align: center; color: var(--neutral-foreground-rest);">
-                Don't have an account?
+                @Localizer["DontHaveAccount"]
             </p>
             <FluentButton 
                 Appearance="Appearance.Outline"
                 OnClick="@NavigateToSetup"
                 Style="width: 100%;">
-                Initial Setup
+                @Localizer["InitialSetup"]
             </FluentButton>
         </FluentStack>
     </FluentCard>
@@ -116,7 +119,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = "An error occurred during login. Please try again.";
+            errorMessage = Localizer["LoginError"];
             Logger.LogError(ex, "Login error");
         }
         finally

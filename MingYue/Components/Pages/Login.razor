@@ -26,6 +26,7 @@
                     @bind-Value="loginRequest.Username"
                     Label="@Localizer["Username"]"
                     Placeholder="@Localizer["EnterUsername"]"
+                    Immediate="true"
                     Required="true"
                     Style="width: 100%;" />
                 <ValidationMessage For="@(() => loginRequest.Username)" />
@@ -35,6 +36,7 @@
                     Label="@Localizer["Password"]"
                     Placeholder="@Localizer["EnterPassword"]"
                     TextFieldType="TextFieldType.Password"
+                    Immediate="true"
                     Required="true"
                     Style="width: 100%;" />
                 <ValidationMessage For="@(() => loginRequest.Password)" />

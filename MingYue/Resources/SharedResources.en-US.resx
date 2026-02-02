@@ -856,4 +856,7 @@
   <data name="AllowedExtensions" xml:space="preserve">
     <value>Allowed Extensions</value>
   </data>
+  <data name="AllowedExtensionsPlaceholder" xml:space="preserve">
+    <value>Leave blank to allow all types, or enter like: .jpg,.png,.pdf</value>
+  </data>
 </root>

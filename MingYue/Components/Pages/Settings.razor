@@ -241,7 +241,7 @@
                             <FluentTextField 
                                 @bind-Value="@fileSettings.AllowedFileTypes"
                                 Style="width: 100%; max-width: 500px;" 
-                                Placeholder=".jpg,.png,.pdf" />
+                                Placeholder="@Localizer["AllowedExtensionsPlaceholder"]" />
                             <FluentButton Appearance="Appearance.Accent" OnClick="@(() => SaveSettingAsync("filemanager.allowedFileTypes", fileSettings.AllowedFileTypes, Localizer["FileManagementSettings"], Localizer["AllowedExtensions"]))">
                                 @Localizer["Save"]
                             </FluentButton>

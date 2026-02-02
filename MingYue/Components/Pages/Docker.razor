@@ -153,7 +153,7 @@
                     {
                         <FluentDataGrid Items="@images.AsQueryable()" GridTemplateColumns="1fr 2fr 0.8fr 1fr 0.8fr">
                             <PropertyColumn Property="@(i => i.Id.Substring(7, Math.Min(12, i.Id.Length - 7)))" Title="@Localizer["ImageId"]" Sortable="true" />
-                            <TemplateColumn Title="@($"{Localizer["Repository"]}:{Localizer["Tag"]}")" Sortable="true">
+                            <TemplateColumn Title="@Localizer["Repository"]" Sortable="true">
                                 @if (context.RepoTags.Any())
                                 {
                                     foreach (var tag in context.RepoTags.Take(2))

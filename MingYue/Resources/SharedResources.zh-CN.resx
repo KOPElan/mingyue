@@ -856,4 +856,7 @@
   <data name="AllowedExtensions" xml:space="preserve">
     <value>允许的文件扩展名</value>
   </data>
+  <data name="AllowedExtensionsPlaceholder" xml:space="preserve">
+    <value>留空表示允许所有类型，或输入如: .jpg,.png,.pdf</value>
+  </data>
 </root>

@@ -61,799 +61,802 @@
   
   <!-- Common -->
   <data name="AppName" xml:space="preserve">
-    <value>明月</value>
+    <value>MingYue</value>
   </data>
   <data name="Home" xml:space="preserve">
-    <value>主页</value>
+    <value>Home</value>
   </data>
   <data name="Settings" xml:space="preserve">
-    <value>系统设置</value>
+    <value>Settings</value>
   </data>
   <data name="Logout" xml:space="preserve">
-    <value>退出登录</value>
+    <value>Logout</value>
   </data>
   <data name="Login" xml:space="preserve">
-    <value>登录</value>
+    <value>Login</value>
   </data>
   <data name="Username" xml:space="preserve">
-    <value>用户名</value>
+    <value>Username</value>
   </data>
   <data name="Password" xml:space="preserve">
-    <value>密码</value>
+    <value>Password</value>
   </data>
   <data name="Save" xml:space="preserve">
-    <value>保存</value>
+    <value>Save</value>
   </data>
   <data name="Cancel" xml:space="preserve">
-    <value>取消</value>
+    <value>Cancel</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>删除</value>
+    <value>Delete</value>
   </data>
   <data name="Edit" xml:space="preserve">
-    <value>编辑</value>
+    <value>Edit</value>
   </data>
   <data name="Add" xml:space="preserve">
-    <value>添加</value>
+    <value>Add</value>
   </data>
   <data name="Close" xml:space="preserve">
-    <value>关闭</value>
+    <value>Close</value>
   </data>
   <data name="Confirm" xml:space="preserve">
-    <value>确认</value>
+    <value>Confirm</value>
   </data>
   <data name="Yes" xml:space="preserve">
-    <value>是</value>
+    <value>Yes</value>
   </data>
   <data name="No" xml:space="preserve">
-    <value>否</value>
+    <value>No</value>
   </data>
   <data name="Search" xml:space="preserve">
-    <value>搜索</value>
+    <value>Search</value>
   </data>
   <data name="Refresh" xml:space="preserve">
-    <value>刷新</value>
+    <value>Refresh</value>
   </data>
   <data name="Loading" xml:space="preserve">
-    <value>加载中...</value>
+    <value>Loading...</value>
   </data>
   <data name="NoData" xml:space="preserve">
-    <value>暂无数据</value>
+    <value>No data available</value>
   </data>
   <data name="Error" xml:space="preserve">
-    <value>错误</value>
+    <value>Error</value>
   </data>
   <data name="Success" xml:space="preserve">
-    <value>成功</value>
+    <value>Success</value>
   </data>
   <data name="Warning" xml:space="preserve">
-    <value>警告</value>
+    <value>Warning</value>
   </data>
   <data name="Info" xml:space="preserve">
-    <value>信息</value>
+    <value>Information</value>
   </data>
 
   <!-- Navigation -->
   <data name="SystemMonitor" xml:space="preserve">
-    <value>系统监控</value>
+    <value>System Monitor</value>
   </data>
   <data name="FileManager" xml:space="preserve">
-    <value>文件管理</value>
+    <value>File Manager</value>
   </data>
   <data name="DiskManagement" xml:space="preserve">
-    <value>磁盘管理</value>
+    <value>Disk Management</value>
   </data>
   <data name="ShareManagement" xml:space="preserve">
-    <value>共享管理</value>
+    <value>Share Management</value>
   </data>
   <data name="DockerManagement" xml:space="preserve">
-    <value>Docker管理</value>
+    <value>Docker Management</value>
   </data>
   <data name="ScheduledTasks" xml:space="preserve">
-    <value>计划任务</value>
+    <value>Scheduled Tasks</value>
   </data>
   <data name="Anydrop" xml:space="preserve">
-    <value>随意投</value>
+    <value>Anydrop</value>
   </data>
   <data name="Notifications" xml:space="preserve">
-    <value>通知</value>
+    <value>Notifications</value>
   </data>
 
   <!-- System Monitor -->
   <data name="CPU" xml:space="preserve">
-    <value>处理器</value>
+    <value>CPU</value>
   </data>
   <data name="Memory" xml:space="preserve">
-    <value>内存</value>
+    <value>Memory</value>
   </data>
   <data name="Disk" xml:space="preserve">
-    <value>磁盘</value>
+    <value>Disk</value>
   </data>
   <data name="Network" xml:space="preserve">
-    <value>网络</value>
+    <value>Network</value>
   </data>
   <data name="Usage" xml:space="preserve">
-    <value>使用率</value>
+    <value>Usage</value>
   </data>
   <data name="Available" xml:space="preserve">
-    <value>可用</value>
+    <value>Available</value>
   </data>
   <data name="Total" xml:space="preserve">
-    <value>总计</value>
+    <value>Total</value>
   </data>
 
   <!-- Settings -->
   <data name="General" xml:space="preserve">
-    <value>常规设置</value>
+    <value>General</value>
   </data>
   <data name="Appearance" xml:space="preserve">
-    <value>外观设置</value>
+    <value>Appearance</value>
   </data>
   <data name="Security" xml:space="preserve">
-    <value>安全设置</value>
+    <value>Security</value>
   </data>
   <data name="Language" xml:space="preserve">
-    <value>语言</value>
+    <value>Language</value>
   </data>
   <data name="ChineseSimplified" xml:space="preserve">
-    <value>简体中文</value>
+    <value>Simplified Chinese</value>
   </data>
   <data name="English" xml:space="preserve">
     <value>English</value>
   </data>
   <data name="Theme" xml:space="preserve">
-    <value>主题</value>
+    <value>Theme</value>
   </data>
   <data name="Light" xml:space="preserve">
-    <value>浅色</value>
+    <value>Light</value>
   </data>
   <data name="Dark" xml:space="preserve">
-    <value>深色</value>
+    <value>Dark</value>
   </data>
   <data name="Auto" xml:space="preserve">
-    <value>自动</value>
+    <value>Auto</value>
   </data>
 
   <!-- File Manager -->
   <data name="FileName" xml:space="preserve">
-    <value>文件名</value>
+    <value>File Name</value>
   </data>
   <data name="FileSize" xml:space="preserve">
-    <value>文件大小</value>
+    <value>File Size</value>
   </data>
   <data name="FileType" xml:space="preserve">
-    <value>文件类型</value>
+    <value>File Type</value>
   </data>
   <data name="ModifiedDate" xml:space="preserve">
-    <value>修改日期</value>
+    <value>Modified Date</value>
   </data>
   <data name="Upload" xml:space="preserve">
-    <value>上传</value>
+    <value>Upload</value>
   </data>
   <data name="Download" xml:space="preserve">
-    <value>下载</value>
+    <value>Download</value>
   </data>
   <data name="NewFolder" xml:space="preserve">
-    <value>新建文件夹</value>
+    <value>New Folder</value>
   </data>
   <data name="Rename" xml:space="preserve">
-    <value>重命名</value>
+    <value>Rename</value>
   </data>
 
   <!-- Docker -->
   <data name="Containers" xml:space="preserve">
-    <value>容器</value>
+    <value>Containers</value>
   </data>
   <data name="Images" xml:space="preserve">
-    <value>镜像</value>
+    <value>Images</value>
   </data>
   <data name="Start" xml:space="preserve">
-    <value>启动</value>
+    <value>Start</value>
   </data>
   <data name="Stop" xml:space="preserve">
-    <value>停止</value>
+    <value>Stop</value>
   </data>
   <data name="Restart" xml:space="preserve">
-    <value>重启</value>
+    <value>Restart</value>
   </data>
   <data name="Status" xml:space="preserve">
-    <value>状态</value>
+    <value>Status</value>
   </data>
   <data name="Running" xml:space="preserve">
-    <value>运行中</value>
+    <value>Running</value>
   </data>
   <data name="Stopped" xml:space="preserve">
-    <value>已停止</value>
+    <value>Stopped</value>
   </data>
 
   <!-- Messages -->
   <data name="OperationSuccessful" xml:space="preserve">
-    <value>操作成功</value>
+    <value>Operation Successful</value>
   </data>
   <data name="OperationFailed" xml:space="preserve">
-    <value>操作失败</value>
+    <value>Operation Failed</value>
   </data>
   <data name="ConfirmDelete" xml:space="preserve">
-    <value>确认删除吗？</value>
+    <value>Are you sure you want to delete?</value>
   </data>
   <data name="LanguageChanged" xml:space="preserve">
-    <value>语言已更改</value>
+    <value>Language Changed</value>
   </data>
   <data name="PleaseRefresh" xml:space="preserve">
-    <value>请刷新页面以查看更改</value>
+    <value>Please refresh the page to see changes</value>
   </data>
 
   <!-- Additional UI Elements -->
   <data name="Management" xml:space="preserve">
-    <value>管理</value>
+    <value>Management</value>
   </data>
   <data name="ApplicationManagement" xml:space="preserve">
-    <value>应用管理</value>
+    <value>Application Management</value>
   </data>
   <data name="DockManagement" xml:space="preserve">
-    <value>Dock管理</value>
+    <value>Dock Management</value>
   </data>
   <data name="UserManagement" xml:space="preserve">
-    <value>用户管理</value>
+    <value>User Management</value>
   </data>
   <data name="Weather" xml:space="preserve">
-    <value>天气</value>
+    <value>Weather</value>
   </data>
   <data name="NetworkStatus" xml:space="preserve">
-    <value>网络状态</value>
+    <value>Network Status</value>
   </data>
   <data name="Applications" xml:space="preserve">
-    <value>应用</value>
+    <value>Applications</value>
   </data>
   <data name="ViewAll" xml:space="preserve">
-    <value>查看全部</value>
+    <value>View All</value>
   </data>
   <data name="AccessDenied" xml:space="preserve">
-    <value>访问被拒绝。您必须是管理员才能访问此页面。</value>
+    <value>Access denied. You must be an administrator to access this page.</value>
   </data>
   <data name="Name" xml:space="preserve">
-    <value>名称</value>
+    <value>Name</value>
   </data>
   <data name="Actions" xml:space="preserve">
-    <value>操作</value>
+    <value>Actions</value>
   </data>
   <data name="Visible" xml:space="preserve">
-    <value>显示</value>
+    <value>Visible</value>
   </data>
 
   <!-- Login Page -->
   <data name="WelcomeToMingYue" xml:space="preserve">
-    <value>欢迎使用明月</value>
+    <value>Welcome to MingYue</value>
   </data>
   <data name="PleaseSignIn" xml:space="preserve">
-    <value>请登录以继续</value>
+    <value>Please sign in to continue</value>
   </data>
   <data name="SignIn" xml:space="preserve">
-    <value>登录</value>
+    <value>Sign In</value>
   </data>
   <data name="SignOut" xml:space="preserve">
-    <value>退出登录</value>
+    <value>Sign Out</value>
   </data>
   <data name="DontHaveAccount" xml:space="preserve">
-    <value>还没有账户？</value>
+    <value>Don't have an account?</value>
   </data>
   <data name="InitialSetup" xml:space="preserve">
-    <value>初始设置</value>
+    <value>Initial Setup</value>
   </data>
   <data name="EnterUsername" xml:space="preserve">
-    <value>请输入用户名</value>
+    <value>Enter your username</value>
   </data>
   <data name="EnterPassword" xml:space="preserve">
-    <value>请输入密码</value>
+    <value>Enter your password</value>
   </data>
   <data name="LoginError" xml:space="preserve">
-    <value>登录时发生错误，请重试。</value>
+    <value>An error occurred during login. Please try again.</value>
   </data>
 
   <!-- Initial Setup Page -->
   <data name="LetsSetupAdmin" xml:space="preserve">
-    <value>让我们设置您的管理员账户</value>
+    <value>Let's set up your administrator account</value>
   </data>
   <data name="UserExists" xml:space="preserve">
-    <value>已存在用户账户。请使用登录页面。</value>
+    <value>A user account already exists. Please use the login page instead.</value>
   </data>
   <data name="GoToLogin" xml:space="preserve">
-    <value>前往登录</value>
+    <value>Go to Login</value>
   </data>
   <data name="ChooseUsername" xml:space="preserve">
-    <value>选择用户名</value>
+    <value>Choose a username</value>
   </data>
   <data name="ChoosePassword" xml:space="preserve">
-    <value>选择一个强密码</value>
+    <value>Choose a strong password</value>
   </data>
   <data name="ConfirmPassword" xml:space="preserve">
-    <value>确认密码</value>
+    <value>Confirm Password</value>
   </data>
   <data name="ReenterPassword" xml:space="preserve">
-    <value>再次输入密码</value>
+    <value>Re-enter your password</value>
   </data>
   <data name="CreateAdminAccount" xml:space="preserve">
-    <value>创建管理员账户</value>
+    <value>Create Administrator Account</value>
   </data>
   <data name="AlreadyHaveAccount" xml:space="preserve">
-    <value>已有账户？</value>
+    <value>Already have an account?</value>
   </data>
   <data name="AdminCreatedSuccess" xml:space="preserve">
-    <value>管理员账户创建成功！正在跳转...</value>
+    <value>Administrator account created successfully! Redirecting...</value>
   </data>
   <data name="SetupError" xml:space="preserve">
-    <value>设置时发生错误，请重试。</value>
+    <value>An error occurred during setup. Please try again.</value>
   </data>
 
   <!-- Settings Page -->
   <data name="SystemSettings" xml:space="preserve">
-    <value>系统设置</value>
+    <value>System Settings</value>
   </data>
   <data name="ImportSettings" xml:space="preserve">
-    <value>导入设置</value>
+    <value>Import Settings</value>
   </data>
   <data name="ExportSettings" xml:space="preserve">
-    <value>导出设置</value>
+    <value>Export Settings</value>
   </data>
   <data name="ResetToDefault" xml:space="preserve">
-    <value>重置为默认值</value>
+    <value>Reset to Default</value>
   </data>
   <data name="GeneralSettings" xml:space="preserve">
-    <value>常规设置</value>
+    <value>General Settings</value>
   </data>
   <data name="LanguageChangeHint" xml:space="preserve">
-    <value>更改语言后，页面将自动刷新以应用新语言</value>
+    <value>After changing language, the page will automatically refresh to apply the new language</value>
   </data>
   <data name="TimeZone" xml:space="preserve">
-    <value>时区</value>
+    <value>Time Zone</value>
   </data>
   <data name="SystemName" xml:space="preserve">
-    <value>系统名称</value>
+    <value>System Name</value>
   </data>
   <data name="AppearanceSettings" xml:space="preserve">
-    <value>外观设置</value>
+    <value>Appearance Settings</value>
   </data>
   <data name="SecuritySettings" xml:space="preserve">
-    <value>安全设置</value>
+    <value>Security Settings</value>
   </data>
   <data name="StorageSettings" xml:space="preserve">
-    <value>存储设置</value>
+    <value>Storage Settings</value>
   </data>
   <data name="NotificationSettings" xml:space="preserve">
-    <value>通知设置</value>
+    <value>Notification Settings</value>
   </data>
 
   <!-- Docker Page -->
   <data name="DockerNotAvailable" xml:space="preserve">
-    <value>Docker不可用</value>
+    <value>Docker Not Available</value>
   </data>
   <data name="DockerAvailable" xml:space="preserve">
-    <value>Docker可用</value>
+    <value>Docker Available</value>
   </data>
   <data name="DockerNotAvailableMessage" xml:space="preserve">
-    <value>Docker不可用。请确保Docker已安装并正在运行。</value>
+    <value>Docker is not available. Please ensure Docker is installed and running.</value>
   </data>
   <data name="ContainerId" xml:space="preserve">
-    <value>容器ID</value>
+    <value>Container ID</value>
   </data>
   <data name="Image" xml:space="preserve">
-    <value>镜像</value>
+    <value>Image</value>
   </data>
   <data name="Ports" xml:space="preserve">
-    <value>端口</value>
+    <value>Ports</value>
   </data>
   <data name="Created" xml:space="preserve">
-    <value>创建时间</value>
+    <value>Created</value>
   </data>
   <data name="NoContainers" xml:space="preserve">
-    <value>未找到容器。</value>
+    <value>No containers found.</value>
   </data>
   <data name="NoImages" xml:space="preserve">
-    <value>未找到镜像。</value>
+    <value>No images found.</value>
   </data>
   <data name="ImageId" xml:space="preserve">
-    <value>镜像ID</value>
+    <value>Image ID</value>
   </data>
   <data name="Repository" xml:space="preserve">
-    <value>仓库</value>
+    <value>Repository</value>
   </data>
   <data name="Tag" xml:space="preserve">
-    <value>标签</value>
+    <value>Tag</value>
   </data>
   <data name="Size" xml:space="preserve">
-    <value>大小</value>
+    <value>Size</value>
   </data>
   <data name="PullImage" xml:space="preserve">
-    <value>拉取镜像</value>
+    <value>Pull Image</value>
   </data>
   <data name="Logs" xml:space="preserve">
-    <value>日志</value>
+    <value>Logs</value>
   </data>
   <data name="CreateContainer" xml:space="preserve">
-    <value>创建容器</value>
+    <value>Create Container</value>
   </data>
 
   <!-- Disk Management Page -->
   <data name="AllDiskDevices" xml:space="preserve">
-    <value>所有磁盘设备</value>
+    <value>All Disk Devices</value>
   </data>
   <data name="NoLocalDisks" xml:space="preserve">
-    <value>未找到本地磁盘。</value>
+    <value>No local disks found.</value>
   </data>
   <data name="MountPoint" xml:space="preserve">
-    <value>挂载点</value>
+    <value>Mount Point</value>
   </data>
   <data name="FileSystem" xml:space="preserve">
-    <value>文件系统</value>
+    <value>File System</value>
   </data>
   <data name="Used" xml:space="preserve">
-    <value>已用</value>
+    <value>Used</value>
   </data>
   <data name="Free" xml:space="preserve">
-    <value>可用</value>
+    <value>Free</value>
   </data>
   <data name="Mount" xml:space="preserve">
-    <value>挂载</value>
+    <value>Mount</value>
   </data>
   <data name="Unmount" xml:space="preserve">
-    <value>卸载</value>
+    <value>Unmount</value>
   </data>
   <data name="Format" xml:space="preserve">
-    <value>格式化</value>
+    <value>Format</value>
   </data>
 
   <!-- Share Management Page -->
   <data name="SMBUsers" xml:space="preserve">
-    <value>SMB用户</value>
+    <value>SMB Users</value>
   </data>
   <data name="SMBShares" xml:space="preserve">
-    <value>SMB共享</value>
+    <value>SMB Shares</value>
   </data>
   <data name="NFSShares" xml:space="preserve">
-    <value>NFS共享</value>
+    <value>NFS Shares</value>
   </data>
   <data name="AddUser" xml:space="preserve">
-    <value>添加用户</value>
+    <value>Add User</value>
   </data>
   <data name="AddShare" xml:space="preserve">
-    <value>添加共享</value>
+    <value>Add Share</value>
   </data>
   <data name="ChangePassword" xml:space="preserve">
-    <value>修改密码</value>
+    <value>Change Password</value>
   </data>
   <data name="PasswordSet" xml:space="preserve">
-    <value>已设置密码</value>
+    <value>Password Set</value>
   </data>
   <data name="NoPassword" xml:space="preserve">
-    <value>无密码</value>
+    <value>No Password</value>
   </data>
   <data name="Path" xml:space="preserve">
-    <value>路径</value>
+    <value>Path</value>
   </data>
   <data name="ReadOnly" xml:space="preserve">
-    <value>只读</value>
+    <value>Read Only</value>
   </data>
   <data name="GuestOK" xml:space="preserve">
-    <value>允许访客</value>
+    <value>Guest Access</value>
   </data>
 
   <!-- Scheduled Tasks Page -->
   <data name="AddTask" xml:space="preserve">
-    <value>添加任务</value>
+    <value>Add Task</value>
   </data>
   <data name="NoTasks" xml:space="preserve">
-    <value>未找到任务。点击"添加任务"创建您的第一个计划任务。</value>
+    <value>No tasks found. Click "Add Task" to create your first scheduled task.</value>
   </data>
   <data name="Description" xml:space="preserve">
-    <value>描述</value>
+    <value>Description</value>
   </data>
   <data name="Type" xml:space="preserve">
-    <value>类型</value>
+    <value>Type</value>
   </data>
   <data name="CronExpression" xml:space="preserve">
-    <value>Cron表达式</value>
+    <value>Cron Expression</value>
   </data>
   <data name="Enabled" xml:space="preserve">
-    <value>启用</value>
+    <value>Enabled</value>
   </data>
   <data name="Disabled" xml:space="preserve">
-    <value>禁用</value>
+    <value>Disabled</value>
   </data>
   <data name="LastRun" xml:space="preserve">
-    <value>上次运行</value>
+    <value>Last Run</value>
   </data>
   <data name="NextRun" xml:space="preserve">
-    <value>下次运行</value>
+    <value>Next Run</value>
   </data>
   <data name="RunNow" xml:space="preserve">
-    <value>立即运行</value>
+    <value>Run Now</value>
   </data>
 
   <!-- User Management Page -->
   <data name="NoUsers" xml:space="preserve">
-    <value>未发现用户。</value>
+    <value>No users found.</value>
   </data>
   <data name="Role" xml:space="preserve">
-    <value>角色</value>
+    <value>Role</value>
   </data>
   <data name="CreatedAt" xml:space="preserve">
-    <value>创建时间</value>
+    <value>Created At</value>
   </data>
   <data name="LastLogin" xml:space="preserve">
-    <value>最后登录</value>
+    <value>Last Login</value>
   </data>
   <data name="EditRole" xml:space="preserve">
-    <value>修改角色</value>
+    <value>Edit Role</value>
   </data>
   <data name="DeleteUser" xml:space="preserve">
-    <value>删除用户</value>
+    <value>Delete User</value>
   </data>
 
   <!-- Dock Management Page -->
   <data name="AddDockItem" xml:space="preserve">
-    <value>添加Dock项</value>
+    <value>Add Dock Item</value>
   </data>
   <data name="NoDockItems" xml:space="preserve">
-    <value>未找到Dock项。点击"添加Dock项"创建您的第一个。</value>
+    <value>No dock items found. Click "Add Dock Item" to create your first one.</value>
   </data>
   <data name="Order" xml:space="preserve">
-    <value>顺序</value>
+    <value>Order</value>
   </data>
   <data name="Title" xml:space="preserve">
-    <value>标题</value>
+    <value>Title</value>
   </data>
   <data name="URL" xml:space="preserve">
-    <value>网址</value>
+    <value>URL</value>
   </data>
   <data name="AssociatedApp" xml:space="preserve">
-    <value>关联应用</value>
+    <value>Associated App</value>
   </data>
   <data name="Pinned" xml:space="preserve">
-    <value>已固定</value>
+    <value>Pinned</value>
   </data>
 
   <!-- File Manager Page -->
   <data name="Create" xml:space="preserve">
-    <value>创建</value>
+    <value>Create</value>
   </data>
   <data name="UploadFiles" xml:space="preserve">
-    <value>上传文件</value>
+    <value>Upload Files</value>
   </data>
   <data name="Favorites" xml:space="preserve">
-    <value>收藏夹</value>
+    <value>Favorites</value>
   </data>
   <data name="Disks" xml:space="preserve">
-    <value>磁盘</value>
+    <value>Disks</value>
   </data>
   <data name="FilterCurrentDir" xml:space="preserve">
-    <value>筛选当前目录...</value>
+    <value>Filter current directory...</value>
   </data>
   <data name="Copy" xml:space="preserve">
-    <value>复制</value>
+    <value>Copy</value>
   </data>
   <data name="Cut" xml:space="preserve">
-    <value>剪切</value>
+    <value>Cut</value>
   </data>
   <data name="Paste" xml:space="preserve">
-    <value>粘贴</value>
+    <value>Paste</value>
   </data>
   <data name="Properties" xml:space="preserve">
-    <value>属性</value>
+    <value>Properties</value>
   </data>
   <data name="SelectAll" xml:space="preserve">
-    <value>全选</value>
+    <value>Select All</value>
   </data>
   <data name="DeselectAll" xml:space="preserve">
-    <value>取消全选</value>
+    <value>Deselect All</value>
   </data>
   <data name="Selected" xml:space="preserve">
-    <value>已选择</value>
+    <value>Selected</value>
   </data>
   <data name="Items" xml:space="preserve">
-    <value>项</value>
+    <value>items</value>
   </data>
   <data name="PercentUsed" xml:space="preserve">
-    <value>已使用</value>
+    <value>used</value>
   </data>
 
   <!-- Network Page -->
   <data name="NetworkManagement" xml:space="preserve">
-    <value>网络管理</value>
+    <value>Network Management</value>
   </data>
   <data name="NetworkStatistics" xml:space="preserve">
-    <value>网络统计</value>
+    <value>Network Statistics</value>
   </data>
   <data name="RealTimeTraffic" xml:space="preserve">
-    <value>实时流量趋势 (每5秒更新)</value>
+    <value>Real-time Traffic Trend (updates every 5 seconds)</value>
   </data>
   <data name="NetworkTrafficMonitor" xml:space="preserve">
-    <value>网络流量监控</value>
+    <value>Network Traffic Monitor</value>
   </data>
   <data name="ReceiveRate" xml:space="preserve">
-    <value>接收速率</value>
+    <value>Receive Rate</value>
   </data>
   <data name="TransmitRate" xml:space="preserve">
-    <value>发送速率</value>
+    <value>Transmit Rate</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
-    <value>未授权</value>
+    <value>Unauthorized</value>
   </data>
   <data name="NeedLoginToAccess" xml:space="preserve">
-    <value>您需要登录才能访问此页面。</value>
+    <value>You need to login to access this page.</value>
   </data>
   <data name="GoToLoginPage" xml:space="preserve">
-    <value>前往登录</value>
+    <value>Go to Login</value>
   </data>
   <data name="Interfaces" xml:space="preserve">
-    <value>网络接口</value>
+    <value>Interfaces</value>
   </data>
   <data name="ActiveConnections" xml:space="preserve">
-    <value>活动连接</value>
+    <value>Active Connections</value>
   </data>
 
   <!-- Common Dialog and Messages -->
   <data name="AddApplication" xml:space="preserve">
-    <value>添加应用</value>
+    <value>Add Application</value>
   </data>
   <data name="EditApplication" xml:space="preserve">
-    <value>编辑应用</value>
+    <value>Edit Application</value>
   </data>
   <data name="IconFluentUIName" xml:space="preserve">
-    <value>图标 (FluentUI图标名称或URL)</value>
+    <value>Icon (FluentUI icon name or URL)</value>
   </data>
   <data name="IconColor" xml:space="preserve">
-    <value>图标颜色</value>
+    <value>Icon Color</value>
   </data>
   <data name="Category" xml:space="preserve">
-    <value>分类</value>
+    <value>Category</value>
   </data>
   <data name="ApplicationCreatedSuccess" xml:space="preserve">
-    <value>应用创建成功</value>
+    <value>Application created successfully</value>
   </data>
   <data name="ApplicationUpdatedSuccess" xml:space="preserve">
-    <value>应用更新成功</value>
+    <value>Application updated successfully</value>
   </data>
   <data name="ApplicationDeletedSuccess" xml:space="preserve">
-    <value>应用删除成功</value>
+    <value>Application deleted successfully</value>
   </data>
   <data name="FailedToLoadApplications" xml:space="preserve">
-    <value>加载应用失败</value>
+    <value>Failed to load applications</value>
   </data>
   <data name="FailedToSaveApplication" xml:space="preserve">
-    <value>保存应用失败</value>
+    <value>Failed to save application</value>
   </data>
   <data name="FailedToDeleteApplication" xml:space="preserve">
-    <value>删除应用失败</value>
+    <value>Failed to delete application</value>
   </data>
   <data name="Account" xml:space="preserve">
-    <value>账户</value>
+    <value>Account</value>
   </data>
 
   <!-- Anydrop Page -->
   <data name="AllDevices" xml:space="preserve">
-    <value>所有设备</value>
+    <value>All Devices</value>
   </data>
   <data name="TextMessages" xml:space="preserve">
-    <value>文本消息</value>
+    <value>Text Messages</value>
   </data>
   <data name="Files" xml:space="preserve">
-    <value>文件</value>
+    <value>Files</value>
   </data>
   <data name="Links" xml:space="preserve">
-    <value>链接</value>
+    <value>Links</value>
   </data>
   <data name="SendMessage" xml:space="preserve">
-    <value>发送消息</value>
+    <value>Send Message</value>
   </data>
   <data name="TypeMessage" xml:space="preserve">
-    <value>输入消息...</value>
+    <value>Type a message...</value>
   </data>
   <data name="DropFilesHere" xml:space="preserve">
-    <value>将文件拖放到此处</value>
+    <value>Drop files here</value>
   </data>
 
   <!-- Home Server -->
   <data name="HomeServer" xml:space="preserve">
-    <value>家庭服务器</value>
+    <value>Home Server</value>
   </data>
   
   <!-- Additional Common Terms -->
   <data name="Clear" xml:space="preserve">
-    <value>清空</value>
+    <value>Clear</value>
   </data>
   <data name="Submit" xml:space="preserve">
-    <value>提交</value>
+    <value>Submit</value>
   </data>
   <data name="Back" xml:space="preserve">
-    <value>返回</value>
+    <value>Back</value>
   </data>
   <data name="Next" xml:space="preserve">
-    <value>下一步</value>
+    <value>Next</value>
   </data>
   <data name="Previous" xml:space="preserve">
-    <value>上一步</value>
+    <value>Previous</value>
   </data>
   <data name="Help" xml:space="preserve">
-    <value>帮助</value>
+    <value>Help</value>
   </data>
   <data name="About" xml:space="preserve">
-    <value>关于</value>
+    <value>About</value>
   </data>
   <data name="Version" xml:space="preserve">
-    <value>版本</value>
+    <value>Version</value>
   </data>
   <data name="More" xml:space="preserve">
-    <value>更多</value>
+    <value>more</value>
   </data>
   <data name="Less" xml:space="preserve">
-    <value>更少</value>
+    <value>less</value>
   </data>
 
   <!-- Settings Page Additional -->
   <data name="ThemeMode" xml:space="preserve">
-    <value>主题模式</value>
+    <value>Theme Mode</value>
   </data>
   <data name="AccentColor" xml:space="preserve">
-    <value>主题色</value>
+    <value>Accent Color</value>
   </data>
   <data name="BorderRadius" xml:space="preserve">
-    <value>卡片圆角</value>
+    <value>Border Radius</value>
   </data>
   <data name="SessionTimeout" xml:space="preserve">
-    <value>会话超时（分钟）</value>
+    <value>Session Timeout (minutes)</value>
   </data>
   <data name="MaxLoginAttempts" xml:space="preserve">
-    <value>最大登录尝试次数</value>
+    <value>Max Login Attempts</value>
   </data>
   <data name="LockoutDuration" xml:space="preserve">
-    <value>锁定时间（分钟）</value>
+    <value>Lockout Duration (minutes)</value>
   </data>
   <data name="DefaultUploadPath" xml:space="preserve">
-    <value>默认上传路径</value>
+    <value>Default Upload Path</value>
   </data>
   <data name="MaxUploadSize" xml:space="preserve">
-    <value>最大上传文件大小（MB）</value>
+    <value>Max Upload Size (MB)</value>
   </data>
   <data name="EnableNotifications" xml:space="preserve">
-    <value>启用通知</value>
+    <value>Enable Notifications</value>
   </data>
   <data name="NotificationRetention" xml:space="preserve">
-    <value>通知保留天数</value>
+    <value>Notification Retention (days)</value>
   </data>
   <data name="DefaultPath" xml:space="preserve">
-    <value>默认路径</value>
+    <value>Default Path</value>
   </data>
   <data name="ShowHiddenFiles" xml:space="preserve">
-    <value>显示隐藏文件</value>
+    <value>Show Hidden Files</value>
   </data>
   <data name="EnableThumbnails" xml:space="preserve">
-    <value>启用缩略图</value>
+    <value>Enable Thumbnails</value>
   </data>
   <data name="FileBrowserSettings" xml:space="preserve">
-    <value>文件浏览器设置</value>
+    <value>File Browser Settings</value>
   </data>
   <data name="PasswordPolicy" xml:space="preserve">
-    <value>密码策略</value>
+    <value>Password Policy</value>
   </data>
   <data name="RequireStrongPassword" xml:space="preserve">
-    <value>要求强密码</value>
+    <value>Require Strong Password</value>
   </data>
   <data name="MinPasswordLength" xml:space="preserve">
-    <value>最小密码长度</value>
+    <value>Minimum Password Length</value>
   </data>
   <data name="LoginLockout" xml:space="preserve">
-    <value>登录失败锁定</value>
+    <value>Login Lockout</value>
   </data>
   <data name="EnableLoginLockout" xml:space="preserve">
-    <value>启用登录失败锁定</value>
+    <value>Enable Login Lockout</value>
   </data>
   <data name="FileManagementSettings" xml:space="preserve">
-    <value>文件管理设置</value>
+    <value>File Management Settings</value>
   </data>
   <data name="MaxFileSizeMB" xml:space="preserve">
-    <value>最大文件大小（MB）</value>
+    <value>Max File Size (MB)</value>
   </data>
   <data name="AllowedExtensions" xml:space="preserve">
-    <value>允许的文件扩展名</value>
+    <value>Allowed Extensions</value>
+  </data>
+  <data name="AllowedExtensionsPlaceholder" xml:space="preserve">
+    <value>Leave blank to allow all types, or enter like: .jpg,.png,.pdf</value>
   </data>
 </root>

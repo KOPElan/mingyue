@@ -64,7 +64,7 @@ namespace MingYue.Services
             return _currentCulture;
         }
 
-        public async Task SetCultureAsync(string culture)
+        public async Task SetCultureAsync(string culture, Microsoft.JSInterop.IJSRuntime? jsRuntime = null)
         {
             if (string.IsNullOrEmpty(culture))
             {
@@ -85,6 +85,19 @@ namespace MingYue.Services
 
             // Save to settings
             await _systemSettingService.SetSettingAsync("Language", culture, "General", "语言/Language");
+
+            // 设置 Cookie 让 RequestLocalizationMiddleware 能识别
+            if (jsRuntime is not null)
+            {
+                try
+                {
+                    await jsRuntime.InvokeVoidAsync("blazorCulture.set", culture);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to set .AspNetCore.Culture cookie via JSRuntime");
+                }
+            }
 
             // Raise event
             CultureChanged?.Invoke(this, EventArgs.Empty);

@@ -23,6 +23,7 @@
                     @bind-Value="loginRequest.Username"
                     Label="Username"
                     Placeholder="Enter your username"
+                    Immediate="true"
                     Required="true"
                     Style="width: 100%;" />
                 <ValidationMessage For="@(() => loginRequest.Username)" />
@@ -32,6 +33,7 @@
                     Label="Password"
                     Placeholder="Enter your password"
                     TextFieldType="TextFieldType.Password"
+                    Immediate="true"
                     Required="true"
                     Style="width: 100%;" />
                 <ValidationMessage For="@(() => loginRequest.Password)" />

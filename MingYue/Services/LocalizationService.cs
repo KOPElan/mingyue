@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 using System.Globalization;
 
 using MingYue.Resources;
@@ -70,7 +71,7 @@ namespace MingYue.Services
             await SetCultureAsync(culture, null);
         }
 
-        public async Task SetCultureAsync(string culture, Microsoft.JSInterop.IJSRuntime? jsRuntime = null)
+        public async Task SetCultureAsync(string culture, IJSRuntime? jsRuntime = null)
         {
             if (string.IsNullOrEmpty(culture))
             {

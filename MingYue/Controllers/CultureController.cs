@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace MingYue.Controllers
 {
@@ -11,10 +12,14 @@ namespace MingYue.Controllers
     public class CultureController : ControllerBase
     {
         private readonly ILogger<CultureController> _logger;
+        private readonly RequestLocalizationOptions _localizationOptions;
 
-        public CultureController(ILogger<CultureController> logger)
+        public CultureController(
+            ILogger<CultureController> logger,
+            IOptions<RequestLocalizationOptions> localizationOptions)
         {
             _logger = logger;
+            _localizationOptions = localizationOptions.Value;
         }
 
         /// <summary>
@@ -30,8 +35,11 @@ namespace MingYue.Controllers
                 return BadRequest("Culture is required");
             }
 
-            // Validate culture
-            var supportedCultures = new[] { "zh-CN", "en-US" };
+            // Validate culture against configured supported cultures
+            var supportedCultures = _localizationOptions.SupportedCultures?
+                .Select(c => c.Name)
+                .ToArray() ?? Array.Empty<string>();
+            
             if (!supportedCultures.Contains(culture))
             {
                 return BadRequest($"Culture '{culture}' is not supported");
@@ -45,7 +53,8 @@ namespace MingYue.Controllers
                 {
                     Expires = DateTimeOffset.UtcNow.AddYears(1),
                     IsEssential = true,
-                    SameSite = SameSiteMode.Lax
+                    SameSite = SameSiteMode.Lax,
+                    Secure = true
                 }
             );
 

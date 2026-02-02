@@ -497,7 +497,8 @@
             
             // Navigate to the culture controller to set the cookie and redirect back
             // This ensures the RequestLocalizationMiddleware picks up the new culture
-            var redirectUri = Uri.EscapeDataString(Navigation.Uri);
+            var currentUri = Navigation.Uri ?? "/settings";
+            var redirectUri = Uri.EscapeDataString(currentUri);
             Navigation.NavigateTo($"/api/Culture/set?culture={selectedCulture.Code}&redirectUri={redirectUri}", forceLoad: true);
         }
         catch (Exception ex)

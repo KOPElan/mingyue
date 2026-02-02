@@ -1141,4 +1141,90 @@
   <data name="SelectRole" xml:space="preserve">
     <value>Select Role</value>
   </data>
+
+  <!-- Scheduled Tasks Dialog -->
+  <data name="AddScheduledTask" xml:space="preserve">
+    <value>Add Scheduled Task</value>
+  </data>
+  <data name="EditScheduledTask" xml:space="preserve">
+    <value>Edit Scheduled Task</value>
+  </data>
+  <data name="TaskDataJsonFormat" xml:space="preserve">
+    <value>Task Data (JSON format)</value>
+  </data>
+  <data name="TaskDataExample" xml:space="preserve">
+    <value>Task data example:</value>
+  </data>
+  <data name="PathToIndex" xml:space="preserve">
+    <value>Directory path to index</value>
+  </data>
+  <data name="RecursiveIndex" xml:space="preserve">
+    <value>Whether to recursively index subdirectories</value>
+  </data>
+  <data name="DaysToKeep" xml:space="preserve">
+    <value>Keep read messages for the last N days, older messages will be deleted</value>
+  </data>
+  <data name="CronExpressionHint" xml:space="preserve">
+    <value>Common Cron expression examples (6-field format with seconds):</value>
+  </data>
+  <data name="CronMidnight" xml:space="preserve">
+    <value>Execute at midnight every day</value>
+  </data>
+  <data name="CronEvery6Hours" xml:space="preserve">
+    <value>Execute every 6 hours</value>
+  </data>
+  <data name="CronSundayMidnight" xml:space="preserve">
+    <value>Execute at midnight every Sunday</value>
+  </data>
+  <data name="CronEvery15Minutes" xml:space="preserve">
+    <value>Execute every 15 minutes</value>
+  </data>
+  <data name="CronWeekday9AM" xml:space="preserve">
+    <value>Execute at 9 AM on weekdays</value>
+  </data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve">
+    <value>Confirm Delete</value>
+  </data>
+  <data name="ConfirmDeleteTaskMessage" xml:space="preserve">
+    <value>Are you sure you want to delete task "{0}"? This action cannot be undone.</value>
+  </data>
+  <data name="ExecutionHistory" xml:space="preserve">
+    <value>Execution History</value>
+  </data>
+  <data name="TaskName" xml:space="preserve">
+    <value>Task Name</value>
+  </data>
+  <data name="StartTime" xml:space="preserve">
+    <value>Start Time</value>
+  </data>
+  <data name="EndTime" xml:space="preserve">
+    <value>End Time</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="SuccessResult" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="FailedResult" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="NoHistoryRecords" xml:space="preserve">
+    <value>No execution history records</value>
+  </data>
+  <data name="ViewOutput" xml:space="preserve">
+    <value>View Output</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Error Message</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
 </root>

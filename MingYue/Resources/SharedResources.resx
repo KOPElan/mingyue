@@ -1141,4 +1141,90 @@
   <data name="SelectRole" xml:space="preserve">
     <value>选择角色</value>
   </data>
+
+  <!-- Scheduled Tasks Dialog -->
+  <data name="AddScheduledTask" xml:space="preserve">
+    <value>添加计划任务</value>
+  </data>
+  <data name="EditScheduledTask" xml:space="preserve">
+    <value>编辑计划任务</value>
+  </data>
+  <data name="TaskDataJsonFormat" xml:space="preserve">
+    <value>任务数据（JSON格式）</value>
+  </data>
+  <data name="TaskDataExample" xml:space="preserve">
+    <value>任务数据示例：</value>
+  </data>
+  <data name="PathToIndex" xml:space="preserve">
+    <value>要索引的目录路径</value>
+  </data>
+  <data name="RecursiveIndex" xml:space="preserve">
+    <value>是否递归索引子目录</value>
+  </data>
+  <data name="DaysToKeep" xml:space="preserve">
+    <value>保留最近N天的已读消息，超过此天数的将被删除</value>
+  </data>
+  <data name="CronExpressionHint" xml:space="preserve">
+    <value>常用Cron表达式示例（6位格式，包含秒）：</value>
+  </data>
+  <data name="CronMidnight" xml:space="preserve">
+    <value>每天午夜执行</value>
+  </data>
+  <data name="CronEvery6Hours" xml:space="preserve">
+    <value>每6小时执行一次</value>
+  </data>
+  <data name="CronSundayMidnight" xml:space="preserve">
+    <value>每周日午夜执行</value>
+  </data>
+  <data name="CronEvery15Minutes" xml:space="preserve">
+    <value>每15分钟执行一次</value>
+  </data>
+  <data name="CronWeekday9AM" xml:space="preserve">
+    <value>工作日上午9点执行</value>
+  </data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve">
+    <value>确认删除</value>
+  </data>
+  <data name="ConfirmDeleteTaskMessage" xml:space="preserve">
+    <value>确定要删除任务 "{0}" 吗？此操作无法撤销。</value>
+  </data>
+  <data name="ExecutionHistory" xml:space="preserve">
+    <value>执行历史</value>
+  </data>
+  <data name="TaskName" xml:space="preserve">
+    <value>任务名称</value>
+  </data>
+  <data name="StartTime" xml:space="preserve">
+    <value>开始时间</value>
+  </data>
+  <data name="EndTime" xml:space="preserve">
+    <value>结束时间</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>耗时</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>结果</value>
+  </data>
+  <data name="SuccessResult" xml:space="preserve">
+    <value>成功</value>
+  </data>
+  <data name="FailedResult" xml:space="preserve">
+    <value>失败</value>
+  </data>
+  <data name="NoHistoryRecords" xml:space="preserve">
+    <value>暂无执行历史记录</value>
+  </data>
+  <data name="ViewOutput" xml:space="preserve">
+    <value>查看输出</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>输出</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>错误信息</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>详情</value>
+  </data>
 </root>

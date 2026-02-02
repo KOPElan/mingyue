@@ -132,7 +132,7 @@ namespace MingYue.Services
                 },
                 new Services.CultureInfo
                 {
-                    Code = "en-US",
+                    Code = "en",
                     DisplayName = "English",
                     NativeName = "English"
                 }

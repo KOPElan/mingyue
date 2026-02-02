@@ -1,39 +1,42 @@
 @page "/docker"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IDockerManagementService DockerService
 @inject IApplicationService AppService
 @inject ILogger<Docker> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>Docker Management - MingYue</PageTitle>
+<PageTitle>@Localizer["DockerManagement"] - MingYue</PageTitle>
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">Docker Management</h2>
+        <h2 style="margin: 0;">@Localizer["DockerManagement"]</h2>
         <FluentSpacer />
         @if (!isDockerAvailable)
         {
             <FluentBadge Fill="error" BackgroundColor="red" Color="white">
-                Docker Not Available
+                @Localizer["DockerNotAvailable"]
             </FluentBadge>
         }
         else
         {
             <FluentBadge Fill="success" BackgroundColor="green" Color="white">
-                Docker Available
+                @Localizer["DockerAvailable"]
             </FluentBadge>
         }
         <FluentButton Appearance="Appearance.Lightweight" OnClick="@RefreshData" Disabled="@isLoading">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowClockwise())" />
-            Refresh
+            @Localizer["Refresh"]
         </FluentButton>
     </FluentStack>
 
     @if (!isDockerAvailable)
     {
         <FluentMessageBar Intent="MessageIntent.Error">
-            Docker is not available. Please ensure Docker is installed and running.
+            @Localizer["DockerNotAvailableMessage"]
         </FluentMessageBar>
         return;
     }
@@ -45,21 +48,21 @@
     else
     {
         <FluentTabs>
-            <FluentTab Label="Containers">
+            <FluentTab Label="@Localizer["Containers"]">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15" Style="margin-top: 15px;">
                     @if (containers.Count == 0)
                     {
                         <FluentMessageBar Intent="MessageIntent.Info">
-                            No containers found.
+                            @Localizer["NoContainersFound"]
                         </FluentMessageBar>
                     }
                     else
                     {
                         <FluentDataGrid Items="@containers.AsQueryable()" GridTemplateColumns="0.8fr 1.2fr 1.5fr 0.8fr 1.2fr 1fr 1.5fr">
-                            <PropertyColumn Property="@(c => c.Id.Substring(0, Math.Min(12, c.Id.Length)))" Title="Container ID" Sortable="true" />
-                            <PropertyColumn Property="@(c => c.Name)" Title="Name" Sortable="true" />
-                            <PropertyColumn Property="@(c => c.Image)" Title="Image" Sortable="true" />
-                            <TemplateColumn Title="Status" Sortable="true">
+                            <PropertyColumn Property="@(c => c.Id.Substring(0, Math.Min(12, c.Id.Length)))" Title="@Localizer["ContainerID"]" Sortable="true" />
+                            <PropertyColumn Property="@(c => c.Name)" Title="@Localizer["Name"]" Sortable="true" />
+                            <PropertyColumn Property="@(c => c.Image)" Title="@Localizer["Image"]" Sortable="true" />
+                            <TemplateColumn Title="@Localizer["Status"]" Sortable="true">
                                 @{
                                     var statusColor = GetStatusColor(context.State);
                                     var statusFill = GetStatusFill(context.State);
@@ -68,7 +71,7 @@
                                     @context.Status
                                 </FluentBadge>
                             </TemplateColumn>
-                            <TemplateColumn Title="Ports">
+                            <TemplateColumn Title="@Localizer["Ports"]">
                                 @if (context.Ports.Any())
                                 {
                                     <span style="font-size: 12px;">@string.Join(", ", context.Ports.Take(2))</span>
@@ -82,21 +85,21 @@
                                     <span style="color: gray;">-</span>
                                 }
                             </TemplateColumn>
-                            <TemplateColumn Title="Created">
+                            <TemplateColumn Title="@Localizer["Created"]">
                                 <span style="font-size: 12px;">@FormatDate(context.Created)</span>
                             </TemplateColumn>
-                            <TemplateColumn Title="Actions">
+                            <TemplateColumn Title="@Localizer["Actions"]">
                                 <FluentStack Orientation="Orientation.Horizontal" HorizontalGap="5">
                                     @if (context.State.Equals("running", StringComparison.OrdinalIgnoreCase))
                                     {
                                         <FluentButton Appearance="Appearance.Lightweight" 
                                                     OnClick="@(() => StopContainer(context.Id))"
-                                                    Title="Stop">
+                                                    Title="@Localizer["Stop"]">
                                             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Stop())" Color="@Color.Warning" />
                                         </FluentButton>
                                         <FluentButton Appearance="Appearance.Lightweight" 
                                                     OnClick="@(() => RestartContainer(context.Id))"
-                                                    Title="Restart">
+                                                    Title="@Localizer["Restart"]">
                                             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.ArrowClockwise())" />
                                         </FluentButton>
                                     }
@@ -104,23 +107,23 @@
                                     {
                                         <FluentButton Appearance="Appearance.Lightweight" 
                                                     OnClick="@(() => StartContainer(context.Id))"
-                                                    Title="Start">
+                                                    Title="@Localizer["Start"]">
                                             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Play())" Color="@Color.Success" />
                                         </FluentButton>
                                     }
                                     <FluentButton Appearance="Appearance.Lightweight" 
                                                 OnClick="@(() => OpenLogsDialog(context))"
-                                                Title="View Logs">
+                                                Title="@Localizer["ViewLogs"]">
                                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.DocumentText())" />
                                     </FluentButton>
                                     <FluentButton Appearance="Appearance.Lightweight" 
                                                 OnClick="@(() => OpenCreateShortcutDialog(context))"
-                                                Title="Create Shortcut">
+                                                Title="@Localizer["CreateShortcut"]">
                                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Apps())" />
                                     </FluentButton>
                                     <FluentButton Appearance="Appearance.Lightweight" 
                                                 OnClick="@(() => OpenDeleteContainerDialog(context))"
-                                                Title="Delete">
+                                                Title="@Localizer["Delete"]">
                                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
                                     </FluentButton>
                                 </FluentStack>

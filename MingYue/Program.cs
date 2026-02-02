@@ -14,7 +14,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     var supportedCultures = new[]
     {
         new System.Globalization.CultureInfo("zh-CN"),
-        new System.Globalization.CultureInfo("en-US")
+        new System.Globalization.CultureInfo("en")
     };
     options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("zh-CN");
     options.SupportedCultures = supportedCultures;

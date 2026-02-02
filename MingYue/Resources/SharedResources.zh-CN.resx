@@ -282,4 +282,215 @@
   <data name="PleaseRefresh" xml:space="preserve">
     <value>请刷新页面以查看更改</value>
   </data>
+
+  <!-- Login & Authentication -->
+  <data name="WelcomeToMingYue" xml:space="preserve">
+    <value>欢迎使用明月</value>
+  </data>
+  <data name="PleaseSignInToContinue" xml:space="preserve">
+    <value>请登录以继续</value>
+  </data>
+  <data name="EnterYourUsername" xml:space="preserve">
+    <value>输入您的用户名</value>
+  </data>
+  <data name="EnterYourPassword" xml:space="preserve">
+    <value>输入您的密码</value>
+  </data>
+  <data name="SignIn" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="DontHaveAccount" xml:space="preserve">
+    <value>还没有账号？</value>
+  </data>
+  <data name="InitialSetup" xml:space="preserve">
+    <value>初始设置</value>
+  </data>
+  <data name="LoginError" xml:space="preserve">
+    <value>登录过程中发生错误。请重试。</value>
+  </data>
+  <data name="LetsSetupAdminAccount" xml:space="preserve">
+    <value>让我们设置您的管理员账号</value>
+  </data>
+  <data name="AccountAlreadyExists" xml:space="preserve">
+    <value>用户账号已存在。请改用登录页面。</value>
+  </data>
+  <data name="GoToLogin" xml:space="preserve">
+    <value>前往登录</value>
+  </data>
+  <data name="ChooseUsername" xml:space="preserve">
+    <value>选择用户名</value>
+  </data>
+  <data name="ChooseStrongPassword" xml:space="preserve">
+    <value>选择一个强密码</value>
+  </data>
+  <data name="ConfirmPassword" xml:space="preserve">
+    <value>确认密码</value>
+  </data>
+  <data name="ReenterPassword" xml:space="preserve">
+    <value>重新输入您的密码</value>
+  </data>
+  <data name="CreateAdministratorAccount" xml:space="preserve">
+    <value>创建管理员账号</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>已有账号？</value>
+  </data>
+
+  <!-- Common Actions -->
+  <data name="Actions" xml:space="preserve">
+    <value>操作</value>
+  </data>
+  <data name="Enable" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="Disable" xml:space="preserve">
+    <value>禁用</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>导入</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>导出</value>
+  </data>
+
+  <!-- Docker -->
+  <data name="DockerNotAvailable" xml:space="preserve">
+    <value>Docker不可用</value>
+  </data>
+  <data name="DockerAvailable" xml:space="preserve">
+    <value>Docker可用</value>
+  </data>
+  <data name="DockerNotAvailableMessage" xml:space="preserve">
+    <value>Docker不可用。请确保Docker已安装并正在运行。</value>
+  </data>
+  <data name="NoContainersFound" xml:space="preserve">
+    <value>未找到容器。</value>
+  </data>
+  <data name="ContainerID" xml:space="preserve">
+    <value>容器ID</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="Ports" xml:space="preserve">
+    <value>端口</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>创建时间</value>
+  </data>
+  <data name="ViewLogs" xml:space="preserve">
+    <value>查看日志</value>
+  </data>
+  <data name="CreateShortcut" xml:space="preserve">
+    <value>创建快捷方式</value>
+  </data>
+  <data name="PullImage" xml:space="preserve">
+    <value>拉取镜像</value>
+  </data>
+  <data name="ImageNameExample" xml:space="preserve">
+    <value>镜像名称 (例如: nginx:latest, mysql:8.0)</value>
+  </data>
+  <data name="ApplicationName" xml:space="preserve">
+    <value>应用名称</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="Icon" xml:space="preserve">
+    <value>图标</value>
+  </data>
+  <data name="IconFluentUI" xml:space="preserve">
+    <value>图标 (FluentUI 图标名称)</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>描述</value>
+  </data>
+  <data name="DescriptionOptional" xml:space="preserve">
+    <value>描述 (可选)</value>
+  </data>
+  <data name="Pull" xml:space="preserve">
+    <value>拉取</value>
+  </data>
+
+  <!-- Scheduled Tasks -->
+  <data name="AccessDeniedAdmin" xml:space="preserve">
+    <value>访问被拒绝。您必须是管理员才能访问此页面。</value>
+  </data>
+  <data name="AddTask" xml:space="preserve">
+    <value>添加任务</value>
+  </data>
+  <data name="NoTasksFound" xml:space="preserve">
+    <value>未找到任务。点击"添加任务"创建您的第一个计划任务。</value>
+  </data>
+  <data name="TaskName" xml:space="preserve">
+    <value>任务名称</value>
+  </data>
+  <data name="TaskDescription" xml:space="preserve">
+    <value>任务描述</value>
+  </data>
+  <data name="TaskType" xml:space="preserve">
+    <value>任务类型</value>
+  </data>
+  <data name="CronExpression" xml:space="preserve">
+    <value>Cron表达式</value>
+  </data>
+  <data name="LastRun" xml:space="preserve">
+    <value>上次运行</value>
+  </data>
+  <data name="NeverRun" xml:space="preserve">
+    <value>从未运行</value>
+  </data>
+  <data name="ExecutionHistory" xml:space="preserve">
+    <value>执行历史</value>
+  </data>
+  <data name="ManualExecuteComingSoon" xml:space="preserve">
+    <value>手动执行（即将推出）</value>
+  </data>
+
+  <!-- Settings -->
+  <data name="SystemSettings" xml:space="preserve">
+    <value>系统设置</value>
+  </data>
+  <data name="ImportSettings" xml:space="preserve">
+    <value>导入设置</value>
+  </data>
+  <data name="ExportSettings" xml:space="preserve">
+    <value>导出设置</value>
+  </data>
+  <data name="ResetToDefault" xml:space="preserve">
+    <value>重置为默认值</value>
+  </data>
+  <data name="GeneralSettings" xml:space="preserve">
+    <value>常规设置</value>
+  </data>
+  <data name="TimeZone" xml:space="preserve">
+    <value>时区</value>
+  </data>
+  <data name="LanguageChangeNote" xml:space="preserve">
+    <value>更改语言后，页面将自动刷新以应用新语言</value>
+  </data>
+  <data name="Management" xml:space="preserve">
+    <value>管理</value>
+  </data>
+  <data name="ApplicationManagement" xml:space="preserve">
+    <value>应用管理</value>
+  </data>
+  <data name="DockManagement" xml:space="preserve">
+    <value>Dock管理</value>
+  </data>
+  <data name="UserManagement" xml:space="preserve">
+    <value>用户管理</value>
+  </data>
+  <data name="Weather" xml:space="preserve">
+    <value>天气</value>
+  </data>
+  <data name="NetworkStatus" xml:space="preserve">
+    <value>网络状态</value>
+  </data>
 </root>

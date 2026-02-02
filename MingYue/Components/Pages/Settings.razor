@@ -1,6 +1,8 @@
 @page "/settings"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using System.Text.Json
 @inject ISystemSettingService SettingService
 @inject ILocalizationService LocalizationService
@@ -9,32 +11,33 @@
 @inject ILogger<Settings> Logger
 @inject IToastService ToastService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>系统设置 - MingYue</PageTitle>
+<PageTitle>@Localizer["SystemSettings"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+        <p>@Localizer["AccessDeniedAdmin"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">系统设置</h2>
+        <h2 style="margin: 0;">@Localizer["SystemSettings"]</h2>
         <FluentSpacer />
         <FluentButton Appearance="Appearance.Neutral" OnClick="@OpenImportDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowDownload())" />
-            导入设置
+            @Localizer["ImportSettings"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@ExportSettings">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowUpload())" />
-            导出设置
+            @Localizer["ExportSettings"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@OpenResetDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.ArrowReset())" />
-            重置为默认值
+            @Localizer["ResetToDefault"]
         </FluentButton>
     </FluentStack>
 
@@ -46,11 +49,11 @@
     {
         <FluentAccordion>
             <!-- 常规设置 -->
-            <FluentAccordionItem Heading="常规设置" Expanded="true">
+            <FluentAccordionItem Heading="@Localizer["GeneralSettings"]" Expanded="true">
                 <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">语言</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["Language"]</FluentLabel>
                             <FluentSelect 
                                 TOption="MingYue.Services.CultureInfo"
                                 Items="@availableCultures"
@@ -60,14 +63,14 @@
                                 OptionText="@(c => c.DisplayName)"
                                 Style="width: 100%; max-width: 300px;" />
                             <FluentLabel Typo="Typography.Body" Style="font-size: 12px; color: var(--neutral-foreground-hint);">
-                                更改语言后，页面将自动刷新以应用新语言
+                                @Localizer["LanguageChangeNote"]
                             </FluentLabel>
                         </FluentStack>
                     </FluentCard>
 
                     <FluentCard>
                         <FluentStack Orientation="Orientation.Vertical" VerticalGap="10">
-                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">时区</FluentLabel>
+                            <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@Localizer["TimeZone"]</FluentLabel>
                             <FluentTextField 
                                 @bind-Value="@generalSettings.TimeZone"
                                 Style="width: 100%; max-width: 300px;" 

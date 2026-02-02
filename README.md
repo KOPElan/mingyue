@@ -86,7 +86,10 @@ MingYue（明月）是一个功能强大的家庭服务器门户系统，旨在�
 详见: [Phase 3 实现总结](PHASE3_IMPLEMENTATION_SUMMARY.md)
 
 #### Phase 4: 优化完善 (第9-10周)
-- 🔄 **本地化**: 多语言支持（中文/英文）
+- ✅ **本地化**: 多语言支持（中文/英文）
+  - 完成核心页面本地化（Login, InitialSetup, Docker, ScheduledTasks, Settings）
+  - 新增 70+ 资源键，支持简体中文 (zh-CN) 和英语 (en)
+  - 使用 .NET 内置 IStringLocalizer 和 .resx 资源文件
 - 🔄 **网络管理**: 网络接口配置
 - 🔄 **性能优化**: 虚拟化、缓存、懒加载
 - 🔄 **测试和文档**: 完整的测试覆盖和用户文档

@@ -64,6 +64,12 @@ namespace MingYue.Services
             return _currentCulture;
         }
 
+        // 实现接口方法，兼容原签名
+        public async Task SetCultureAsync(string culture)
+        {
+            await SetCultureAsync(culture, null);
+        }
+
         public async Task SetCultureAsync(string culture, Microsoft.JSInterop.IJSRuntime? jsRuntime = null)
         {
             if (string.IsNullOrEmpty(culture))

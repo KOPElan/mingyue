@@ -492,7 +492,7 @@
         
         try
         {
-            await LocalizationService.SetCultureAsync(selectedCulture.Code);
+            await LocalizationService.SetCultureAsync(selectedCulture.Code, JSRuntime);
             ToastService.ShowSuccess("语言设置已保存，页面即将刷新");
             
             // Wait a moment for the toast to show, then reload

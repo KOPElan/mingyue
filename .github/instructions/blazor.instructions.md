@@ -23,7 +23,7 @@ applyTo: '**/*.razor, **/*.razor.cs, **/*.razor.css'
 - Use data binding effectively with @bind.
 - Leverage Dependency Injection for services in Blazor.
 - Structure Blazor components and services following Separation of Concerns.
-- Always use the latest version C#, currently C# 13 features like record types, pattern matching, and global usings.
+- Always use the latest version C#, features like record types, pattern matching, and global usings.
 
 ## Error Handling and Validation
 
@@ -69,7 +69,6 @@ applyTo: '**/*.razor, **/*.razor.cs, **/*.razor.css'
 ## Security and Authentication
 
 - Implement Authentication and Authorization in the Blazor app where necessary using ASP.NET Identity or JWT tokens for API authentication.
-- Use HTTPS for all web communication and ensure proper CORS policies are implemented.
 
 ## API Documentation and Swagger
 

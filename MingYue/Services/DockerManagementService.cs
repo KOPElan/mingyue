@@ -4,12 +4,21 @@ using System.Text.Json;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides Docker container and image management services including listing, starting, stopping, and removing containers.
+    /// </summary>
     public class DockerManagementService : IDockerManagementService
     {
         private readonly ILogger<DockerManagementService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DockerManagementService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording Docker operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
         public DockerManagementService(ILogger<DockerManagementService> logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
             _logger = logger;
         }
 

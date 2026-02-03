@@ -4,6 +4,9 @@ using System.Collections.Concurrent;
 
 namespace MingYue.Controllers;
 
+/// <summary>
+/// API controller for handling file upload operations including chunked uploads and resumable uploads.
+/// </summary>
 [IgnoreAntiforgeryToken]
 [ApiController]
 [Route("api/files")]
@@ -17,10 +20,19 @@ public class FileUploadController : ControllerBase
     private static readonly TimeSpan CleanupInterval = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan AbandonedUploadThreshold = TimeSpan.FromHours(24);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref=\"FileUploadController\"/> class.
+    /// </summary>
+    /// <param name=\"fileService\">The file management service for file operations.</param>
+    /// <param name=\"logger\">The logger for recording upload operations and errors.</param>
+    /// <exception cref=\"ArgumentNullException\">Thrown when any parameter is null.</exception>
     public FileUploadController(
         IFileManagementService fileService,
         ILogger<FileUploadController> logger)
     {
+        ArgumentNullException.ThrowIfNull(fileService);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _fileService = fileService;
         _logger = logger;
         

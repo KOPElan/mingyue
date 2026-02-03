@@ -5,6 +5,10 @@ using MingYue.Models;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides comprehensive file and directory management services including file operations,
+    /// favorite folders management, and batch operations.
+    /// </summary>
     public class FileManagementService : IFileManagementService
     {
         private readonly string _rootPath;
@@ -15,8 +19,17 @@ namespace MingYue.Services
         // This is optimal for most scenarios as it balances memory usage and I/O performance
         private const int StreamBufferSize = 81920;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileManagementService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording file operation events and errors.</param>
+        /// <param name="dbContextFactory">The database context factory for managing favorite folders and metadata.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public FileManagementService(ILogger<FileManagementService> logger, IDbContextFactory<MingYueDbContext> dbContextFactory)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(dbContextFactory);
+
             _logger = logger;
             _dbContextFactory = dbContextFactory;
 

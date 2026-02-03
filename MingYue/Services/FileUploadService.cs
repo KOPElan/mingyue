@@ -1,12 +1,24 @@
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides file upload services with support for single and batch file uploads.
+    /// </summary>
     public class FileUploadService : IFileUploadService
     {
         private readonly ILogger<FileUploadService> _logger;
         private readonly IFileManagementService _fileService;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileUploadService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording file upload operations and errors.</param>
+        /// <param name="fileService">The file management service for file operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public FileUploadService(ILogger<FileUploadService> logger, IFileManagementService fileService)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(fileService);
+
             _logger = logger;
             _fileService = fileService;
         }

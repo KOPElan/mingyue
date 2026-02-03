@@ -5,6 +5,9 @@ using System.Net.NetworkInformation;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides Anydrop message and file sharing services for cross-device communication.
+    /// </summary>
     public class AnydropService : IAnydropService
     {
         private readonly IDbContextFactory<MingYueDbContext> _contextFactory;
@@ -12,10 +15,22 @@ namespace MingYue.Services
         private readonly string _deviceId;
         private readonly string _deviceName;
 
+        /// <summary>
+        /// Occurs when messages are changed (added, updated, or removed).
+        /// </summary>
         public event EventHandler? MessagesChanged;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AnydropService"/> class.
+        /// </summary>
+        /// <param name="contextFactory">The database context factory for accessing Anydrop data.</param>
+        /// <param name="logger">The logger for recording Anydrop operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public AnydropService(IDbContextFactory<MingYueDbContext> contextFactory, ILogger<AnydropService> logger)
         {
+            ArgumentNullException.ThrowIfNull(contextFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _contextFactory = contextFactory;
             _logger = logger;
             _deviceId = GenerateDeviceId();

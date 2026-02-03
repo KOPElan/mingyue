@@ -4,15 +4,27 @@ using MingYue.Models;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides application management services for creating, updating, and organizing applications in the system.
+    /// </summary>
     public class ApplicationService : IApplicationService
     {
         private readonly IDbContextFactory<MingYueDbContext> _dbFactory;
         private readonly ILogger<ApplicationService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ApplicationService"/> class.
+        /// </summary>
+        /// <param name="dbFactory">The database context factory for accessing application data.</param>
+        /// <param name="logger">The logger for recording application management events and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public ApplicationService(
             IDbContextFactory<MingYueDbContext> dbFactory,
             ILogger<ApplicationService> logger)
         {
+            ArgumentNullException.ThrowIfNull(dbFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _dbFactory = dbFactory;
             _logger = logger;
         }

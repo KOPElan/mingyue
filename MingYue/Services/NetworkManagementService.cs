@@ -11,8 +11,14 @@ namespace MingYue.Services
     {
         private readonly ILogger<NetworkManagementService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NetworkManagementService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording network management operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
         public NetworkManagementService(ILogger<NetworkManagementService> logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
             _logger = logger;
         }
 

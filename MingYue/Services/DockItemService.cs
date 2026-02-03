@@ -4,15 +4,27 @@ using MingYue.Models;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides dock item management services for organizing and managing pinned and unpinned items in the dock.
+    /// </summary>
     public class DockItemService : IDockItemService
     {
         private readonly IDbContextFactory<MingYueDbContext> _dbFactory;
         private readonly ILogger<DockItemService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DockItemService"/> class.
+        /// </summary>
+        /// <param name="dbFactory">The database context factory for accessing dock item data.</param>
+        /// <param name="logger">The logger for recording dock item operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public DockItemService(
             IDbContextFactory<MingYueDbContext> dbFactory,
             ILogger<DockItemService> logger)
         {
+            ArgumentNullException.ThrowIfNull(dbFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _dbFactory = dbFactory;
             _logger = logger;
         }

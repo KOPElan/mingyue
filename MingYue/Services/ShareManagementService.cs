@@ -5,6 +5,9 @@ using System.Text.RegularExpressions;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides network share management services including CIFS/Samba and NFS share creation, modification, and removal.
+    /// </summary>
     public class ShareManagementService : IShareManagementService
     {
         private const string SambaConfigPath = "/etc/samba/smb.conf";
@@ -17,8 +20,15 @@ namespace MingYue.Services
         private static readonly Regex SafeNameRegex = new(@"^[a-zA-Z0-9_.\-]+$", RegexOptions.Compiled);
 
         ILogger<ShareManagementService> _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ShareManagementService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording share management operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
         public ShareManagementService(ILogger<ShareManagementService> logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
             _logger = logger;
         }
 

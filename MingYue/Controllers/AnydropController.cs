@@ -35,7 +35,16 @@ public class AnydropController : ControllerBase
     private readonly IAnydropService _anydropService;
     private readonly IFileUploadService _fileUploadService;
     private readonly ILogger<AnydropController> _logger;
-    private const string AnydropUploadPath = "/var/lib/mingyue/anydrop";
+    
+    // Configuration constants
+    private const long MaxUploadSizeBytes = 104857600; // 100MB
+    
+    /// <summary>
+    /// The upload path for Anydrop files. Uses a platform-appropriate default path.
+    /// </summary>
+    private static readonly string AnydropUploadPath = OperatingSystem.IsWindows()
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "mingyue", "anydrop")
+        : "/var/lib/mingyue/anydrop";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AnydropController"/> class.

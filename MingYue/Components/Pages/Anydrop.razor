@@ -924,7 +924,11 @@
 </FluentDialog>
 
 @code {
+    // Configuration constants
     private const string ANYDROP_UPLOAD_PATH = "/var/lib/mingyue/anydrop";
+    private const int MediaGalleryPageSize = 100;
+    private const int MaxFileNameDisplayLength = 20;
+    private const int MaxFileNameWithoutExtLength = 15;
     
     private FluentDialog? sendMessageDialog;
     private FluentInputFile? fileInput;
@@ -1021,7 +1025,7 @@
                 _ => null
             };
 
-            var result = await AnydropService.GetAttachmentsByTypeAsync(contentTypePrefix, 1, 100);
+            var result = await AnydropService.GetAttachmentsByTypeAsync(contentTypePrefix, 1, MediaGalleryPageSize);
             mediaAttachments = result.Items;
         }
         catch (Exception ex)
@@ -1478,7 +1482,7 @@
 
     private string TruncateFileName(string fileName)
     {
-        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length <= 20)
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length <= MaxFileNameDisplayLength)
         {
             return fileName;
         }
@@ -1486,12 +1490,12 @@
         var extension = Path.GetExtension(fileName);
         var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
         
-        if (nameWithoutExt.Length <= 15)
+        if (nameWithoutExt.Length <= MaxFileNameWithoutExtLength)
         {
             return fileName;
         }
 
-        return nameWithoutExt[..15] + "..." + extension;
+        return nameWithoutExt[..MaxFileNameWithoutExtLength] + "..." + extension;
     }
 
     private async Task PreviewMedia(AnydropAttachment attachment)

@@ -17,7 +17,11 @@ namespace MingYue.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly string _deviceId;
         private readonly string _deviceName;
+        
+        // Configuration constants
         private const int DefaultContextMessageCount = 2;
+        private const int MaxUrlsPerMessage = 5;
+        private const int LinkMetadataFetchTimeoutSeconds = 10;
 
         /// <inheritdoc />
         public event EventHandler? MessagesChanged;
@@ -302,7 +306,7 @@ namespace MingYue.Services
                     // Delete attachment files
                     foreach (var attachment in message.Attachments)
                     {
-                        await DeleteAttachmentFilesAsync(attachment);
+                        DeleteAttachmentFiles(attachment);
                     }
 
                     context.AnydropMessages.Remove(message);
@@ -331,7 +335,7 @@ namespace MingYue.Services
                 {
                     foreach (var attachment in message.Attachments)
                     {
-                        await DeleteAttachmentFilesAsync(attachment);
+                        DeleteAttachmentFiles(attachment);
                     }
 
                     context.AnydropMessages.Remove(message);
@@ -419,7 +423,7 @@ namespace MingYue.Services
 
                 if (attachment is not null)
                 {
-                    await DeleteAttachmentFilesAsync(attachment);
+                    DeleteAttachmentFiles(attachment);
                     context.AnydropAttachments.Remove(attachment);
                     await context.SaveChangesAsync();
                     OnMessagesChanged();
@@ -570,7 +574,7 @@ namespace MingYue.Services
 
                 using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
-                foreach (var url in urls.Take(5)) // Limit to 5 URLs per message
+                foreach (var url in urls.Take(MaxUrlsPerMessage))
                 {
                     var metadata = await FetchLinkMetadataAsync(url, cancellationToken);
                     metadata.MessageId = messageId;
@@ -680,7 +684,7 @@ namespace MingYue.Services
             MessagesChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private async Task DeleteAttachmentFilesAsync(AnydropAttachment attachment)
+        private void DeleteAttachmentFiles(AnydropAttachment attachment)
         {
             try
             {
@@ -698,8 +702,6 @@ namespace MingYue.Services
             {
                 _logger.LogWarning(ex, "Error deleting attachment files: {FilePath}", attachment.FilePath);
             }
-
-            await Task.CompletedTask;
         }
 
         private static MessageType DetermineMessageType(AnydropMessage message, AnydropAttachment attachment)
@@ -843,7 +845,7 @@ namespace MingYue.Services
             try
             {
                 using var client = _httpClientFactory.CreateClient();
-                client.Timeout = TimeSpan.FromSeconds(10);
+                client.Timeout = TimeSpan.FromSeconds(LinkMetadataFetchTimeoutSeconds);
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MingYue Anydrop)");
 
                 var response = await client.GetAsync(url, cancellationToken);

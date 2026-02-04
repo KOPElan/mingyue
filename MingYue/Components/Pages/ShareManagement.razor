@@ -1,25 +1,28 @@
 @page "/share-management"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
 @inject IShareManagementService ShareService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<ShareManagement> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>Share Management - MingYue</PageTitle>
+<PageTitle>@Localizer["ShareManagement"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>Access denied. You must be an administrator to access this page.</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
-    <FluentLabel Typo="Typography.H2">Share Management</FluentLabel>
+    <FluentLabel Typo="Typography.H2">@Localizer["ShareManagement"]</FluentLabel>
 
     @if (isLoading)
     {

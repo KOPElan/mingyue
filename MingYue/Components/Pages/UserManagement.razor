@@ -1,25 +1,28 @@
 @page "/user-management"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IAuthenticationService AuthService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<UserManagement> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>用户管理 - MingYue</PageTitle>
+<PageTitle>@Localizer["UserManagement"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">用户管理</h2>
+        <h2 style="margin: 0;">@Localizer["UserManagement"]</h2>
         <FluentSpacer />
     </FluentStack>
 
@@ -30,27 +33,27 @@
     else if (users.Count == 0)
     {
         <FluentMessageBar Intent="MessageIntent.Info">
-            未发现用户。
+            @Localizer["NoUsers"]
         </FluentMessageBar>
     }
     else
     {
         <FluentDataGrid Items="@users.AsQueryable()" GridTemplateColumns="1fr 1fr 1.5fr 1.5fr 1fr">
-            <PropertyColumn Property="@(u => u.Username)" Title="用户名" Sortable="true" />
-            <TemplateColumn Title="角色" Sortable="true">
+            <PropertyColumn Property="@(u => u.Username)" Title="@Localizer["Username"]" Sortable="true" />
+            <TemplateColumn Title="@Localizer["Role"]" Sortable="true">
                 <FluentBadge Fill="User" BackgroundColor="@(context.Role == "Admin" ? "green" : "blue")" Color="white">
                     @context.Role
                 </FluentBadge>
             </TemplateColumn>
-            <PropertyColumn Property="@(u => u.CreatedAt)" Title="创建时间" Sortable="true" Format="yyyy-MM-dd HH:mm" />
-            <PropertyColumn Property="@(u => u.LastLoginAt)" Title="最后登录" Sortable="true" Format="yyyy-MM-dd HH:mm" />
-            <TemplateColumn Title="操作">
-                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))" Title="修改角色">
+            <PropertyColumn Property="@(u => u.CreatedAt)" Title="@Localizer["CreatedAt"]" Sortable="true" Format="yyyy-MM-dd HH:mm" />
+            <PropertyColumn Property="@(u => u.LastLoginAt)" Title="@Localizer["LastLogin"]" Sortable="true" Format="yyyy-MM-dd HH:mm" />
+            <TemplateColumn Title="@Localizer["Actions"]">
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenEditDialog(context))" Title="@Localizer["EditRole"]">
                     <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.PersonEdit())" />
                 </FluentButton>
                 @if (AuthStateService.CurrentUser?.Id != context.Id)
                 {
-                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteUser(context))" Title="删除用户">
+                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DeleteUser(context))" Title="@Localizer["DeleteUser"]">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Delete())" Color="@Color.Error" />
                     </FluentButton>
                 }
@@ -63,16 +66,16 @@
     <FluentDialogHeader ShowDismiss="true">
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Person())" />
-            <FluentLabel Typo="Typography.PaneHeader">修改用户角色</FluentLabel>
+            <FluentLabel Typo="Typography.PaneHeader">@Localizer["EditRole"]</FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
 
     <FluentDialogBody>
         <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
-            <FluentLabel>用户: <b>@selectedUser?.Username</b></FluentLabel>
+            <FluentLabel>@Localizer["User"]: <b>@selectedUser?.Username</b></FluentLabel>
 
             <FluentSelect TOption="string"
-                          Label="角色"
+                          Label="@Localizer["Role"]"
                           @bind-Value="@newRole"
                           Items="@roles" />
         </FluentStack>
@@ -80,10 +83,10 @@
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@SaveUserRole">
-            保存
+            @Localizer["Save"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDialog">
-            取消
+            @Localizer["Cancel"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -122,7 +125,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading users");
-            ToastService.ShowError("加载用户失败");
+            ToastService.ShowError(Localizer["FailedToLoadUsers"]);
         }
         finally
         {
@@ -146,19 +149,19 @@
             var success = await AuthService.UpdateUserRoleAsync(selectedUser.Id, newRole);
             if (success)
             {
-                ToastService.ShowSuccess("用户角色更新成功");
+                ToastService.ShowSuccess(Localizer["UserRoleUpdated"]);
                 await LoadUsers();
                 CloseDialog();
             }
             else
             {
-                ToastService.ShowError("更新用户角色失败");
+                ToastService.ShowError(Localizer["UpdateUserRoleFailed"]);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving user role");
-            ToastService.ShowError("更新用户角色时发生错误");
+            ToastService.ShowError(Localizer["UpdateUserRoleFailed"]);
         }
     }
 
@@ -166,7 +169,7 @@
     {
         if (AuthStateService.CurrentUser?.Id == user.Id)
         {
-            ToastService.ShowWarning("不能删除当前登录的用户");
+            ToastService.ShowWarning(Localizer["CannotDeleteSelf"]);
             return;
         }
 
@@ -175,18 +178,18 @@
             var success = await AuthService.DeleteUserAsync(user.Id);
             if (success)
             {
-                ToastService.ShowSuccess("用户删除成功");
+                ToastService.ShowSuccess(Localizer["UserDeleted"]);
                 await LoadUsers();
             }
             else
             {
-                ToastService.ShowError("删除用户失败");
+                ToastService.ShowError(Localizer["DeleteUserFailed"]);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error deleting user");
-            ToastService.ShowError("删除用户时发生错误");
+            ToastService.ShowError(Localizer["DeleteUserFailed"]);
         }
     }
 

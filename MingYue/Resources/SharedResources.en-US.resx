@@ -282,4 +282,969 @@
   <data name="PleaseRefresh" xml:space="preserve">
     <value>Please refresh the page to see changes</value>
   </data>
+
+  <!-- Additional UI Elements -->
+  <data name="Management" xml:space="preserve">
+    <value>Management</value>
+  </data>
+  <data name="ApplicationManagement" xml:space="preserve">
+    <value>Application Management</value>
+  </data>
+  <data name="DockManagement" xml:space="preserve">
+    <value>Dock Management</value>
+  </data>
+  <data name="UserManagement" xml:space="preserve">
+    <value>User Management</value>
+  </data>
+  <data name="Weather" xml:space="preserve">
+    <value>Weather</value>
+  </data>
+  <data name="NetworkStatus" xml:space="preserve">
+    <value>Network Status</value>
+  </data>
+  <data name="Applications" xml:space="preserve">
+    <value>Applications</value>
+  </data>
+  <data name="ViewAll" xml:space="preserve">
+    <value>View All</value>
+  </data>
+  <data name="AccessDenied" xml:space="preserve">
+    <value>Access denied. You must be an administrator to access this page.</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Visible" xml:space="preserve">
+    <value>Visible</value>
+  </data>
+
+  <!-- Login Page -->
+  <data name="WelcomeToMingYue" xml:space="preserve">
+    <value>Welcome to MingYue</value>
+  </data>
+  <data name="PleaseSignIn" xml:space="preserve">
+    <value>Please sign in to continue</value>
+  </data>
+  <data name="SignIn" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Sign Out</value>
+  </data>
+  <data name="DontHaveAccount" xml:space="preserve">
+    <value>Don't have an account?</value>
+  </data>
+  <data name="InitialSetup" xml:space="preserve">
+    <value>Initial Setup</value>
+  </data>
+  <data name="EnterUsername" xml:space="preserve">
+    <value>Enter your username</value>
+  </data>
+  <data name="EnterPassword" xml:space="preserve">
+    <value>Enter your password</value>
+  </data>
+  <data name="LoginError" xml:space="preserve">
+    <value>An error occurred during login. Please try again.</value>
+  </data>
+
+  <!-- Initial Setup Page -->
+  <data name="LetsSetupAdmin" xml:space="preserve">
+    <value>Let's set up your administrator account</value>
+  </data>
+  <data name="UserExists" xml:space="preserve">
+    <value>A user account already exists. Please use the login page instead.</value>
+  </data>
+  <data name="GoToLogin" xml:space="preserve">
+    <value>Go to Login</value>
+  </data>
+  <data name="ChooseUsername" xml:space="preserve">
+    <value>Choose a username</value>
+  </data>
+  <data name="ChoosePassword" xml:space="preserve">
+    <value>Choose a strong password</value>
+  </data>
+  <data name="ConfirmPassword" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="ReenterPassword" xml:space="preserve">
+    <value>Re-enter your password</value>
+  </data>
+  <data name="CreateAdminAccount" xml:space="preserve">
+    <value>Create Administrator Account</value>
+  </data>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>Already have an account?</value>
+  </data>
+  <data name="AdminCreatedSuccess" xml:space="preserve">
+    <value>Administrator account created successfully! Redirecting...</value>
+  </data>
+  <data name="SetupError" xml:space="preserve">
+    <value>An error occurred during setup. Please try again.</value>
+  </data>
+
+  <!-- Settings Page -->
+  <data name="SystemSettings" xml:space="preserve">
+    <value>System Settings</value>
+  </data>
+  <data name="ImportSettings" xml:space="preserve">
+    <value>Import Settings</value>
+  </data>
+  <data name="ExportSettings" xml:space="preserve">
+    <value>Export Settings</value>
+  </data>
+  <data name="ResetToDefault" xml:space="preserve">
+    <value>Reset to Default</value>
+  </data>
+  <data name="GeneralSettings" xml:space="preserve">
+    <value>General Settings</value>
+  </data>
+  <data name="LanguageChangeHint" xml:space="preserve">
+    <value>After changing language, the page will automatically refresh to apply the new language</value>
+  </data>
+  <data name="TimeZone" xml:space="preserve">
+    <value>Time Zone</value>
+  </data>
+  <data name="SystemName" xml:space="preserve">
+    <value>System Name</value>
+  </data>
+  <data name="AppearanceSettings" xml:space="preserve">
+    <value>Appearance Settings</value>
+  </data>
+  <data name="SecuritySettings" xml:space="preserve">
+    <value>Security Settings</value>
+  </data>
+  <data name="StorageSettings" xml:space="preserve">
+    <value>Storage Settings</value>
+  </data>
+  <data name="NotificationSettings" xml:space="preserve">
+    <value>Notification Settings</value>
+  </data>
+
+  <!-- Docker Page -->
+  <data name="DockerNotAvailable" xml:space="preserve">
+    <value>Docker Not Available</value>
+  </data>
+  <data name="DockerAvailable" xml:space="preserve">
+    <value>Docker Available</value>
+  </data>
+  <data name="DockerNotAvailableMessage" xml:space="preserve">
+    <value>Docker is not available. Please ensure Docker is installed and running.</value>
+  </data>
+  <data name="ContainerId" xml:space="preserve">
+    <value>Container ID</value>
+  </data>
+  <data name="Image" xml:space="preserve">
+    <value>Image</value>
+  </data>
+  <data name="Ports" xml:space="preserve">
+    <value>Ports</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="NoContainers" xml:space="preserve">
+    <value>No containers found.</value>
+  </data>
+  <data name="NoImages" xml:space="preserve">
+    <value>No images found.</value>
+  </data>
+  <data name="ImageId" xml:space="preserve">
+    <value>Image ID</value>
+  </data>
+  <data name="Repository" xml:space="preserve">
+    <value>Repository</value>
+  </data>
+  <data name="Tag" xml:space="preserve">
+    <value>Tag</value>
+  </data>
+  <data name="Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="PullImage" xml:space="preserve">
+    <value>Pull Image</value>
+  </data>
+  <data name="Logs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="CreateContainer" xml:space="preserve">
+    <value>Create Container</value>
+  </data>
+
+  <!-- Disk Management Page -->
+  <data name="AllDiskDevices" xml:space="preserve">
+    <value>All Disk Devices</value>
+  </data>
+  <data name="NoLocalDisks" xml:space="preserve">
+    <value>No local disks found.</value>
+  </data>
+  <data name="MountPoint" xml:space="preserve">
+    <value>Mount Point</value>
+  </data>
+  <data name="FileSystem" xml:space="preserve">
+    <value>File System</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>Used</value>
+  </data>
+  <data name="Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="Mount" xml:space="preserve">
+    <value>Mount</value>
+  </data>
+  <data name="Unmount" xml:space="preserve">
+    <value>Unmount</value>
+  </data>
+  <data name="Format" xml:space="preserve">
+    <value>Format</value>
+  </data>
+
+  <!-- Share Management Page -->
+  <data name="SMBUsers" xml:space="preserve">
+    <value>SMB Users</value>
+  </data>
+  <data name="SMBShares" xml:space="preserve">
+    <value>SMB Shares</value>
+  </data>
+  <data name="NFSShares" xml:space="preserve">
+    <value>NFS Shares</value>
+  </data>
+  <data name="AddUser" xml:space="preserve">
+    <value>Add User</value>
+  </data>
+  <data name="AddShare" xml:space="preserve">
+    <value>Add Share</value>
+  </data>
+  <data name="ChangePassword" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="PasswordSet" xml:space="preserve">
+    <value>Password Set</value>
+  </data>
+  <data name="NoPassword" xml:space="preserve">
+    <value>No Password</value>
+  </data>
+  <data name="Path" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="ReadOnly" xml:space="preserve">
+    <value>Read Only</value>
+  </data>
+  <data name="GuestOK" xml:space="preserve">
+    <value>Guest Access</value>
+  </data>
+
+  <!-- Scheduled Tasks Page -->
+  <data name="AddTask" xml:space="preserve">
+    <value>Add Task</value>
+  </data>
+  <data name="NoTasks" xml:space="preserve">
+    <value>No tasks found. Click "Add Task" to create your first scheduled task.</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="CronExpression" xml:space="preserve">
+    <value>Cron Expression</value>
+  </data>
+  <data name="Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="LastRun" xml:space="preserve">
+    <value>Last Run</value>
+  </data>
+  <data name="NextRun" xml:space="preserve">
+    <value>Next Run</value>
+  </data>
+  <data name="RunNow" xml:space="preserve">
+    <value>Run Now</value>
+  </data>
+
+  <!-- User Management Page -->
+  <data name="NoUsers" xml:space="preserve">
+    <value>No users found.</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="CreatedAt" xml:space="preserve">
+    <value>Created At</value>
+  </data>
+  <data name="LastLogin" xml:space="preserve">
+    <value>Last Login</value>
+  </data>
+  <data name="EditRole" xml:space="preserve">
+    <value>Edit Role</value>
+  </data>
+  <data name="DeleteUser" xml:space="preserve">
+    <value>Delete User</value>
+  </data>
+
+  <!-- Dock Management Page -->
+  <data name="AddDockItem" xml:space="preserve">
+    <value>Add Dock Item</value>
+  </data>
+  <data name="NoDockItems" xml:space="preserve">
+    <value>No dock items found. Click "Add Dock Item" to create your first one.</value>
+  </data>
+  <data name="Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="AssociatedApp" xml:space="preserve">
+    <value>Associated App</value>
+  </data>
+  <data name="Pinned" xml:space="preserve">
+    <value>Pinned</value>
+  </data>
+
+  <!-- File Manager Page -->
+  <data name="Create" xml:space="preserve">
+    <value>Create</value>
+  </data>
+  <data name="UploadFiles" xml:space="preserve">
+    <value>Upload Files</value>
+  </data>
+  <data name="Favorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="Disks" xml:space="preserve">
+    <value>Disks</value>
+  </data>
+  <data name="FilterCurrentDir" xml:space="preserve">
+    <value>Filter current directory...</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Cut" xml:space="preserve">
+    <value>Cut</value>
+  </data>
+  <data name="Paste" xml:space="preserve">
+    <value>Paste</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Properties</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="DeselectAll" xml:space="preserve">
+    <value>Deselect All</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>Selected</value>
+  </data>
+  <data name="Items" xml:space="preserve">
+    <value>items</value>
+  </data>
+  <data name="PercentUsed" xml:space="preserve">
+    <value>used</value>
+  </data>
+
+  <!-- Network Page -->
+  <data name="NetworkManagement" xml:space="preserve">
+    <value>Network Management</value>
+  </data>
+  <data name="NetworkStatistics" xml:space="preserve">
+    <value>Network Statistics</value>
+  </data>
+  <data name="RealTimeTraffic" xml:space="preserve">
+    <value>Real-time Traffic Trend (updates every 5 seconds)</value>
+  </data>
+  <data name="NetworkTrafficMonitor" xml:space="preserve">
+    <value>Network Traffic Monitor</value>
+  </data>
+  <data name="ReceiveRate" xml:space="preserve">
+    <value>Receive Rate</value>
+  </data>
+  <data name="TransmitRate" xml:space="preserve">
+    <value>Transmit Rate</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>Unauthorized</value>
+  </data>
+  <data name="NeedLoginToAccess" xml:space="preserve">
+    <value>You need to login to access this page.</value>
+  </data>
+  <data name="GoToLoginPage" xml:space="preserve">
+    <value>Go to Login</value>
+  </data>
+  <data name="Interfaces" xml:space="preserve">
+    <value>Interfaces</value>
+  </data>
+  <data name="ActiveConnections" xml:space="preserve">
+    <value>Active Connections</value>
+  </data>
+
+  <!-- Common Dialog and Messages -->
+  <data name="AddApplication" xml:space="preserve">
+    <value>Add Application</value>
+  </data>
+  <data name="EditApplication" xml:space="preserve">
+    <value>Edit Application</value>
+  </data>
+  <data name="IconFluentUIName" xml:space="preserve">
+    <value>Icon (FluentUI icon name or URL)</value>
+  </data>
+  <data name="IconColor" xml:space="preserve">
+    <value>Icon Color</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="ApplicationCreatedSuccess" xml:space="preserve">
+    <value>Application created successfully</value>
+  </data>
+  <data name="ApplicationUpdatedSuccess" xml:space="preserve">
+    <value>Application updated successfully</value>
+  </data>
+  <data name="ApplicationDeletedSuccess" xml:space="preserve">
+    <value>Application deleted successfully</value>
+  </data>
+  <data name="FailedToLoadApplications" xml:space="preserve">
+    <value>Failed to load applications</value>
+  </data>
+  <data name="FailedToSaveApplication" xml:space="preserve">
+    <value>Failed to save application</value>
+  </data>
+  <data name="FailedToDeleteApplication" xml:space="preserve">
+    <value>Failed to delete application</value>
+  </data>
+  <data name="Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+
+  <!-- Anydrop Page -->
+  <data name="AllDevices" xml:space="preserve">
+    <value>All Devices</value>
+  </data>
+  <data name="TextMessages" xml:space="preserve">
+    <value>Text Messages</value>
+  </data>
+  <data name="Files" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="Links" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="SendMessage" xml:space="preserve">
+    <value>Send Message</value>
+  </data>
+  <data name="TypeMessage" xml:space="preserve">
+    <value>Type a message...</value>
+  </data>
+  <data name="DropFilesHere" xml:space="preserve">
+    <value>Drop files here</value>
+  </data>
+
+  <!-- Home Server -->
+  <data name="HomeServer" xml:space="preserve">
+    <value>Home Server</value>
+  </data>
+  
+  <!-- Additional Common Terms -->
+  <data name="Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Submit" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="More" xml:space="preserve">
+    <value>more</value>
+  </data>
+  <data name="Less" xml:space="preserve">
+    <value>less</value>
+  </data>
+
+  <!-- Settings Page Additional -->
+  <data name="ThemeMode" xml:space="preserve">
+    <value>Theme Mode</value>
+  </data>
+  <data name="AccentColor" xml:space="preserve">
+    <value>Accent Color</value>
+  </data>
+  <data name="BorderRadius" xml:space="preserve">
+    <value>Border Radius</value>
+  </data>
+  <data name="SessionTimeout" xml:space="preserve">
+    <value>Session Timeout (minutes)</value>
+  </data>
+  <data name="MaxLoginAttempts" xml:space="preserve">
+    <value>Max Login Attempts</value>
+  </data>
+  <data name="LockoutDuration" xml:space="preserve">
+    <value>Lockout Duration (minutes)</value>
+  </data>
+  <data name="DefaultUploadPath" xml:space="preserve">
+    <value>Default Upload Path</value>
+  </data>
+  <data name="MaxUploadSize" xml:space="preserve">
+    <value>Max Upload Size (MB)</value>
+  </data>
+  <data name="EnableNotifications" xml:space="preserve">
+    <value>Enable Notifications</value>
+  </data>
+  <data name="NotificationRetention" xml:space="preserve">
+    <value>Notification Retention (days)</value>
+  </data>
+  <data name="DefaultPath" xml:space="preserve">
+    <value>Default Path</value>
+  </data>
+  <data name="ShowHiddenFiles" xml:space="preserve">
+    <value>Show Hidden Files</value>
+  </data>
+  <data name="EnableThumbnails" xml:space="preserve">
+    <value>Enable Thumbnails</value>
+  </data>
+  <data name="FileBrowserSettings" xml:space="preserve">
+    <value>File Browser Settings</value>
+  </data>
+  <data name="PasswordPolicy" xml:space="preserve">
+    <value>Password Policy</value>
+  </data>
+  <data name="RequireStrongPassword" xml:space="preserve">
+    <value>Require Strong Password</value>
+  </data>
+  <data name="MinPasswordLength" xml:space="preserve">
+    <value>Minimum Password Length</value>
+  </data>
+  <data name="LoginLockout" xml:space="preserve">
+    <value>Login Lockout</value>
+  </data>
+  <data name="EnableLoginLockout" xml:space="preserve">
+    <value>Enable Login Lockout</value>
+  </data>
+  <data name="FileManagementSettings" xml:space="preserve">
+    <value>File Management Settings</value>
+  </data>
+  <data name="MaxFileSizeMB" xml:space="preserve">
+    <value>Max File Size (MB)</value>
+  </data>
+  <data name="AllowedExtensions" xml:space="preserve">
+    <value>Allowed Extensions</value>
+  </data>
+  <data name="AllowedExtensionsPlaceholder" xml:space="preserve">
+    <value>Leave blank to allow all types, or enter like: .jpg,.png,.pdf</value>
+  </data>
+
+  <!-- Toast Messages -->
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Settings saved</value>
+  </data>
+  <data name="SaveSettingsFailed" xml:space="preserve">
+    <value>Failed to save settings</value>
+  </data>
+  <data name="LoadSettingsFailed" xml:space="preserve">
+    <value>Failed to load settings</value>
+  </data>
+  <data name="SettingsExported" xml:space="preserve">
+    <value>Settings exported</value>
+  </data>
+  <data name="ExportSettingsFailed" xml:space="preserve">
+    <value>Failed to export settings</value>
+  </data>
+  <data name="SettingsImported" xml:space="preserve">
+    <value>Settings imported successfully</value>
+  </data>
+  <data name="ImportSettingsFailed" xml:space="preserve">
+    <value>Failed to import settings</value>
+  </data>
+  <data name="InvalidJsonFormat" xml:space="preserve">
+    <value>Invalid JSON format</value>
+  </data>
+  <data name="PleaseEnterJson" xml:space="preserve">
+    <value>Please enter JSON content</value>
+  </data>
+  <data name="SettingsResetSuccess" xml:space="preserve">
+    <value>Settings reset to defaults</value>
+  </data>
+  <data name="ResetSettingsFailed" xml:space="preserve">
+    <value>Failed to reset settings</value>
+  </data>
+  <data name="LanguageChangeFailed" xml:space="preserve">
+    <value>Failed to change language</value>
+  </data>
+  <data name="LanguageSavedRefreshing" xml:space="preserve">
+    <value>Language saved, page will refresh</value>
+  </data>
+
+  <!-- Disk Management -->
+  <data name="FailedToLoadDisks" xml:space="preserve">
+    <value>Failed to load disks</value>
+  </data>
+  <data name="DisksRefreshed" xml:space="preserve">
+    <value>Disks refreshed</value>
+  </data>
+  <data name="FailedToToggleDiskMount" xml:space="preserve">
+    <value>Failed to toggle disk mount</value>
+  </data>
+  <data name="FailedToToggleNetworkDiskMount" xml:space="preserve">
+    <value>Failed to toggle network disk mount</value>
+  </data>
+  <data name="FailedToDeleteNetworkDisk" xml:space="preserve">
+    <value>Failed to delete network disk</value>
+  </data>
+  <data name="FailedToMountNetworkDisk" xml:space="preserve">
+    <value>Failed to mount network disk</value>
+  </data>
+  <data name="PowerManagementApplied" xml:space="preserve">
+    <value>Power management settings applied</value>
+  </data>
+  <data name="PowerSettingsFailed" xml:space="preserve">
+    <value>Failed to apply power settings</value>
+  </data>
+  <data name="ServerIPOrHostname" xml:space="preserve">
+    <value>Server (IP or hostname)</value>
+  </data>
+  <data name="UsernameOptional" xml:space="preserve">
+    <value>Username (optional)</value>
+  </data>
+  <data name="PasswordOptional" xml:space="preserve">
+    <value>Password (optional)</value>
+  </data>
+  <data name="DomainOptional" xml:space="preserve">
+    <value>Domain (optional)</value>
+  </data>
+  <data name="AutoMountOnBoot" xml:space="preserve">
+    <value>Auto mount on boot (permanent)</value>
+  </data>
+  <data name="StandbyTimeout" xml:space="preserve">
+    <value>Standby timeout (minutes)</value>
+  </data>
+  <data name="APMLevel" xml:space="preserve">
+    <value>APM power management level</value>
+  </data>
+
+  <!-- Scheduled Tasks -->
+  <data name="LoadTasksFailed" xml:space="preserve">
+    <value>Failed to load scheduled tasks</value>
+  </data>
+  <data name="TaskDataMustBeValidJson" xml:space="preserve">
+    <value>Task data must be valid JSON format</value>
+  </data>
+  <data name="TaskCreatedSuccess" xml:space="preserve">
+    <value>Task created successfully</value>
+  </data>
+  <data name="TaskUpdatedSuccess" xml:space="preserve">
+    <value>Task updated successfully</value>
+  </data>
+  <data name="SaveTaskFailed" xml:space="preserve">
+    <value>Failed to save task</value>
+  </data>
+  <data name="TaskDeletedSuccess" xml:space="preserve">
+    <value>Task deleted successfully</value>
+  </data>
+  <data name="DeleteTaskFailed" xml:space="preserve">
+    <value>Failed to delete task</value>
+  </data>
+  <data name="TaskEnabled" xml:space="preserve">
+    <value>Task enabled</value>
+  </data>
+  <data name="TaskDisabled" xml:space="preserve">
+    <value>Task disabled</value>
+  </data>
+  <data name="ToggleTaskStatusFailed" xml:space="preserve">
+    <value>Failed to toggle task status</value>
+  </data>
+  <data name="LoadHistoryFailed" xml:space="preserve">
+    <value>Failed to load execution history</value>
+  </data>
+  <data name="TaskType" xml:space="preserve">
+    <value>Task Type</value>
+  </data>
+  <data name="TaskData" xml:space="preserve">
+    <value>Task Data (JSON format)</value>
+  </data>
+  <data name="EnableTask" xml:space="preserve">
+    <value>Enable task</value>
+  </data>
+
+  <!-- Share Management -->
+  <data name="FailedToLoadData" xml:space="preserve">
+    <value>Failed to load data</value>
+  </data>
+  <data name="FailedToLoadShares" xml:space="preserve">
+    <value>Failed to load shares</value>
+  </data>
+  <data name="FailedToLoadUsers" xml:space="preserve">
+    <value>Failed to load users</value>
+  </data>
+  <data name="ShareNameRequired" xml:space="preserve">
+    <value>Share name is required</value>
+  </data>
+  <data name="DirectoryPathRequired" xml:space="preserve">
+    <value>Directory path is required</value>
+  </data>
+  <data name="AllowedHostsRequired" xml:space="preserve">
+    <value>Allowed hosts is required for NFS shares</value>
+  </data>
+  <data name="AtLeastOneValidUser" xml:space="preserve">
+    <value>At least one valid user must be selected for CIFS shares without guest access</value>
+  </data>
+  <data name="ShareCreatedSuccess" xml:space="preserve">
+    <value>Share created successfully</value>
+  </data>
+  <data name="ShareUpdatedSuccess" xml:space="preserve">
+    <value>Share updated successfully</value>
+  </data>
+  <data name="SaveShareFailed" xml:space="preserve">
+    <value>Failed to save share</value>
+  </data>
+  <data name="ShareDeletedSuccess" xml:space="preserve">
+    <value>Share deleted successfully</value>
+  </data>
+  <data name="DeleteShareFailed" xml:space="preserve">
+    <value>Failed to delete share</value>
+  </data>
+  <data name="SambaRestartSuccess" xml:space="preserve">
+    <value>Samba service restarted successfully</value>
+  </data>
+  <data name="FailedToRestartSamba" xml:space="preserve">
+    <value>Failed to restart Samba service</value>
+  </data>
+  <data name="NFSRestartSuccess" xml:space="preserve">
+    <value>NFS service restarted successfully</value>
+  </data>
+  <data name="FailedToRestartNFS" xml:space="preserve">
+    <value>Failed to restart NFS service</value>
+  </data>
+  <data name="DirectoryPath" xml:space="preserve">
+    <value>Directory Path</value>
+  </data>
+  <data name="Browseable" xml:space="preserve">
+    <value>Browseable</value>
+  </data>
+  <data name="AllowGuestAccess" xml:space="preserve">
+    <value>Allow guest access (no password required)</value>
+  </data>
+  <data name="CreateMask" xml:space="preserve">
+    <value>Create Mask</value>
+  </data>
+  <data name="DirectoryMask" xml:space="preserve">
+    <value>Directory Mask</value>
+  </data>
+  <data name="AllowedHosts" xml:space="preserve">
+    <value>Allowed Hosts</value>
+  </data>
+  <data name="NFSOptions" xml:space="preserve">
+    <value>NFS Options</value>
+  </data>
+
+  <!-- Docker Settings -->
+  <data name="DockerSettings" xml:space="preserve">
+    <value>Docker Settings</value>
+  </data>
+  <data name="DockerHost" xml:space="preserve">
+    <value>Docker Host</value>
+  </data>
+  <data name="DockerHostHint" xml:space="preserve">
+    <value>Unix Socket: unix:///var/run/docker.sock or TCP: tcp://localhost:2375</value>
+  </data>
+  <data name="DockerApiVersion" xml:space="preserve">
+    <value>Docker API Version</value>
+  </data>
+  <data name="AutoUpdateContainers" xml:space="preserve">
+    <value>Auto Update Containers</value>
+  </data>
+  <data name="EnableAutoUpdateCheck" xml:space="preserve">
+    <value>Enable container auto-update check</value>
+  </data>
+  <data name="ContainerLogMaxLines" xml:space="preserve">
+    <value>Container Log Max Lines</value>
+  </data>
+
+  <!-- File Manager -->
+  <data name="FolderName" xml:space="preserve">
+    <value>Folder Name</value>
+  </data>
+  <data name="NewName" xml:space="preserve">
+    <value>New Name</value>
+  </data>
+  <data name="DestinationPath" xml:space="preserve">
+    <value>Destination Path</value>
+  </data>
+  <data name="IncludeSubdirectories" xml:space="preserve">
+    <value>Include subdirectories (recursive)</value>
+  </data>
+  <data name="GenerateThumbnails" xml:space="preserve">
+    <value>Generate Thumbnails</value>
+  </data>
+  <data name="BuildSearchIndex" xml:space="preserve">
+    <value>Build Search Index</value>
+  </data>
+  <data name="CronExpressionOptional" xml:space="preserve">
+    <value>Cron Expression (optional)</value>
+  </data>
+  <data name="IncludeFolders" xml:space="preserve">
+    <value>Include Folders</value>
+  </data>
+
+  <!-- Anydrop -->
+  <data name="MessageContent" xml:space="preserve">
+    <value>Message Content</value>
+  </data>
+
+  <!-- Import/Export Dialog -->
+  <data name="PasteJsonContent" xml:space="preserve">
+    <value>Please paste the previously exported JSON settings:</value>
+  </data>
+  <data name="PasteJsonPlaceholder" xml:space="preserve">
+    <value>Paste JSON content...</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="ResetConfirmTitle" xml:space="preserve">
+    <value>Confirm Reset</value>
+  </data>
+  <data name="ResetConfirmMessage" xml:space="preserve">
+    <value>Are you sure you want to reset all settings to defaults? This action cannot be undone.</value>
+  </data>
+  <data name="ConfirmReset" xml:space="preserve">
+    <value>Confirm Reset</value>
+  </data>
+
+  <!-- User Management Dialog -->
+  <data name="SelectRole" xml:space="preserve">
+    <value>Select Role</value>
+  </data>
+
+  <!-- Scheduled Tasks Dialog -->
+  <data name="AddScheduledTask" xml:space="preserve">
+    <value>Add Scheduled Task</value>
+  </data>
+  <data name="EditScheduledTask" xml:space="preserve">
+    <value>Edit Scheduled Task</value>
+  </data>
+  <data name="TaskDataJsonFormat" xml:space="preserve">
+    <value>Task Data (JSON format)</value>
+  </data>
+  <data name="TaskDataExample" xml:space="preserve">
+    <value>Task data example:</value>
+  </data>
+  <data name="PathToIndex" xml:space="preserve">
+    <value>Directory path to index</value>
+  </data>
+  <data name="RecursiveIndex" xml:space="preserve">
+    <value>Whether to recursively index subdirectories</value>
+  </data>
+  <data name="DaysToKeep" xml:space="preserve">
+    <value>Keep read messages for the last N days, older messages will be deleted</value>
+  </data>
+  <data name="CronExpressionHint" xml:space="preserve">
+    <value>Common Cron expression examples (6-field format with seconds):</value>
+  </data>
+  <data name="CronMidnight" xml:space="preserve">
+    <value>Execute at midnight every day</value>
+  </data>
+  <data name="CronEvery6Hours" xml:space="preserve">
+    <value>Execute every 6 hours</value>
+  </data>
+  <data name="CronSundayMidnight" xml:space="preserve">
+    <value>Execute at midnight every Sunday</value>
+  </data>
+  <data name="CronEvery15Minutes" xml:space="preserve">
+    <value>Execute every 15 minutes</value>
+  </data>
+  <data name="CronWeekday9AM" xml:space="preserve">
+    <value>Execute at 9 AM on weekdays</value>
+  </data>
+  <data name="ConfirmDeleteTitle" xml:space="preserve">
+    <value>Confirm Delete</value>
+  </data>
+  <data name="ConfirmDeleteTaskMessage" xml:space="preserve">
+    <value>Are you sure you want to delete task "{0}"? This action cannot be undone.</value>
+  </data>
+  <data name="ExecutionHistory" xml:space="preserve">
+    <value>Execution History</value>
+  </data>
+  <data name="TaskName" xml:space="preserve">
+    <value>Task Name</value>
+  </data>
+  <data name="StartTime" xml:space="preserve">
+    <value>Start Time</value>
+  </data>
+  <data name="EndTime" xml:space="preserve">
+    <value>End Time</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>Result</value>
+  </data>
+  <data name="SuccessResult" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="FailedResult" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="NoHistoryRecords" xml:space="preserve">
+    <value>No execution history records</value>
+  </data>
+  <data name="ViewOutput" xml:space="preserve">
+    <value>View Output</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="ErrorMessage" xml:space="preserve">
+    <value>Error Message</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+
+  <!-- User Management -->
+  <data name="User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="UserRoleUpdated" xml:space="preserve">
+    <value>User role updated successfully</value>
+  </data>
+  <data name="UpdateUserRoleFailed" xml:space="preserve">
+    <value>Failed to update user role</value>
+  </data>
+  <data name="CannotDeleteSelf" xml:space="preserve">
+    <value>Cannot delete currently logged in user</value>
+  </data>
+  <data name="UserDeleted" xml:space="preserve">
+    <value>User deleted successfully</value>
+  </data>
+  <data name="DeleteUserFailed" xml:space="preserve">
+    <value>Failed to delete user</value>
+  </data>
 </root>

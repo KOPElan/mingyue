@@ -1,29 +1,32 @@
 @page "/scheduled-tasks"
 @using MingYue.Models
 @using MingYue.Services
+@using MingYue.Resources
+@using Microsoft.Extensions.Localization
 @inject IScheduledTaskService TaskService
 @inject AuthenticationStateService AuthStateService
 @inject NavigationManager Navigation
 @inject ILogger<ScheduledTasks> Logger
 @inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Localizer
 
-<PageTitle>计划任务 - MingYue</PageTitle>
+<PageTitle>@Localizer["ScheduledTasks"] - MingYue</PageTitle>
 
 @if (!isAuthorized)
 {
     <FluentMessageBar Intent="MessageIntent.Error">
-        <p>访问被拒绝。您必须是管理员才能访问此页面。</p>
+        <p>@Localizer["AccessDenied"]</p>
     </FluentMessageBar>
     return;
 }
 
 <FluentStack Orientation="Orientation.Vertical" VerticalGap="20">
     <FluentStack Orientation="Orientation.Horizontal" VerticalAlignment="VerticalAlignment.Center">
-        <h2 style="margin: 0;">计划任务</h2>
+        <h2 style="margin: 0;">@Localizer["ScheduledTasks"]</h2>
         <FluentSpacer />
         <FluentButton Appearance="Appearance.Accent" OnClick="@OpenAddDialog">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size20.Add())" />
-            添加任务
+            @Localizer["AddTask"]
         </FluentButton>
     </FluentStack>
 
@@ -34,38 +37,38 @@
     else if (tasks.Count == 0)
     {
         <FluentMessageBar Intent="MessageIntent.Info">
-            未找到任务。点击"添加任务"创建您的第一个计划任务。
+            @Localizer["NoTasks"]
         </FluentMessageBar>
     }
     else
     {
         <FluentDataGrid Items="@tasks.AsQueryable()" GridTemplateColumns="1.5fr 2fr 1fr 1.2fr 1fr 1fr 1.5fr">
-            <PropertyColumn Property="@(t => t.Name)" Title="名称" Sortable="true" />
-            <TemplateColumn Title="描述">
+            <PropertyColumn Property="@(t => t.Name)" Title="@Localizer["Name"]" Sortable="true" />
+            <TemplateColumn Title="@Localizer["Description"]">
                 <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@context.Description">
                     @context.Description
                 </div>
             </TemplateColumn>
-            <PropertyColumn Property="@(t => t.TaskType)" Title="类型" Sortable="true" />
-            <PropertyColumn Property="@(t => t.CronExpression)" Title="Cron表达式" Sortable="true" />
-            <TemplateColumn Title="状态" Sortable="true">
+            <PropertyColumn Property="@(t => t.TaskType)" Title="@Localizer["Type"]" Sortable="true" />
+            <PropertyColumn Property="@(t => t.CronExpression)" Title="@Localizer["CronExpression"]" Sortable="true" />
+            <TemplateColumn Title="@Localizer["Status"]" Sortable="true">
                 @if (context.IsEnabled)
                 {
-                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">启用</FluentBadge>
+                    <FluentBadge Fill="success" BackgroundColor="green" Color="white">@Localizer["Enabled"]</FluentBadge>
                 }
                 else
                 {
-                    <FluentBadge Fill="neutral">禁用</FluentBadge>
+                    <FluentBadge Fill="neutral">@Localizer["Disabled"]</FluentBadge>
                 }
             </TemplateColumn>
-            <TemplateColumn Title="上次运行">
+            <TemplateColumn Title="@Localizer["LastRun"]">
                 @if (context.LastRunAt.HasValue)
                 {
                     <span>@context.LastRunAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
                 }
                 else
                 {
-                    <span style="color: gray;">从未运行</span>
+                    <span style="color: gray;">-</span>
                 }
             </TemplateColumn>
             <TemplateColumn Title="操作">
@@ -102,7 +105,7 @@
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.CalendarClock())" />
             <FluentLabel Typo="Typography.PaneHeader">
-                @(editingTask == null ? "添加计划任务" : "编辑计划任务")
+                @(editingTask == null ? Localizer["AddScheduledTask"] : Localizer["EditScheduledTask"])
             </FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
@@ -114,14 +117,14 @@
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <FluentTextField 
                     @bind-Value="currentTask!.Name"
-                    Label="名称"
+                    Label="@Localizer["Name"]"
                     Required="true"
                     Style="width: 100%;"
                     Maxlength="200" />
                 
                 <FluentTextField 
                     @bind-Value="currentTask!.Description"
-                    Label="描述"
+                    Label="@Localizer["Description"]"
                     Style="width: 100%;"
                     Maxlength="1000" />
                 
@@ -129,7 +132,7 @@
                     TOption="string"
                     Items="@taskTypes"
                     @bind-SelectedOption="currentTask!.TaskType"
-                    Label="任务类型"
+                    Label="@Localizer["TaskType"]"
                     Required="true"
                     Style="width: 100%;">
                     <OptionTemplate Context="type">@GetTaskTypeDisplay(type)</OptionTemplate>
@@ -137,7 +140,7 @@
                 
                 <FluentTextArea 
                     @bind-Value="currentTask!.TaskData"
-                    Label="任务数据（JSON格式）"
+                    Label="@Localizer["TaskDataJsonFormat"]"
                     Required="true"
                     Style="width: 100%;"
                     Rows="5"
@@ -146,17 +149,17 @@
                 @if (!string.IsNullOrEmpty(currentTask?.TaskType))
                 {
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="5" Style="margin-top: -10px; padding: 10px; background-color: var(--neutral-layer-2); border-radius: 4px;">
-                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">@currentTask.TaskType 任务数据示例：</small>
+                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">@currentTask.TaskType @Localizer["TaskDataExample"]</small>
                         @if (currentTask.TaskType == "FileIndex")
                         {
                             <small style="color: var(--neutral-foreground-rest);"><code>{"path": "/path/to/directory", "recursive": "true"}</code></small>
-                            <small style="color: var(--neutral-foreground-hint);">• path: 要索引的目录路径</small>
-                            <small style="color: var(--neutral-foreground-hint);">• recursive: 是否递归索引子目录（true/false）</small>
+                            <small style="color: var(--neutral-foreground-hint);">• path: @Localizer["PathToIndex"]</small>
+                            <small style="color: var(--neutral-foreground-hint);">• recursive: @Localizer["RecursiveIndex"]</small>
                         }
                         else if (currentTask.TaskType == "AnydropMigration")
                         {
                             <small style="color: var(--neutral-foreground-rest);"><code>{"daysToKeep": "30"}</code></small>
-                            <small style="color: var(--neutral-foreground-hint);">• daysToKeep: 保留最近N天的已读消息，超过此天数的将被删除</small>
+                            <small style="color: var(--neutral-foreground-hint);">• daysToKeep: @Localizer["DaysToKeep"]</small>
                         }
                         else if (currentTask.TaskType == "Command")
                         {
@@ -176,33 +179,33 @@
                 <div>
                     <FluentTextField 
                         @bind-Value="currentTask!.CronExpression"
-                        Label="Cron表达式"
+                        Label="@Localizer["CronExpression"]"
                         Required="true"
                         Style="width: 100%;"
                         Maxlength="100" />
                     <FluentStack Orientation="Orientation.Vertical" VerticalGap="5" Style="margin-top: 8px; padding: 10px; background-color: var(--neutral-layer-2); border-radius: 4px;">
-                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">常用Cron表达式示例（6位格式，包含秒）：</small>
-                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 0 * * *</code> - 每天午夜执行</small>
-                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 */6 * * *</code> - 每6小时执行一次</small>
-                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 0 * * 0</code> - 每周日午夜执行</small>
-                        <small style="color: var(--neutral-foreground-rest);">• <code>0 */15 * * * *</code> - 每15分钟执行一次</small>
-                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 9 * * 1-5</code> - 工作日上午9点执行</small>
+                        <small style="font-weight: 600; color: var(--neutral-foreground-rest);">@Localizer["CronExpressionHint"]</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 0 * * *</code> - @Localizer["CronMidnight"]</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 */6 * * *</code> - @Localizer["CronEvery6Hours"]</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 0 * * 0</code> - @Localizer["CronSundayMidnight"]</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 */15 * * * *</code> - @Localizer["CronEvery15Minutes"]</small>
+                        <small style="color: var(--neutral-foreground-rest);">• <code>0 0 9 * * 1-5</code> - @Localizer["CronWeekday9AM"]</small>
                     </FluentStack>
                 </div>
                 
                 <FluentCheckbox 
                     @bind-Value="currentTask!.IsEnabled"
-                    Label="启用任务" />
+                    Label="@Localizer["EnableTask"]" />
             </FluentStack>
         </EditForm>
     </FluentDialogBody>
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@SaveTask">
-            保存
+            @Localizer["Save"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseTaskDialog">
-            取消
+            @Localizer["Cancel"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -213,21 +216,21 @@
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.Warning())" Color="@Color.Error" />
             <FluentLabel Typo="Typography.PaneHeader">
-                确认删除
+                @Localizer["ConfirmDeleteTitle"]
             </FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
 
     <FluentDialogBody>
-        <p>确定要删除任务 "<strong>@taskToDelete?.Name</strong>" 吗？此操作无法撤销。</p>
+        <p>@string.Format(Localizer["ConfirmDeleteTaskMessage"], taskToDelete?.Name)</p>
     </FluentDialogBody>
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Accent" OnClick="@ConfirmDelete">
-            删除
+            @Localizer["Delete"]
         </FluentButton>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseDeleteDialog">
-            取消
+            @Localizer["Cancel"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -238,7 +241,7 @@
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.History())" />
             <FluentLabel Typo="Typography.PaneHeader">
-                执行历史 - @selectedTask?.Name
+                @Localizer["ExecutionHistory"] - @selectedTask?.Name
             </FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
@@ -251,50 +254,50 @@
         else if (executionHistory.Count == 0)
         {
             <FluentMessageBar Intent="MessageIntent.Info">
-                该任务还没有执行历史记录。
+                @Localizer["NoHistoryRecords"]
             </FluentMessageBar>
         }
         else
         {
             <FluentDataGrid Items="@executionHistory.AsQueryable()" Style="max-height: 500px; overflow-y: auto;">
-                <TemplateColumn Title="开始时间">
+                <TemplateColumn Title="@Localizer["StartTime"]">
                     @context.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                 </TemplateColumn>
-                <TemplateColumn Title="完成时间">
+                <TemplateColumn Title="@Localizer["EndTime"]">
                     @if (context.CompletedAt.HasValue)
                     {
                         @context.CompletedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                     }
                     else
                     {
-                        <span style="color: gray;">运行中</span>
+                        <span style="color: gray;">@Localizer["Running"]</span>
                     }
                 </TemplateColumn>
-                <TemplateColumn Title="耗时">
+                <TemplateColumn Title="@Localizer["Duration"]">
                     @if (context.CompletedAt.HasValue)
                     {
                         var duration = context.CompletedAt.Value - context.StartedAt;
-                        <span>@duration.TotalSeconds.ToString("F2")秒</span>
+                        <span>@duration.TotalSeconds.ToString("F2")s</span>
                     }
                     else
                     {
                         <span>-</span>
                     }
                 </TemplateColumn>
-                <TemplateColumn Title="状态">
+                <TemplateColumn Title="@Localizer["Status"]">
                     @if (context.Success)
                     {
-                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">成功</FluentBadge>
+                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">@Localizer["SuccessResult"]</FluentBadge>
                     }
                     else
                     {
-                        <FluentBadge Fill="error" BackgroundColor="red" Color="white">失败</FluentBadge>
+                        <FluentBadge Fill="error" BackgroundColor="red" Color="white">@Localizer["FailedResult"]</FluentBadge>
                     }
                 </TemplateColumn>
-                <TemplateColumn Title="详情">
+                <TemplateColumn Title="@Localizer["Details"]">
                     <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => OpenHistoryDetailDialog(context))">
                         <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size16.Info())" />
-                        查看
+                        @Localizer["ViewOutput"]
                     </FluentButton>
                 </TemplateColumn>
             </FluentDataGrid>
@@ -303,7 +306,7 @@
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseHistoryDialog">
-            关闭
+            @Localizer["Close"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -314,7 +317,7 @@
         <FluentStack VerticalAlignment="VerticalAlignment.Center">
             <FluentIcon Value="@(new Microsoft.FluentUI.AspNetCore.Components.Icons.Regular.Size24.DocumentText())" />
             <FluentLabel Typo="Typography.PaneHeader">
-                执行详情
+                @Localizer["Details"]
             </FluentLabel>
         </FluentStack>
     </FluentDialogHeader>
@@ -324,35 +327,35 @@
         {
             <FluentStack Orientation="Orientation.Vertical" VerticalGap="15">
                 <div>
-                    <strong>开始时间：</strong> @selectedHistory.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                    <strong>@Localizer["StartTime"]:</strong> @selectedHistory.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                 </div>
                 <div>
-                    <strong>完成时间：</strong> 
+                    <strong>@Localizer["EndTime"]:</strong> 
                     @if (selectedHistory.CompletedAt.HasValue)
                     {
                         @selectedHistory.CompletedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                     }
                     else
                     {
-                        <span>运行中</span>
+                        <span>@Localizer["Running"]</span>
                     }
                 </div>
                 <div>
-                    <strong>状态：</strong>
+                    <strong>@Localizer["Status"]:</strong>
                     @if (selectedHistory.Success)
                     {
-                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">成功</FluentBadge>
+                        <FluentBadge Fill="success" BackgroundColor="green" Color="white">@Localizer["SuccessResult"]</FluentBadge>
                     }
                     else
                     {
-                        <FluentBadge Fill="error" BackgroundColor="red" Color="white">失败</FluentBadge>
+                        <FluentBadge Fill="error" BackgroundColor="red" Color="white">@Localizer["FailedResult"]</FluentBadge>
                     }
                 </div>
                 
                 @if (!string.IsNullOrWhiteSpace(selectedHistory.Output))
                 {
                     <div>
-                        <strong>输出：</strong>
+                        <strong>@Localizer["Output"]:</strong>
                         <FluentTextArea 
                             Value="@selectedHistory.Output"
                             Readonly="true"
@@ -365,7 +368,7 @@
                 @if (!string.IsNullOrWhiteSpace(selectedHistory.ErrorMessage))
                 {
                     <div>
-                        <strong style="color: red;">错误信息：</strong>
+                        <strong style="color: red;">@Localizer["ErrorMessage"]:</strong>
                         <FluentTextArea 
                             Value="@selectedHistory.ErrorMessage"
                             Readonly="true"
@@ -380,7 +383,7 @@
 
     <FluentDialogFooter>
         <FluentButton Appearance="Appearance.Neutral" OnClick="@CloseHistoryDetailDialog">
-            关闭
+            @Localizer["Close"]
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
@@ -446,7 +449,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading scheduled tasks");
-            ToastService.ShowError("加载计划任务失败");
+            ToastService.ShowError(Localizer["LoadTasksFailed"]);
         }
         finally
         {
@@ -495,7 +498,7 @@
                 }
                 catch
                 {
-                    ToastService.ShowError("任务数据必须是有效的JSON格式");
+                    ToastService.ShowError(Localizer["TaskDataMustBeValidJson"]);
                     return;
                 }
             }
@@ -503,12 +506,12 @@
             if (editingTask == null)
             {
                 await TaskService.CreateTaskAsync(currentTask);
-                ToastService.ShowSuccess("任务创建成功");
+                ToastService.ShowSuccess(Localizer["TaskCreatedSuccess"]);
             }
             else
             {
                 await TaskService.UpdateTaskAsync(currentTask);
-                ToastService.ShowSuccess("任务更新成功");
+                ToastService.ShowSuccess(Localizer["TaskUpdatedSuccess"]);
             }
 
             await LoadTasks();
@@ -517,7 +520,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving scheduled task");
-            ToastService.ShowError("保存任务失败");
+            ToastService.ShowError(Localizer["SaveTaskFailed"]);
         }
     }
 
@@ -534,14 +537,14 @@
         try
         {
             await TaskService.DeleteTaskAsync(taskToDelete.Id);
-            ToastService.ShowSuccess("任务删除成功");
+            ToastService.ShowSuccess(Localizer["TaskDeletedSuccess"]);
             await LoadTasks();
             CloseDeleteDialog();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error deleting scheduled task");
-            ToastService.ShowError("删除任务失败");
+            ToastService.ShowError(Localizer["DeleteTaskFailed"]);
         }
     }
 
@@ -550,13 +553,13 @@
         try
         {
             await TaskService.SetTaskEnabledAsync(task.Id, !task.IsEnabled);
-            ToastService.ShowSuccess(task.IsEnabled ? "任务已禁用" : "任务已启用");
+            ToastService.ShowSuccess(task.IsEnabled ? Localizer["TaskDisabled"] : Localizer["TaskEnabled"]);
             await LoadTasks();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error toggling task enabled state");
-            ToastService.ShowError("切换任务状态失败");
+            ToastService.ShowError(Localizer["ToggleTaskStatusFailed"]);
         }
     }
 
@@ -573,7 +576,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading task execution history");
-            ToastService.ShowError("加载执行历史失败");
+            ToastService.ShowError(Localizer["LoadHistoryFailed"]);
             executionHistory = new List<ScheduledTaskExecutionHistory>();
         }
         finally

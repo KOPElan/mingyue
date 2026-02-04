@@ -19,6 +19,9 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("zh-CN");
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
+    
+    // Add cookie-based culture provider as highest priority
+    options.RequestCultureProviders.Insert(0, new Microsoft.AspNetCore.Localization.CookieRequestCultureProvider());
 });
 
 // Add services to the container.

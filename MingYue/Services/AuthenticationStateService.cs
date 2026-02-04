@@ -12,10 +12,19 @@ namespace MingYue.Services
         private readonly ILogger<AuthenticationStateService> _logger;
         private const string UserSessionKey = "CurrentUser";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthenticationStateService"/> class.
+        /// </summary>
+        /// <param name="sessionStorage">The protected session storage for persisting user state.</param>
+        /// <param name="logger">The logger for recording authentication state operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public AuthenticationStateService(
             ProtectedSessionStorage sessionStorage,
             ILogger<AuthenticationStateService> logger)
         {
+            ArgumentNullException.ThrowIfNull(sessionStorage);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _sessionStorage = sessionStorage;
             _logger = logger;
         }

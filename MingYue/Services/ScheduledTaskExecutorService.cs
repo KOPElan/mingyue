@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace MingYue.Services
 {
     /// <summary>
-    /// Background service for executing scheduled tasks
+    /// Background service for executing scheduled tasks based on cron expressions.
     /// </summary>
     public class ScheduledTaskExecutorService : BackgroundService
     {
@@ -16,8 +16,17 @@ namespace MingYue.Services
         private readonly ILogger<ScheduledTaskExecutorService> _logger;
         private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScheduledTaskExecutorService"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider for creating scoped services.</param>
+        /// <param name="logger">The logger for recording task execution events and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public ScheduledTaskExecutorService(IServiceProvider serviceProvider, ILogger<ScheduledTaskExecutorService> logger)
         {
+            ArgumentNullException.ThrowIfNull(serviceProvider);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _serviceProvider = serviceProvider;
             _logger = logger;
         }

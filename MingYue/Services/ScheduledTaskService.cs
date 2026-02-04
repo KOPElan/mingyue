@@ -4,13 +4,25 @@ using MingYue.Models;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides scheduled task management services for creating, updating, and executing scheduled tasks.
+    /// </summary>
     public class ScheduledTaskService : IScheduledTaskService
     {
         private readonly IDbContextFactory<MingYueDbContext> _contextFactory;
         private readonly ILogger<ScheduledTaskService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ScheduledTaskService"/> class.
+        /// </summary>
+        /// <param name="contextFactory">The database context factory for accessing scheduled task data.</param>
+        /// <param name="logger">The logger for recording scheduled task operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public ScheduledTaskService(IDbContextFactory<MingYueDbContext> contextFactory, ILogger<ScheduledTaskService> logger)
         {
+            ArgumentNullException.ThrowIfNull(contextFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _contextFactory = contextFactory;
             _logger = logger;
         }

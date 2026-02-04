@@ -4,15 +4,30 @@ using MingYue.Models;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides notification management services for creating, updating, and managing user notifications.
+    /// </summary>
     public class NotificationService : INotificationService
     {
         private readonly IDbContextFactory<MingYueDbContext> _contextFactory;
         private readonly ILogger<NotificationService> _logger;
 
+        /// <summary>
+        /// Occurs when notifications are changed (added, updated, or removed).
+        /// </summary>
         public event EventHandler? NotificationsChanged;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NotificationService"/> class.
+        /// </summary>
+        /// <param name="contextFactory">The database context factory for accessing notification data.</param>
+        /// <param name="logger">The logger for recording notification operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public NotificationService(IDbContextFactory<MingYueDbContext> contextFactory, ILogger<NotificationService> logger)
         {
+            ArgumentNullException.ThrowIfNull(contextFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _contextFactory = contextFactory;
             _logger = logger;
         }

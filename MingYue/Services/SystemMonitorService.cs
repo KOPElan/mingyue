@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides system monitoring services including CPU, memory, disk, and network statistics.
+    /// </summary>
     public class SystemMonitorService : ISystemMonitorService
     {
         private double _lastCpuUsage = 0;
@@ -14,8 +17,15 @@ namespace MingYue.Services
         private long _lastIdleCpuTime = 0;
 
         private ILogger<SystemMonitorService> _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SystemMonitorService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording system monitoring events and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
         public SystemMonitorService(ILogger<SystemMonitorService> logger)
         {
+            ArgumentNullException.ThrowIfNull(logger);
             _logger = logger;
         }
         public async Task<CpuInfo> GetCpuInfoAsync()

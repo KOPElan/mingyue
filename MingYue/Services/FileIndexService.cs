@@ -4,6 +4,9 @@ using System.Text.Json;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides file indexing and searching services using a disk-based index for fast file discovery.
+    /// </summary>
     public class FileIndexService : IFileIndexService
     {
         private readonly ILogger<FileIndexService> _logger;
@@ -19,8 +22,17 @@ namespace MingYue.Services
             ".next", ".nuxt", "dist", "build", "target"
         };
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileIndexService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording file indexing operations and errors.</param>
+        /// <param name="configuration">The application configuration for accessing index settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public FileIndexService(ILogger<FileIndexService> logger, IConfiguration configuration)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(configuration);
+
             _logger = logger;
             _configuration = configuration;
             

@@ -5,13 +5,25 @@ using System.Text.Json;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides system settings management services for storing and retrieving application configuration settings.
+    /// </summary>
     public class SystemSettingService : ISystemSettingService
     {
         private readonly IDbContextFactory<MingYueDbContext> _contextFactory;
         private readonly ILogger<SystemSettingService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SystemSettingService"/> class.
+        /// </summary>
+        /// <param name="contextFactory">The database context factory for accessing system settings data.</param>
+        /// <param name="logger">The logger for recording system settings operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public SystemSettingService(IDbContextFactory<MingYueDbContext> contextFactory, ILogger<SystemSettingService> logger)
         {
+            ArgumentNullException.ThrowIfNull(contextFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _contextFactory = contextFactory;
             _logger = logger;
         }

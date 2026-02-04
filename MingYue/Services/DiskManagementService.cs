@@ -7,10 +7,23 @@ using System.Text.RegularExpressions;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides disk management services including disk listing, formatting, partitioning, mounting, and S.M.A.R.T. monitoring.
+    /// </summary>
     public class DiskManagementService : IDiskManagementService
     {
         ILogger<DiskManagementService> _logger;
-        public DiskManagementService(ILogger<DiskManagementService> logger) { _logger = logger; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DiskManagementService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording disk management operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+        public DiskManagementService(ILogger<DiskManagementService> logger)
+        {
+            ArgumentNullException.ThrowIfNull(logger);
+            _logger = logger;
+        }
 
         private static readonly string[] InvalidChars = ["&&", ";", "|", "`", "$", "(", ")", "<", ">", "\"", "'", "\n", "\r", " "];
         private static readonly char[] InvalidCredentialChars = ['\n', '\r', '='];

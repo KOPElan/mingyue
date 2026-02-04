@@ -10,6 +10,9 @@ using System.Text;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides thumbnail generation and caching services for images and videos.
+    /// </summary>
     public class ThumbnailService : IThumbnailService
     {
         private readonly ILogger<ThumbnailService> _logger;
@@ -25,8 +28,19 @@ namespace MingYue.Services
             ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".m4v"
         };
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThumbnailService"/> class.
+        /// </summary>
+        /// <param name="logger">The logger for recording thumbnail operations and errors.</param>
+        /// <param name="dbContextFactory">The database context factory for caching thumbnail metadata.</param>
+        /// <param name="configuration">The application configuration for accessing thumbnail settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public ThumbnailService(ILogger<ThumbnailService> logger, IDbContextFactory<MingYueDbContext> dbContextFactory, IConfiguration configuration)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(dbContextFactory);
+            ArgumentNullException.ThrowIfNull(configuration);
+
             _logger = logger;
             _dbContextFactory = dbContextFactory;
             _configuration = configuration;

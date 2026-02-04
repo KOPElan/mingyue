@@ -5,6 +5,9 @@ using BCrypt.Net;
 
 namespace MingYue.Services
 {
+    /// <summary>
+    /// Provides authentication and user management services including registration, login, and password management.
+    /// </summary>
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IDbContextFactory<MingYueDbContext> _dbFactory;
@@ -12,11 +15,22 @@ namespace MingYue.Services
         private readonly IConfiguration _configuration;
         private readonly int _bcryptWorkFactor;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AuthenticationService"/> class.
+        /// </summary>
+        /// <param name="dbFactory">The database context factory for creating database contexts.</param>
+        /// <param name="logger">The logger for recording authentication events and errors.</param>
+        /// <param name="configuration">The application configuration for accessing settings.</param>
+        /// <exception cref="ArgumentNullException">Thrown when any parameter is null.</exception>
         public AuthenticationService(
             IDbContextFactory<MingYueDbContext> dbFactory,
             ILogger<AuthenticationService> logger,
             IConfiguration configuration)
         {
+            ArgumentNullException.ThrowIfNull(dbFactory);
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(configuration);
+
             _dbFactory = dbFactory;
             _logger = logger;
             _configuration = configuration;

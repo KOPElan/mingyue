@@ -22,6 +22,7 @@ namespace MingYue.Data
         public DbSet<ScheduledTaskExecutionHistory> ScheduledTaskExecutionHistories { get; set; } = null!;
         public DbSet<AnydropMessage> AnydropMessages { get; set; } = null!;
         public DbSet<AnydropAttachment> AnydropAttachments { get; set; } = null!;
+        public DbSet<AnydropLinkMetadata> AnydropLinkMetadatas { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -151,6 +152,7 @@ namespace MingYue.Data
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.CreatedAt);
                 entity.HasIndex(e => e.IsRead);
+                entity.HasIndex(e => e.MessageType);
                 entity.Property(e => e.Content).IsRequired();
                 entity.Property(e => e.SenderDeviceId).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.SenderDeviceName).HasMaxLength(200);
@@ -161,12 +163,34 @@ namespace MingYue.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => e.MessageId);
+                entity.HasIndex(e => e.ContentType);
                 entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
                 entity.Property(e => e.FilePath).IsRequired().HasMaxLength(2000);
                 entity.Property(e => e.ContentType).HasMaxLength(200);
+                entity.Property(e => e.ThumbnailPath).HasMaxLength(2000);
 
                 entity.HasOne(e => e.Message)
                     .WithMany(m => m.Attachments)
+                    .HasForeignKey(e => e.MessageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure AnydropLinkMetadata
+            modelBuilder.Entity<AnydropLinkMetadata>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.MessageId);
+                entity.HasIndex(e => e.Url);
+                entity.Property(e => e.Url).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.Title).HasMaxLength(500);
+                entity.Property(e => e.Description).HasMaxLength(2000);
+                entity.Property(e => e.ImageUrl).HasMaxLength(2000);
+                entity.Property(e => e.SiteName).HasMaxLength(200);
+                entity.Property(e => e.FaviconUrl).HasMaxLength(2000);
+                entity.Property(e => e.FetchError).HasMaxLength(500);
+
+                entity.HasOne(e => e.Message)
+                    .WithMany(m => m.LinkMetadatas)
                     .HasForeignKey(e => e.MessageId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

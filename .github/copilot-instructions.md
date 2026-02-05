@@ -1,275 +1,75 @@
----
-description: 'Guidelines for building C# applications'
-applyTo: '**/*.cs'
----
 
-# C# Development
+# MingYue 项目 AI 协作指南
 
-## C# Instructions
-- Always use the latest version C#, currently C# 14 features.
-- Write clear and concise comments for each function.
+> 规范约束详见 .github/instructions/ 目录下相关文件（csharp.instructions.md、blazor.instructions.md、aspnet-rest-apis.instructions.md），所有编码建议以这些文件为准。
 
-## General Instructions
-- Make only high confidence suggestions when reviewing code changes.
-- Write code with good maintainability practices, including comments on why certain design decisions were made.
-- Handle edge cases and write clear exception handling.
-- For libraries or external dependencies, mention their usage and purpose in comments.
+## 代码风格
+- 统一采用 C# 10+ 语法，Blazor 组件与服务分层，详见 [.github/instructions/csharp.instructions.md] 及 .github/instructions/csharp.instructions.md。
+- 命名规范：
+	- 公共类型/成员用 PascalCase，私有字段用 _camelCase。
+	- 异步方法以 Async 结尾。
+- CSS 约束：
+	- 禁止在 .razor 文件中直接书写 <style> 或 style 属性的样式表（除极特殊场景的必要内联样式外）。
+	- 所有样式应放在同名 .razor.css 文件或全局样式表，优先使用样式表文件。
+	- 组件样式用同名 .razor.css 文件，避免样式污染。
+- 依赖注入、日志、异常、参数校验、资源本地化等见 [.github/instructions/csharp.instructions.md] 及 .github/instructions/blazor.instructions.md。
+- Fluent UI Blazor 组件开发详见 [.github/docs/FluentUI-Blazor-Guide.md]。
 
-## Naming Conventions
+## 架构与目录结构
+- 主要目录：
+	- `Components/`：Blazor 组件（页面、布局、对话框）
+	- `Services/`：业务服务（接口+实现，依赖注入）
+	- `Models/`：DTO/实体/查询参数/枚举
+	- `Data/`：EF Core 上下文与迁移
+	- `Resources/`：本地化资源
+	- `wwwroot/`：静态资源
+- 入口配置见 `Program.cs`，服务注册、数据库连接、FluentUI、HttpClient、控制器、定时任务等均在此集中配置。
+- 典型 RESTful API 设计，控制器如 `AnydropController`，服务如 `AnydropService`，模型如 `AnydropModels`。
 
-- Follow PascalCase for component names, method names, and public members.
-- Use camelCase for private fields and local variables.
-- Prefix interface names with "I" (e.g., IUserService).
+## 构建与测试
+- 依赖还原：
+	- `dotnet restore`（主依赖）
+	- `npm install`（前端依赖，Dropzone）
+- 构建：`dotnet build`
+- 运行：`dotnet run` 或 `dotnet run --urls "http://0.0.0.0:5000"`
+- 发布：`dotnet publish -c Release -o ./publish`
+- 测试：
+	- 单元测试推荐 xUnit，组件测试用 bUnit
+	- 测试覆盖率目标 >70%
+- 数据库迁移自动执行（见 Program.cs），如需手动：`dotnet ef migrations add <name>`、`dotnet ef database update`
 
-## Formatting
+## 项目约定
+- 服务全部通过依赖注入注册，生命周期按需（Scoped/Singleton/Transient）。
+- 用户界面与 API 返回均采用分页、过滤、排序参数（见 `PagedResult<T>`、`AnydropMessageQuery`）。
+- 文件上传/下载/批量操作均有严格参数校验与日志。
+- 资源字符串集中管理，使用 IStringLocalizer 进行本地化。
+- 日志采用 ILogger<T>，避免记录敏感信息。
+- 业务异常需记录日志并返回标准错误响应。
+- 组件开发优先拆分小型、可复用单元，业务逻辑放服务层。
+- API 设计遵循 RESTful，返回统一结构，错误用 ProblemDetails 或标准 JSON。
 
-- Apply code-formatting style defined in `.editorconfig`.
-- Prefer file-scoped namespace declarations and single-line using directives.
-- Insert a newline before the opening curly brace of any code block (e.g., after `if`, `for`, `while`, `foreach`, `using`, `try`, etc.).
-- Ensure that the final return statement of a method is on its own line.
-- Use pattern matching and switch expressions wherever possible.
-- Use `nameof` instead of string literals when referring to member names.
-- Ensure that XML doc comments are created for any public APIs. When applicable, include `<example>` and `<code>` documentation in the comments.
+## 集成点与外部依赖
+- UI 组件库：Microsoft FluentUI Blazor（见 [FluentUI-Blazor-Guide.md]）
+- 数据库：SQLite，EF Core 10.0
+- 实时通信：SignalR
+- 文件上传：Dropzone（npm 依赖）
+- 依赖注入：ASP.NET Core DI
+- HttpClient 用于外部 API/元数据抓取
+- 计划任务、通知、磁盘/Docker/网络管理等均有独立服务
 
-## Project Setup and Structure
+## 安全
+- 默认仅内网部署，公网需反代+HTTPS。
+- 严格校验所有输入，防止命令注入、路径遍历、SSRF 等。
+- Linux 下 mount/umount 需配置 sudoers，详见 Program.cs 日志提示。
+- 配置项（如数据库连接、密钥）统一放 appsettings.json，不可硬编码。
+- 日志避免输出敏感信息。
+- 文件上传/下载/删除均有路径与文件名校验，防止越权访问。
 
-- Guide users through creating a new .NET project with the appropriate templates.
-- Explain the purpose of each generated file and folder to build understanding of the project structure.
-- Demonstrate how to organize code using feature folders or domain-driven design principles.
-- Show proper separation of concerns with models, services, and data access layers.
-- Explain the Program.cs and configuration system in ASP.NET Core 10 including environment-specific settings.
-
-## Nullable Reference Types
-
-- Declare variables non-nullable, and check for `null` at entry points.
-- Always use `is null` or `is not null` instead of `== null` or `!= null`.
-- Trust the C# null annotations and don't add null checks when the type system says a value cannot be null.
-
-## Data Access Patterns
-
-- Guide the implementation of a data access layer using Entity Framework Core.
-- Explain different options (SQL Server, SQLite, In-Memory) for development and production.
-- Demonstrate repository pattern implementation and when it's beneficial.
-- Show how to implement database migrations and data seeding.
-- Explain efficient query patterns to avoid common performance issues.
-
-## Authentication and Authorization
-
-- Guide users through implementing authentication using JWT Bearer tokens.
-- Explain OAuth 2.0 and OpenID Connect concepts as they relate to ASP.NET Core.
-- Show how to implement role-based and policy-based authorization.
-- Demonstrate integration with Microsoft Entra ID (formerly Azure AD).
-- Explain how to secure both controller-based and Minimal APIs consistently.
-
-## Validation and Error Handling
-
-- Guide the implementation of model validation using data annotations and FluentValidation.
-- Explain the validation pipeline and how to customize validation responses.
-- Demonstrate a global exception handling strategy using middleware.
-- Show how to create consistent error responses across the API.
-- Explain problem details (RFC 7807) implementation for standardized error responses.
-
-## API Versioning and Documentation
-
-- Guide users through implementing and explaining API versioning strategies.
-- Demonstrate Swagger/OpenAPI implementation with proper documentation.
-- Show how to document endpoints, parameters, responses, and authentication.
-- Explain versioning in both controller-based and Minimal APIs.
-- Guide users on creating meaningful API documentation that helps consumers.
-
-## Logging and Monitoring
-
-- Guide the implementation of structured logging using Serilog or other providers.
-- Explain the logging levels and when to use each.
-- Demonstrate integration with Application Insights for telemetry collection.
-- Show how to implement custom telemetry and correlation IDs for request tracking.
-- Explain how to monitor API performance, errors, and usage patterns.
-
-## Testing
-
-- Always include test cases for critical paths of the application.
-- Guide users through creating unit tests.
-- Do not emit "Act", "Arrange" or "Assert" comments.
-- Copy existing style in nearby files for test method names and capitalization.
-- Explain integration testing approaches for API endpoints.
-- Demonstrate how to mock dependencies for effective testing.
-- Show how to test authentication and authorization logic.
-- Explain test-driven development principles as applied to API development.
-
-## Performance Optimization
-
-- Guide users on implementing caching strategies (in-memory, distributed, response caching).
-- Explain asynchronous programming patterns and why they matter for API performance.
-- Demonstrate pagination, filtering, and sorting for large data sets.
-- Show how to implement compression and other performance optimizations.
-- Explain how to measure and benchmark API performance.
-
-## Deployment and DevOps
-
-- Guide users through containerizing their API using .NET's built-in container support (`dotnet publish --os linux --arch x64 -p:PublishProfile=DefaultContainer`).
-- Explain the differences between manual Dockerfile creation and .NET's container publishing features.
-- Explain CI/CD pipelines for NET applications.
-- Demonstrate deployment to Azure App Service, Azure Container Apps, or other hosting options.
-- Show how to implement health checks and readiness probes.
-- Explain environment-specific configurations for different deployment stages.
+## 参考文档
+- [FluentUI Blazor 开发规范](.github/docs/FluentUI-Blazor-Guide.md)
+- [.github/instructions/csharp.instructions.md]
+- [.github/instructions/blazor.instructions.md]
+- [.github/instructions/aspnet-rest-apis.instructions.md]
 
 ---
-description: 'Blazor component and application patterns'
-applyTo: '**/*.razor, **/*.razor.cs, **/*.razor.css'
----
-
-## Blazor Code Style and Structure
-
-- Write idiomatic and efficient Blazor and C# code.
-- Follow .NET and Blazor conventions.
-- Use Razor Components appropriately for component-based UI development.
-- Prefer inline functions for smaller components but separate complex logic into code-behind or service classes.
-- Async/await should be used where applicable to ensure non-blocking UI operations.
-
-## Naming Conventions
-
-- Follow PascalCase for component names, method names, and public members.
-- Use camelCase for private fields and local variables.
-- Prefix interface names with "I" (e.g., IUserService).
-
-## Blazor and .NET Specific Guidelines
-
-- Utilize Blazor's built-in features for component lifecycle (e.g., OnInitializedAsync, OnParametersSetAsync).
-- Use data binding effectively with @bind.
-- Leverage Dependency Injection for services in Blazor.
-- Structure Blazor components and services following Separation of Concerns.
-- Always use the latest version C#, features like record types, pattern matching, and global usings.
-
-## Error Handling and Validation
-
-- Implement proper error handling for Blazor pages and API calls.
-- Use logging for error tracking in the backend and consider capturing UI-level errors in Blazor with tools like ErrorBoundary.
-- Implement validation using FluentValidation or DataAnnotations in forms.
-
-## Blazor API and Performance Optimization
-
-- Utilize Blazor server-side or WebAssembly optimally based on the project requirements.
-- Use asynchronous methods (async/await) for API calls or UI actions that could block the main thread.
-- Optimize Razor components by reducing unnecessary renders and using StateHasChanged() efficiently.
-- Minimize the component render tree by avoiding re-renders unless necessary, using ShouldRender() where appropriate.
-- Use EventCallbacks for handling user interactions efficiently, passing only minimal data when triggering events.
-
-## Caching Strategies
-
-- Implement in-memory caching for frequently used data, especially for Blazor Server apps. Use IMemoryCache for lightweight caching solutions.
-- For Blazor WebAssembly, utilize localStorage or sessionStorage to cache application state between user sessions.
-- Consider Distributed Cache strategies (like Redis or SQL Server Cache) for larger applications that need shared state across multiple users or clients.
-- Cache API calls by storing responses to avoid redundant calls when data is unlikely to change, thus improving the user experience.
-
-## State Management Libraries
-
-- Use Blazor's built-in Cascading Parameters and EventCallbacks for basic state sharing across components.
-- Implement advanced state management solutions using libraries like Fluxor or BlazorState when the application grows in complexity.
-- For client-side state persistence in Blazor WebAssembly, consider using Blazored.LocalStorage or Blazored.SessionStorage to maintain state between page reloads.
-- For server-side Blazor, use Scoped Services and the StateContainer pattern to manage state within user sessions while minimizing re-renders.
-
-## API Design and Integration
-
-- Use HttpClient or other appropriate services to communicate with external APIs or your own backend.
-- Implement error handling for API calls using try-catch and provide proper user feedback in the UI.
-
-## Testing and Debugging in Visual Studio
-
-- All unit testing and integration testing should be done in Visual Studio Enterprise.
-- Test Blazor components and services using xUnit, NUnit, or MSTest.
-- Use Moq or NSubstitute for mocking dependencies during tests.
-- Debug Blazor UI issues using browser developer tools and Visual Studio's debugging tools for backend and server-side issues.
-- For performance profiling and optimization, rely on Visual Studio's diagnostics tools.
-
-## Security and Authentication
-
-- Implement Authentication and Authorization in the Blazor app where necessary using ASP.NET Identity or JWT tokens for API authentication.
-
-## API Documentation and Swagger
-
-- Use Swagger/OpenAPI for API documentation for your backend API services.
-- Ensure XML documentation for models and API methods for enhancing Swagger documentation.
-
----
-description: 'Blazor component and application patterns'
-applyTo: '**/*.razor, **/*.razor.cs, **/*.razor.css'
----
-
-## Blazor Code Style and Structure
-
-- Write idiomatic and efficient Blazor and C# code.
-- Follow .NET and Blazor conventions.
-- Use Razor Components appropriately for component-based UI development.
-- Prefer inline functions for smaller components but separate complex logic into code-behind or service classes.
-- Async/await should be used where applicable to ensure non-blocking UI operations.
-
-## Naming Conventions
-
-- Follow PascalCase for component names, method names, and public members.
-- Use camelCase for private fields and local variables.
-- Prefix interface names with "I" (e.g., IUserService).
-
-## Blazor and .NET Specific Guidelines
-
-- Utilize Blazor's built-in features for component lifecycle (e.g., OnInitializedAsync, OnParametersSetAsync).
-- Use data binding effectively with @bind.
-- Leverage Dependency Injection for services in Blazor.
-- Structure Blazor components and services following Separation of Concerns.
-- Always use the latest version C#, features like record types, pattern matching, and global usings.
-
-## Error Handling and Validation
-
-- Implement proper error handling for Blazor pages and API calls.
-- Use logging for error tracking in the backend and consider capturing UI-level errors in Blazor with tools like ErrorBoundary.
-- Implement validation using FluentValidation or DataAnnotations in forms.
-
-## Blazor API and Performance Optimization
-
-- Utilize Blazor server-side or WebAssembly optimally based on the project requirements.
-- Use asynchronous methods (async/await) for API calls or UI actions that could block the main thread.
-- Optimize Razor components by reducing unnecessary renders and using StateHasChanged() efficiently.
-- Minimize the component render tree by avoiding re-renders unless necessary, using ShouldRender() where appropriate.
-- Use EventCallbacks for handling user interactions efficiently, passing only minimal data when triggering events.
-
-## Caching Strategies
-
-- Implement in-memory caching for frequently used data, especially for Blazor Server apps. Use IMemoryCache for lightweight caching solutions.
-- For Blazor WebAssembly, utilize localStorage or sessionStorage to cache application state between user sessions.
-- Consider Distributed Cache strategies (like Redis or SQL Server Cache) for larger applications that need shared state across multiple users or clients.
-- Cache API calls by storing responses to avoid redundant calls when data is unlikely to change, thus improving the user experience.
-
-## State Management Libraries
-
-- Use Blazor's built-in Cascading Parameters and EventCallbacks for basic state sharing across components.
-- Implement advanced state management solutions using libraries like Fluxor or BlazorState when the application grows in complexity.
-- For client-side state persistence in Blazor WebAssembly, consider using Blazored.LocalStorage or Blazored.SessionStorage to maintain state between page reloads.
-- For server-side Blazor, use Scoped Services and the StateContainer pattern to manage state within user sessions while minimizing re-renders.
-
-## API Design and Integration
-
-- Use HttpClient or other appropriate services to communicate with external APIs or your own backend.
-- Implement error handling for API calls using try-catch and provide proper user feedback in the UI.
-
-## Testing and Debugging in Visual Studio
-
-- All unit testing and integration testing should be done in Visual Studio Enterprise.
-- Test Blazor components and services using xUnit, NUnit, or MSTest.
-- Use Moq or NSubstitute for mocking dependencies during tests.
-- Debug Blazor UI issues using browser developer tools and Visual Studio's debugging tools for backend and server-side issues.
-- For performance profiling and optimization, rely on Visual Studio's diagnostics tools.
-
-## Security and Authentication
-
-- Implement Authentication and Authorization in the Blazor app where necessary using ASP.NET Identity or JWT tokens for API authentication.
-
-## API Documentation and Swagger
-
-- Use Swagger/OpenAPI for API documentation for your backend API services.
-- Ensure XML documentation for models and API methods for enhancing Swagger documentation.
-
-
-# Fluent UI Blazor Development
-- 本项目使用 Fluent UI Blazor 组件库构建现代化 Blazor 应用程序。
-- 参考 Fluent UI 设计原则，确保一致的用户体验和界面风格。
-- 官方文档位置：Docs/Fluent UI Blazor/index.md
-- 在编写、重构或解释涉及该库的代码时，必须先读取上述目录下的文档。禁止使用该库不存在的 API 或过时的语法。
+如需补充或有疑问，请在 PR 或 Issue 中反馈。

@@ -289,6 +289,180 @@
         font-size: 12px;
     }
 
+    /* Media Gallery Styles */
+    .media-gallery {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .media-item {
+        background: var(--neutral-layer-2);
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .media-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .media-thumbnail {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--neutral-layer-3);
+        position: relative;
+    }
+
+    .media-thumbnail.image-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .media-thumbnail.video-thumb {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .media-thumbnail.audio-thumb {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .video-overlay {
+        position: absolute;
+        font-size: 24px;
+        color: white;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .media-info {
+        padding: 8px;
+    }
+
+    .media-name {
+        font-size: 12px;
+        font-weight: 500;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .media-meta {
+        font-size: 10px;
+        color: var(--neutral-foreground-hint);
+    }
+
+    /* Link Preview Styles */
+    .link-previews {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .link-preview-card {
+        display: block;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: background 0.2s;
+    }
+
+    .message-bubble.other .link-preview-card {
+        background: var(--neutral-layer-2);
+        border: 1px solid var(--neutral-stroke-rest);
+    }
+
+    .link-preview-card:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .link-preview-image {
+        width: 100%;
+        aspect-ratio: 1.91 / 1;
+        overflow: hidden;
+    }
+
+    .link-preview-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .link-preview-content {
+        padding: 10px;
+    }
+
+    .link-preview-site {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        opacity: 0.8;
+        margin-bottom: 4px;
+    }
+
+    .link-favicon {
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+    }
+
+    .link-preview-title {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+
+    .link-preview-desc {
+        font-size: 12px;
+        opacity: 0.8;
+        line-height: 1.4;
+    }
+
+    /* Upload Progress Styles */
+    .upload-queue {
+        margin-top: 16px;
+    }
+
+    .upload-item {
+        background: var(--neutral-layer-2);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+
+    .upload-progress {
+        margin-top: 8px;
+    }
+
+    .image-preview, .video-preview {
+        cursor: pointer;
+    }
+
+    .image-preview:hover, .video-preview:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+    }
+
     @@media (max-width: 768px) {
         .sidebar {
             width: 100%;
@@ -305,6 +479,10 @@
         
         .message-bubble {
             max-width: 85%;
+        }
+
+        .media-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         }
     }
 </style>
@@ -331,21 +509,52 @@
             </FluentStack>
         </div>
 
-        <!-- Filter Buttons -->
-        <div class="filter-buttons">
-            <button class="filter-btn @(activeFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
-                全部 (@allMessages.Count)
-            </button>
-            <button class="filter-btn @(activeFilter == "unread" ? "active" : "")" @onclick='() => SetFilter("unread")'>
-                未读 (@allMessages.Count(m => !m.IsRead))
-            </button>
-            <button class="filter-btn @(activeFilter == "files" ? "active" : "")" @onclick='() => SetFilter("files")'>
-                文件 (@allMessages.Count(m => m.Attachments?.Any() == true))
-            </button>
-            <button class="filter-btn @(activeFilter == "today" ? "active" : "")" @onclick='() => SetFilter("today")'>
-                今天 (@allMessages.Count(m => IsToday(m.CreatedAt)))
-            </button>
-        </div>
+        <!-- Main Tabs: Messages / Media Gallery -->
+        <FluentTabs @bind-ActiveTabId="activeMainTab" Style="border-bottom: 1px solid var(--neutral-stroke-rest);">
+            <FluentTab Id="messages" Label="消息">
+                <FluentIcon Value="@(new Icons.Regular.Size16.Chat())" Slot="start" />
+            </FluentTab>
+            <FluentTab Id="media" Label="媒体库">
+                <FluentIcon Value="@(new Icons.Regular.Size16.Image())" Slot="start" />
+            </FluentTab>
+        </FluentTabs>
+
+        @if (activeMainTab == "messages")
+        {
+            <!-- Filter Buttons for Messages -->
+            <div class="filter-buttons">
+                <button class="filter-btn @(activeFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
+                    全部 (@messageStats.GetValueOrDefault("TotalMessages", 0))
+                </button>
+                <button class="filter-btn @(activeFilter == "unread" ? "active" : "")" @onclick='() => SetFilter("unread")'>
+                    未读 (@messageStats.GetValueOrDefault("UnreadMessages", 0))
+                </button>
+                <button class="filter-btn @(activeFilter == "files" ? "active" : "")" @onclick='() => SetFilter("files")'>
+                    文件 (@messageStats.GetValueOrDefault("TotalAttachments", 0))
+                </button>
+                <button class="filter-btn @(activeFilter == "today" ? "active" : "")" @onclick='() => SetFilter("today")'>
+                    今天 (@messageStats.GetValueOrDefault("TodayMessages", 0))
+                </button>
+            </div>
+        }
+        else
+        {
+            <!-- Filter Buttons for Media Gallery -->
+            <div class="filter-buttons">
+                <button class="filter-btn @(mediaFilter == "all" ? "active" : "")" @onclick='() => SetMediaFilter("all")'>
+                    全部
+                </button>
+                <button class="filter-btn @(mediaFilter == "image" ? "active" : "")" @onclick='() => SetMediaFilter("image")'>
+                    图片 (@messageStats.GetValueOrDefault("ImageAttachments", 0))
+                </button>
+                <button class="filter-btn @(mediaFilter == "video" ? "active" : "")" @onclick='() => SetMediaFilter("video")'>
+                    视频 (@messageStats.GetValueOrDefault("VideoAttachments", 0))
+                </button>
+                <button class="filter-btn @(mediaFilter == "audio" ? "active" : "")" @onclick='() => SetMediaFilter("audio")'>
+                    音频 (@messageStats.GetValueOrDefault("AudioAttachments", 0))
+                </button>
+            </div>
+        }
 
         @if (!string.IsNullOrWhiteSpace(searchQuery) && filteredMessages.Any())
         {
@@ -354,10 +563,12 @@
             </div>
         }
 
-        <!-- Message List -->
-        <div class="message-list">
-            @if (isLoading)
-            {
+        @if (activeMainTab == "messages")
+        {
+            <!-- Message List -->
+            <div class="message-list">
+                @if (isLoading)
+                {
                 <FluentStack HorizontalAlignment="HorizontalAlignment.Center" Style="padding: 40px;">
                     <FluentProgressRing />
                 </FluentStack>
@@ -395,7 +606,66 @@
                     </div>
                 }
             }
-        </div>
+            </div>
+        }
+        else
+        {
+            <!-- Media Gallery View -->
+            <div class="media-gallery">
+                @if (isLoadingMedia)
+                {
+                    <FluentStack HorizontalAlignment="HorizontalAlignment.Center" Style="padding: 40px;">
+                        <FluentProgressRing />
+                    </FluentStack>
+                }
+                else if (!mediaAttachments.Any())
+                {
+                    <div style="padding: 40px; text-align: center; color: var(--neutral-foreground-hint);">
+                        <FluentIcon Value="@(new Icons.Regular.Size48.Image())" />
+                        <p style="margin-top: 12px;">暂无媒体文件</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="media-grid">
+                        @foreach (var attachment in mediaAttachments)
+                        {
+                            <div class="media-item" @onclick="() => PreviewMedia(attachment)">
+                                @if (attachment.IsImage)
+                                {
+                                    <div class="media-thumbnail image-thumb">
+                                        <FluentIcon Value="@(new Icons.Regular.Size48.Image())" />
+                                    </div>
+                                }
+                                else if (attachment.IsVideo)
+                                {
+                                    <div class="media-thumbnail video-thumb">
+                                        <FluentIcon Value="@(new Icons.Regular.Size48.Video())" />
+                                        <span class="video-overlay">▶</span>
+                                    </div>
+                                }
+                                else if (attachment.IsAudio)
+                                {
+                                    <div class="media-thumbnail audio-thumb">
+                                        <FluentIcon Value="@(new Icons.Regular.Size24.MusicNote2())" Style="transform: scale(2);" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="media-thumbnail file-thumb">
+                                        <FluentIcon Value="@GetFileIcon(attachment.FileName)" />
+                                    </div>
+                                }
+                                <div class="media-info">
+                                    <span class="media-name" title="@attachment.FileName">@TruncateFileName(attachment.FileName)</span>
+                                    <span class="media-meta">@FormatFileSize(attachment.FileSize) · @attachment.CreatedAt.ToLocalTime().ToString("MM/dd")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     <!-- Main Chat Area -->
@@ -455,27 +725,98 @@
                                 }
                                 @if (!string.IsNullOrWhiteSpace(msg.Content))
                                 {
-                                    <div class="bubble-content">@msg.Content</div>
+                                    <div class="bubble-content">@((MarkupString)HighlightUrls(msg.Content))</div>
+                                }
+                                @* Link Preview Cards *@
+                                @if (msg.LinkMetadatas?.Any() == true)
+                                {
+                                    <div class="link-previews">
+                                        @foreach (var link in msg.LinkMetadatas.Where(l => l.IsFetchSuccessful))
+                                        {
+                                            <a href="@link.Url" target="_blank" class="link-preview-card" @onclick:stopPropagation="true">
+                                                @if (!string.IsNullOrWhiteSpace(link.ImageUrl))
+                                                {
+                                                    <div class="link-preview-image">
+                                                        <img src="@link.ImageUrl" alt="@link.Title" loading="lazy" />
+                                                    </div>
+                                                }
+                                                <div class="link-preview-content">
+                                                    <div class="link-preview-site">
+                                                        @if (!string.IsNullOrWhiteSpace(link.FaviconUrl))
+                                                        {
+                                                            <img src="@link.FaviconUrl" alt="" class="link-favicon" />
+                                                        }
+                                                        <span>@(link.SiteName ?? new Uri(link.Url).Host)</span>
+                                                    </div>
+                                                    @if (!string.IsNullOrWhiteSpace(link.Title))
+                                                    {
+                                                        <div class="link-preview-title">@link.Title</div>
+                                                    }
+                                                    @if (!string.IsNullOrWhiteSpace(link.Description))
+                                                    {
+                                                        <div class="link-preview-desc">@TruncateText(link.Description, 120)</div>
+                                                    }
+                                                </div>
+                                            </a>
+                                        }
+                                    </div>
                                 }
                                 @if (msg.Attachments?.Any() == true)
                                 {
                                     <div class="attachment-cards">
                                         @foreach (var attachment in msg.Attachments)
                                         {
-                                            <div class="attachment-card">
-                                                <FluentIcon Value="@GetFileIcon(attachment.FileName)" />
-                                                <FluentStack Orientation="Orientation.Vertical" VerticalGap="2" Style="flex: 1; min-width: 0;">
-                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                        @attachment.FileName
-                                                    </FluentLabel>
-                                                    <FluentLabel Typo="Typography.Body" Style="font-size: 11px; opacity: 0.7;">
-                                                        @FormatFileSize(attachment.FileSize)
-                                                    </FluentLabel>
-                                                </FluentStack>
-                                                <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DownloadAttachment(attachment))" title="下载">
-                                                    <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
-                                                </FluentButton>
-                                            </div>
+                                            @if (attachment.IsImage)
+                                            {
+                                                <div class="attachment-card image-preview" @onclick="() => PreviewMedia(attachment)">
+                                                    <FluentIcon Value="@(new Icons.Regular.Size24.Image())" />
+                                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="2" Style="flex: 1; min-width: 0;">
+                                                        <FluentLabel Typo="Typography.Body" Style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                            @attachment.FileName
+                                                        </FluentLabel>
+                                                        <FluentLabel Typo="Typography.Body" Style="font-size: 11px; opacity: 0.7;">
+                                                            @FormatFileSize(attachment.FileSize)
+                                                        </FluentLabel>
+                                                    </FluentStack>
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DownloadAttachment(attachment))" OnClick:stopPropagation="true" title="下载">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                                    </FluentButton>
+                                                </div>
+                                            }
+                                            else if (attachment.IsVideo)
+                                            {
+                                                <div class="attachment-card video-preview" @onclick="() => PreviewMedia(attachment)">
+                                                    <FluentIcon Value="@(new Icons.Regular.Size24.Video())" />
+                                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="2" Style="flex: 1; min-width: 0;">
+                                                        <FluentLabel Typo="Typography.Body" Style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                            @attachment.FileName
+                                                        </FluentLabel>
+                                                        <FluentLabel Typo="Typography.Body" Style="font-size: 11px; opacity: 0.7;">
+                                                            @FormatFileSize(attachment.FileSize)
+                                                        </FluentLabel>
+                                                    </FluentStack>
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DownloadAttachment(attachment))" OnClick:stopPropagation="true" title="下载">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                                    </FluentButton>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="attachment-card">
+                                                    <FluentIcon Value="@GetFileIcon(attachment.FileName)" />
+                                                    <FluentStack Orientation="Orientation.Vertical" VerticalGap="2" Style="flex: 1; min-width: 0;">
+                                                        <FluentLabel Typo="Typography.Body" Style="font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                            @attachment.FileName
+                                                        </FluentLabel>
+                                                        <FluentLabel Typo="Typography.Body" Style="font-size: 11px; opacity: 0.7;">
+                                                            @FormatFileSize(attachment.FileSize)
+                                                        </FluentLabel>
+                                                    </FluentStack>
+                                                    <FluentButton Appearance="Appearance.Lightweight" OnClick="@(() => DownloadAttachment(attachment))" title="下载">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.ArrowDownload())" />
+                                                    </FluentButton>
+                                                </div>
+                                            }
                                         }
                                     </div>
                                 }
@@ -583,13 +924,20 @@
 </FluentDialog>
 
 @code {
-    private const string ANYDROP_UPLOAD_PATH = "/var/lib/mingyue/anydrop";
+    // Configuration constants - cross-platform path handling
+    private static readonly string ANYDROP_UPLOAD_PATH = OperatingSystem.IsWindows()
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "mingyue", "anydrop")
+        : "/var/lib/mingyue/anydrop";
+    private const int MediaGalleryPageSize = 100;
+    private const int MaxFileNameDisplayLength = 20;
+    private const int MaxFileNameWithoutExtLength = 15;
     
     private FluentDialog? sendMessageDialog;
     private FluentInputFile? fileInput;
     private bool isSendDialogHidden = true;
     private bool isLoading = true;
     private bool isUploading = false;
+    private bool isLoadingMedia = false;
 
     private string deviceId = string.Empty;
     private string deviceName = string.Empty;
@@ -599,9 +947,13 @@
     
     private string searchQuery = string.Empty;
     private string activeFilter = "all";
+    private string activeMainTab = "messages";
+    private string mediaFilter = "all";
     
     private string newMessageContent = string.Empty;
     private List<FluentInputFileEventArgs> selectedFiles = new();
+    private List<AnydropAttachment> mediaAttachments = new();
+    private Dictionary<string, int> messageStats = new();
     
     private readonly SemaphoreSlim _loadMessagesSemaphore = new(1, 1);
 
@@ -615,6 +967,7 @@
             AnydropService.MessagesChanged += OnMessagesChanged;
             
             await LoadMessagesAsync();
+            await LoadStatisticsAsync();
         }
         catch (Exception ex)
         {
@@ -647,11 +1000,60 @@
         }
     }
 
+    private async Task LoadStatisticsAsync()
+    {
+        try
+        {
+            messageStats = await AnydropService.GetStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading statistics");
+        }
+    }
+
+    private async Task LoadMediaAttachmentsAsync()
+    {
+        try
+        {
+            isLoadingMedia = true;
+            StateHasChanged();
+
+            var contentTypePrefix = mediaFilter switch
+            {
+                "image" => "image/",
+                "video" => "video/",
+                "audio" => "audio/",
+                _ => null
+            };
+
+            var result = await AnydropService.GetAttachmentsByTypeAsync(contentTypePrefix, 1, MediaGalleryPageSize);
+            mediaAttachments = result.Items;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading media attachments");
+            ToastService.ShowError("加载媒体失败");
+        }
+        finally
+        {
+            isLoadingMedia = false;
+            StateHasChanged();
+        }
+    }
+
     private void OnMessagesChanged(object? sender, EventArgs e)
     {
         InvokeAsync(async () =>
         {
             await LoadMessagesAsync();
+            await LoadStatisticsAsync();
+            
+            if (activeMainTab == "media")
+            {
+                await LoadMediaAttachmentsAsync();
+            }
+            
             StateHasChanged();
         });
     }
@@ -694,6 +1096,12 @@
     {
         activeFilter = filter;
         ApplyFilters();
+    }
+
+    private async Task SetMediaFilter(string filter)
+    {
+        mediaFilter = filter;
+        await LoadMediaAttachmentsAsync();
     }
 
     private void OnSearchInput(ChangeEventArgs e)
@@ -894,9 +1302,25 @@
                 }
             }
 
+            // Parse URLs for link metadata with error handling.
+            // We await the operation so that exceptions are observed, but handle them locally
+            // so that a failure in metadata parsing does not cause the whole send operation to fail.
+            if (!string.IsNullOrWhiteSpace(newMessageContent))
+            {
+                try
+                {
+                    await AnydropService.ParseAndSaveLinkMetadataAsync(message.Id, newMessageContent);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error parsing link metadata for message {MessageId}", message.Id);
+                }
+            }
+
             ToastService.ShowSuccess("消息发送成功");
             CloseSendMessageDialog();
             await LoadMessagesAsync();
+            await LoadStatisticsAsync();
         }
         catch (Exception ex)
         {
@@ -1032,6 +1456,94 @@
             ".html" or ".css" or ".js" or ".ts" or ".json" or ".xml" => new Icons.Regular.Size20.Code(),
             _ => new Icons.Regular.Size20.Document()
         };
+    }
+
+    private string HighlightUrls(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return content;
+        }
+
+        // Escape HTML first to prevent XSS
+        content = System.Net.WebUtility.HtmlEncode(content);
+        
+        // Build result with safe URL handling
+        var urlPattern = new System.Text.RegularExpressions.Regex(@"(https?://[^\s<>&quot;]+)");
+        var result = new System.Text.StringBuilder();
+        var lastIndex = 0;
+
+        foreach (System.Text.RegularExpressions.Match match in urlPattern.Matches(content))
+        {
+            // Add text before the URL
+            result.Append(content[lastIndex..match.Index]);
+
+            // Validate and sanitize the URL before creating the link
+            var url = match.Value;
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && 
+                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                // URL is valid and uses http/https - safe to create link
+                // Re-encode the URL to ensure it's safe for href attribute
+                var safeUrl = System.Net.WebUtility.HtmlEncode(uri.AbsoluteUri);
+                result.Append($"<a href=\"{safeUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: inherit; text-decoration: underline;\">{safeUrl}</a>");
+            }
+            else
+            {
+                // Invalid URL - just display as text
+                result.Append(url);
+            }
+
+            lastIndex = match.Index + match.Length;
+        }
+
+        // Add remaining text
+        result.Append(content[lastIndex..]);
+        
+        // Preserve line breaks
+        return result.ToString().Replace("\n", "<br />");
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Length <= maxLength)
+        {
+            return text;
+        }
+
+        return text[..maxLength] + "...";
+    }
+
+    private string TruncateFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length <= MaxFileNameDisplayLength)
+        {
+            return fileName;
+        }
+
+        var extension = Path.GetExtension(fileName);
+        var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+        
+        if (nameWithoutExt.Length <= MaxFileNameWithoutExtLength)
+        {
+            return fileName;
+        }
+
+        return nameWithoutExt[..MaxFileNameWithoutExtLength] + "..." + extension;
+    }
+
+    private async Task PreviewMedia(AnydropAttachment attachment)
+    {
+        try
+        {
+            // For now, just trigger download - can be enhanced with modal preview later
+            await DownloadAttachment(attachment);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error previewing media: {FileName}", attachment.FileName);
+            ToastService.ShowError("预览失败");
+        }
     }
 
     public void Dispose()

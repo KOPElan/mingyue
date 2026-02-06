@@ -377,7 +377,7 @@ namespace MingYue.Services
                 // Update message type based on attachment
                 var message = await context.AnydropMessages.FindAsync(messageId);
 
-                if (message is not null)
+                if (message is not null && message.Content is not null)
                 {
                     message.MessageType = DetermineMessageType(message, attachment);
                     await context.SaveChangesAsync();
@@ -432,6 +432,23 @@ namespace MingYue.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting attachment {Id}", id);
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<AnydropAttachment?> GetAttachmentByIdAsync(int id)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                return await context.AnydropAttachments.FindAsync(id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting attachment {Id}", id);
+
+                return null;
             }
         }
 
@@ -755,7 +772,7 @@ namespace MingYue.Services
             {
                 var normalizedContent = message.Content.ToLowerInvariant();
                 var matches = Regex.Matches(normalizedContent, Regex.Escape(normalizedTerm)).Count;
-                score += matches * 10;
+                score += matches * 10d;
 
                 // Boost for exact match at start
                 if (normalizedContent.StartsWith(normalizedTerm))
@@ -770,13 +787,10 @@ namespace MingYue.Services
                 score += 5;
             }
 
-            // Attachment filename match
-            foreach (var attachment in message.Attachments)
+            // Attachment filename match - use explicit filtering
+            foreach (var attachment in message.Attachments.Where(a => a.FileName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
             {
-                if (attachment.FileName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                {
-                    score += 8;
-                }
+                score += 8;
             }
 
             // Recency boost (newer messages score slightly higher)
@@ -834,6 +848,85 @@ namespace MingYue.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// Validates that a URL is safe to fetch (SSRF protection).
+        /// Blocks private IP ranges, loopback addresses, and cloud metadata endpoints.
+        /// </summary>
+        private static bool IsUrlSafeToFetch(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                return false;
+            }
+
+            // Only allow HTTP and HTTPS
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                return false;
+            }
+
+            var host = uri.Host.ToLowerInvariant();
+
+            // Block common cloud metadata endpoints
+            if (host == "169.254.169.254" || // AWS, GCP, Azure metadata
+                host == "metadata.google.internal" ||
+                host.EndsWith(".internal") ||
+                host == "metadata" ||
+                host.StartsWith("metadata."))
+            {
+                return false;
+            }
+
+            // Block localhost and loopback
+            if (host == "localhost" || host == "127.0.0.1" || host == "::1" ||
+                host.StartsWith("127.") || host == "[::1]")
+            {
+                return false;
+            }
+
+            // Try to parse as IP address to check for private ranges
+            if (System.Net.IPAddress.TryParse(host.Trim('[', ']'), out var ip))
+            {
+                // Block private IP ranges (RFC 1918)
+                var bytes = ip.GetAddressBytes();
+
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    // 10.0.0.0/8
+                    if (bytes[0] == 10)
+                    {
+                        return false;
+                    }
+
+                    // 172.16.0.0/12
+                    if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31)
+                    {
+                        return false;
+                    }
+
+                    // 192.168.0.0/16
+                    if (bytes[0] == 192 && bytes[1] == 168)
+                    {
+                        return false;
+                    }
+
+                    // 169.254.0.0/16 (link-local)
+                    if (bytes[0] == 169 && bytes[1] == 254)
+                    {
+                        return false;
+                    }
+                }
+
+                // Block IPv6 private addresses
+                if (ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private async Task<AnydropLinkMetadata> FetchLinkMetadataAsync(string url, CancellationToken cancellationToken)
         {
             var metadata = new AnydropLinkMetadata
@@ -844,6 +937,15 @@ namespace MingYue.Services
 
             try
             {
+                // SSRF protection: validate URL before fetching
+                if (!IsUrlSafeToFetch(url))
+                {
+                    metadata.IsFetchSuccessful = false;
+                    metadata.FetchError = "URL blocked for security reasons";
+
+                    return metadata;
+                }
+
                 using var client = _httpClientFactory.CreateClient();
                 client.Timeout = TimeSpan.FromSeconds(LinkMetadataFetchTimeoutSeconds);
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (compatible; MingYue Anydrop)");

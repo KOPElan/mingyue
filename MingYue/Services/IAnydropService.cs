@@ -130,6 +130,13 @@ namespace MingYue.Services
         Task DeleteAttachmentAsync(int id);
 
         /// <summary>
+        /// Gets a single attachment by its ID.
+        /// </summary>
+        /// <param name="id">Attachment ID.</param>
+        /// <returns>The attachment if found, null otherwise.</returns>
+        Task<AnydropAttachment?> GetAttachmentByIdAsync(int id);
+
+        /// <summary>
         /// Gets all attachments filtered by type with pagination.
         /// </summary>
         /// <param name="contentTypePrefix">Content type prefix filter (e.g., "image/", "video/").</param>

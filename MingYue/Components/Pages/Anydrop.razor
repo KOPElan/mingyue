@@ -924,8 +924,10 @@
 </FluentDialog>
 
 @code {
-    // Configuration constants
-    private const string ANYDROP_UPLOAD_PATH = "/var/lib/mingyue/anydrop";
+    // Configuration constants - cross-platform path handling
+    private static readonly string ANYDROP_UPLOAD_PATH = OperatingSystem.IsWindows()
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "mingyue", "anydrop")
+        : "/var/lib/mingyue/anydrop";
     private const int MediaGalleryPageSize = 100;
     private const int MaxFileNameDisplayLength = 20;
     private const int MaxFileNameWithoutExtLength = 15;
@@ -1300,10 +1302,19 @@
                 }
             }
 
-            // Parse URLs for link metadata (fire and forget)
+            // Parse URLs for link metadata with error handling.
+            // We await the operation so that exceptions are observed, but handle them locally
+            // so that a failure in metadata parsing does not cause the whole send operation to fail.
             if (!string.IsNullOrWhiteSpace(newMessageContent))
             {
-                _ = AnydropService.ParseAndSaveLinkMetadataAsync(message.Id, newMessageContent);
+                try
+                {
+                    await AnydropService.ParseAndSaveLinkMetadataAsync(message.Id, newMessageContent);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error parsing link metadata for message {MessageId}", message.Id);
+                }
             }
 
             ToastService.ShowSuccess("消息发送成功");
@@ -1457,17 +1468,40 @@
         // Escape HTML first to prevent XSS
         content = System.Net.WebUtility.HtmlEncode(content);
         
-        // Convert URLs to clickable links
-        var urlPattern = @"(https?://[^\s<>""]+)";
-        var result = System.Text.RegularExpressions.Regex.Replace(
-            content, 
-            urlPattern, 
-            "<a href=\"$1\" target=\"_blank\" style=\"color: inherit; text-decoration: underline;\">$1</a>");
+        // Build result with safe URL handling
+        var urlPattern = new System.Text.RegularExpressions.Regex(@"(https?://[^\s<>&quot;]+)");
+        var result = new System.Text.StringBuilder();
+        var lastIndex = 0;
+
+        foreach (System.Text.RegularExpressions.Match match in urlPattern.Matches(content))
+        {
+            // Add text before the URL
+            result.Append(content[lastIndex..match.Index]);
+
+            // Validate and sanitize the URL before creating the link
+            var url = match.Value;
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && 
+                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                // URL is valid and uses http/https - safe to create link
+                // Re-encode the URL to ensure it's safe for href attribute
+                var safeUrl = System.Net.WebUtility.HtmlEncode(uri.AbsoluteUri);
+                result.Append($"<a href=\"{safeUrl}\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color: inherit; text-decoration: underline;\">{safeUrl}</a>");
+            }
+            else
+            {
+                // Invalid URL - just display as text
+                result.Append(url);
+            }
+
+            lastIndex = match.Index + match.Length;
+        }
+
+        // Add remaining text
+        result.Append(content[lastIndex..]);
         
         // Preserve line breaks
-        result = result.Replace("\n", "<br />");
-        
-        return result;
+        return result.ToString().Replace("\n", "<br />");
     }
 
     private string TruncateText(string text, int maxLength)

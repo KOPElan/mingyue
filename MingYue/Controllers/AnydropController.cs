@@ -414,9 +414,8 @@ public class AnydropController : ControllerBase
     {
         try
         {
-            // Get all attachments and find the one with matching ID
-            var attachments = await _anydropService.GetAttachmentsByTypeAsync(null, 1, int.MaxValue);
-            var attachment = attachments.Items.FirstOrDefault(a => a.Id == id);
+            // Query the attachment directly by ID to avoid loading all attachments into memory.
+            var attachment = await _anydropService.GetAttachmentByIdAsync(id);
 
             if (attachment is null)
             {
